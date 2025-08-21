@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rada.ke - Civic Engagement Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+       
+        body {
+            font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #9d4edd 0%, #ff6b35 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+       
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: #000;
+            border-radius: 40px;
+            padding: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .phone-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 30px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            z-index: 10;
+        }
+       
+        .phone-container::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            z-index: 11;
+        }
+       
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: #18181b;
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+       
+        .screen-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+       
+        .screen-content.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+       
+        .screen-content.prev {
+            transform: translateX(-100%);
+        }
+       
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px 0;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            height: 44px;
+            z-index: 10;
+        }
+       
+        .status-time {
+            font-weight: 700;
+        }
+       
+        .status-icons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-size: 16px;
+        }
+       
+        /* Splash Screen */
+        .splash-screen {
+            background: linear-gradient(135deg, #ff6b35 0%, #9d4edd 50%, #06ffa5 100%);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .splash-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            z-index: 5;
+        }
+       
+        .splash-logo {
+            width: 140px;
+            height: 140px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            font-weight: bold;
+            color: #ff6b35;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s infinite;
+        }
+       
+        .splash-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            letter-spacing: -1px;
+        }
+       
+        .splash-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 60px;
+            font-weight: 500;
+            max-width: 280px;
+        }
+       
+        .loading-dots {
+            display: flex;
+            gap: 12px;
+        }
+       
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            animation: bounce 1.5s infinite;
+        }
+       
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+       
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+       
+        .continue-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 24px;
+            right: 24px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            animation: fadeInOut 2s infinite;
+            z-index: 10;
+        }
+       
+        /* Onboarding Screens */
+        .onboarding {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .onboarding-1 {
+            background: linear-gradient(135deg, #ff6b35 0%, #9d4edd 100%);
+        }
+       
+        .onboarding-2 {
+            background: linear-gradient(135deg, #9d4edd 0%, #06ffa5 100%);
+        }
+       
+        .onboarding-3 {
+            background: linear-gradient(135deg, #06ffa5 0%, #ff6b35 100%);
+        }
+       
+        .onboarding-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px 24px;
+            position: relative;
+            z-index: 5;
+        }
+       
+        .onboarding-illustration {
+            width: 180px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+       
+        .onboarding-illustration i {
+            font-size: 80px;
+            color: white;
+            opacity: 0.9;
+        }
+       
+        .onboarding-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+       
+        .onboarding-text {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            margin-bottom: 40px;
+            max-width: 280px;
+            font-weight: 500;
+        }
+       
+        .progress-dots {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+       
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+       
+        .progress-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+       
+        .onboarding-actions {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+       
+        .btn {
+            padding: 16px 24px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 120px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+       
+        .btn:active {
+            transform: scale(0.95);
+        }
+       
+        .btn-outline {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+        }
+       
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+       
+        .btn-primary {
+            background: white;
+            color: #ff6b35;
+            font-weight: 700;
+        }
+       
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+       
+        /* Login Screen */
+        .login-screen {
+            background: linear-gradient(135deg, #06ffa5 0%, #9d4edd 100%);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .login-content {
+            flex: 1;
+            padding: 20px 24px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+       
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+       
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ff6b35 0%, #9d4edd 100%);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+       
+        .logo-text {
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: -1px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+       
+        .logo-text span {
+            color: #ff6b35;
+            font-weight: 900;
+        }
+       
+        .login-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 40px;
+            text-align: center;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+       
+        .login-form {
+            width: 100%;
+            max-width: 300px;
+        }
+       
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+       
+        .input-label {
+            display: block;
+            color: white;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+       
+        .input-field {
+            width: 100%;
+            padding: 16px 20px 16px 50px;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+       
+        .input-field:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+       
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+       
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 42px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 20px;
+        }
+       
+        .login-actions {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+       
+        .btn-full {
+            width: 100%;
+            padding: 18px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 15px;
+        }
+       
+        .btn-login {
+            background: white;
+            color: #ff6b35;
+        }
+       
+        .btn-create {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+        }
+       
+        .divider {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 25px 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+       
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+       
+        .divider span {
+            padding: 0 16px;
+        }
+       
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+       
+        .social-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #9d4edd;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+       
+        .social-icon:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+       
+        .social-icon:active {
+            transform: scale(0.95);
+        }
+       
+        .home-indicator {
+            width: 134px;
+            height: 5px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            margin: 0 auto 8px;
+        }
+       
+        /* Back Button */
+        .back-button {
+            position: absolute;
+            top: 60px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+       
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
+       
+        .back-button:active {
+            transform: scale(0.95);
+        }
+       
+        /* Organic Shapes */
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.4;
+            z-index: 1;
+        }
+       
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: #ff6b35;
+            top: -100px;
+            right: -100px;
+        }
+       
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: #06ffa5;
+            bottom: -50px;
+            left: -50px;
+        }
+       
+        .shape-3 {
+            width: 250px;
+            height: 250px;
+            background: #9d4edd;
+            bottom: -100px;
+            right: -50px;
+        }
+       
+        /* Register Screen */
+        .register-screen {
+            background: linear-gradient(135deg, #9d4edd 0%, #06ffa5 100%);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .register-content {
+            flex: 1;
+            padding: 20px 24px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+       
+        .register-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+       
+        .register-form {
+            width: 100%;
+            max-width: 300px;
+        }
+       
+        /* OTP Screen */
+        .otp-screen {
+            background: linear-gradient(135deg, #06ffa5 0%, #9d4edd 100%);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .otp-content {
+            flex: 1;
+            padding: 20px 24px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+       
+        .otp-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+       
+        .otp-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 280px;
+        }
+       
+        .otp-inputs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+       
+        .otp-input {
+            width: 55px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+       
+        .otp-input:focus {
+            outline: none;
+            border-color: white;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+       
+        .resend-otp {
+            color: white;
+            font-size: 14px;
+            margin-top: 20px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+       
+        /* Role Selection Screen */
+        .role-screen {
+            background: linear-gradient(135deg, #ff6b35 0%, #9d4edd 100%);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .role-content {
+            flex: 1;
+            padding: 20px 24px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+       
+        .role-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+       
+        .role-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 280px;
+        }
+       
+        .role-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 30px;
+        }
+       
+        .role-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid transparent;
+        }
+       
+        .role-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+       
+        .role-card.selected {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+       
+        .role-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            color: white;
+        }
+       
+        .role-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+       
+        .role-desc {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+       
+        /* XP Tracker Screen */
+        .xp-screen {
+            background: linear-gradient(135deg, #9d4edd 0%, #06ffa5 100%);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .xp-content {
+            flex: 1;
+            padding: 20px 24px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+       
+        .xp-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+       
+        .xp-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            padding: 30px;
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+       
+        .xp-level {
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+       
+        .xp-progress {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+       
+        .xp-progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #ff6b35, #9d4edd);
+            border-radius: 10px;
+            width: 45%;
+        }
+       
+        .xp-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+       
+        .xp-stat {
+            text-align: center;
+        }
+       
+        .xp-stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 5px;
+        }
+       
+        .xp-stat-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+       
+        .xp-badges-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+       
+        .xp-badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+       
+        .xp-badge {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+        }
+       
+        /* Data Load Screen */
+        .data-screen {
+            background: linear-gradient(135deg, #06ffa5 0%, #ff6b35 100%);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .data-content {
+            flex: 1;
+            padding: 20px 24px 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+       
+        .data-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+       
+        .data-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 280px;
+        }
+       
+        .loading-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 6px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            margin-bottom: 40px;
+            animation: rotate 1.5s linear infinite;
+        }
+       
+        .data-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 280px;
+        }
+       
+        .data-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+       
+        .data-stat-label {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+       
+        .data-stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+        }
+       
+        .error-message {
+            background: rgba(255, 100, 100, 0.3);
+            padding: 15px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            margin-top: 20px;
+            max-width: 280px;
+            border: 1px solid rgba(255, 100, 100, 0.5);
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+       
+        .retry-button {
+            background: white;
+            color: #ff6b35;
+            font-weight: 700;
+            padding: 15px 30px;
+            border-radius: 50px;
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+            display: none;
+        }
+       
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 20px rgba(255, 255, 255, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+        }
+       
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+       
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+       
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+       
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+       
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+       
+        .rotating {
+            animation: rotate 20s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="screen">
+            <!-- Splash Screen -->
+            <div class="screen-content active" id="splash-screen">
+                <div class="splash-screen">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-2 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="splash-content">
+                        <div class="splash-logo floating">
+                            <i class="fas fa-hands-helping"></i>
+                        </div>
+                        <div class="splash-title">rada.ke</div>
+                        <div class="splash-subtitle">Your Civic Engagement Platform</div>
+                        <div class="loading-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+                    <div class="continue-hint">
+                        Tap anywhere to continue
+                    </div>
+                </div>
+            </div>
+           
+            <!-- Onboarding Screen 1 -->
+            <div class="screen-content" id="onboarding-1">
+                <div class="onboarding onboarding-1">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-2 floating"></div>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="onboarding-content">
+                        <div class="onboarding-illustration floating">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="onboarding-title">Join the Movement</div>
+                        <div class="onboarding-text">Become part of Kenya's largest civic engagement platform for youth empowerment and democratic participation.</div>
+                        <div class="progress-dots">
+                            <div class="progress-dot active"></div>
+                            <div class="progress-dot"></div>
+                            <div class="progress-dot"></div>
+                        </div>
+                        <div class="onboarding-actions">
+                            <button class="btn btn-outline" id="skip-btn">Skip</button>
+                            <button class="btn btn-primary" id="next-1">Next</button>
+                        </div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+           
+            <!-- Onboarding Screen 2 -->
+            <div class="screen-content" id="onboarding-2">
+                <div class="onboarding onboarding-2">
+                    <div class="shape shape-2 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="onboarding-content">
+                        <div class="onboarding-illustration floating">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <div class="onboarding-title">Make Your Voice Heard</div>
+                        <div class="onboarding-text">Track government promises, participate in polls, and share your civic experiences with the community.</div>
+                        <div class="progress-dots">
+                            <div class="progress-dot"></div>
+                            <div class="progress-dot active"></div>
+                            <div class="progress-dot"></div>
+                        </div>
+                        <div class="onboarding-actions">
+                            <button class="btn btn-outline" id="back-btn">Back</button>
+                            <button class="btn btn-primary" id="next-2">Next</button>
+                        </div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+           
+            <!-- Onboarding Screen 3 (XP Tracker) -->
+            <div class="screen-content" id="onboarding-3">
+                <div class="onboarding onboarding-3">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="onboarding-content">
+                        <div class="onboarding-illustration floating">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <div class="onboarding-title">Earn Civic XP</div>
+                        <div class="onboarding-text">Track your progress, earn badges, and level up as you contribute to Kenya's democratic future.</div>
+                        <div class="progress-dots">
+                            <div class="progress-dot"></div>
+                            <div class="progress-dot"></div>
+                            <div class="progress-dot active"></div>
+                        </div>
+                        <div class="onboarding-actions">
+                            <button class="btn btn-outline" id="back-btn-2">Back</button>
+                            <button class="btn btn-primary" id="get-started">Get Started</button>
+                        </div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+           
+            <!-- Login Screen -->
+            <div class="screen-content" id="login-screen">
+                <div class="login-screen">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                   
+                    <button class="back-button" id="login-back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="login-content">
+                        <div class="logo">
+                            <div class="logo-icon rotating">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="logo-text">rada.<span>ke</span></div>
+                        </div>
+                        <div class="login-title">Welcome Back</div>
+                        <div class="login-form">
+                            <div class="input-group">
+                                <label class="input-label">Phone Number</label>
+                                <i class="input-icon fas fa-phone"></i>
+                                <input type="tel" class="input-field" placeholder="+254 700 000 000">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">Password</label>
+                                <i class="input-icon fas fa-lock"></i>
+                                <input type="password" class="input-field" placeholder="••••••••">
+                            </div>
+                            <div class="login-actions">
+                                <button class="btn btn-full btn-login" id="login-btn">Login</button>
+                                <button class="btn btn-full btn-create" id="create-account">Create Account</button>
+                            </div>
+                            <div class="divider">
+                                <span>or continue with</span>
+                            </div>
+                            <div class="social-login">
+                                <div class="social-icon">
+                                    <i class="fab fa-google"></i>
+                                </div>
+                                <div class="social-icon">
+                                    <i class="fab fa-facebook-f"></i>
+                                </div>
+                                <div class="social-icon">
+                                    <i class="fab fa-twitter"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+           
+            <!-- Register Screen -->
+            <div class="screen-content" id="register-screen">
+                <div class="register-screen">
+                    <div class="shape shape-2 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                   
+                    <button class="back-button" id="register-back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="register-content">
+                        <div class="logo">
+                            <div class="logo-icon rotating">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="logo-text">rada.<span>ke</span></div>
+                        </div>
+                        <div class="register-title">Create Account</div>
+                        <div class="login-form">
+                            <div class="input-group">
+                                <label class="input-label">Full Name</label>
+                                <i class="input-icon fas fa-user"></i>
+                                <input type="text" class="input-field" placeholder="Your full name">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">Phone Number</label>
+                                <i class="input-icon fas fa-phone"></i>
+                                <input type="tel" class="input-field" placeholder="+254 700 000 000">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">Email (Optional)</label>
+                                <i class="input-icon fas fa-envelope"></i>
+                                <input type="email" class="input-field" placeholder="email@example.com">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">Password</label>
+                                <i class="input-icon fas fa-lock"></i>
+                                <input type="password" class="input-field" placeholder="••••••••">
+                            </div>
+                            <div class="login-actions">
+                                <button class="btn btn-full btn-login" id="register-btn">Register</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+           
+            <!-- OTP Screen -->
+            <div class="screen-content" id="otp-screen">
+                <div class="otp-screen">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-2 floating"></div>
+                   
+                    <button class="back-button" id="otp-back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="otp-content">
+                        <div class="logo">
+                            <div class="logo-icon rotating">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="logo-text">rada.<span>ke</span></div>
+                        </div>
+                        <div class="otp-title">Verify Your Account</div>
+                        <div class="otp-subtitle">We've sent a 6-digit code to your phone number</div>
+                        <div class="otp-inputs">
+                            <input type="text" class="otp-input" maxlength="1">
+                            <input type="text" class="otp-input" maxlength="1">
+                            <input type="text" class="otp-input" maxlength="1">
+                            <input type="text" class="otp-input" maxlength="1">
+                            <input type="text" class="otp-input" maxlength="1">
+                            <input type="text" class="otp-input" maxlength="1">
+                        </div>
+                        <button class="btn btn-full btn-login" id="verify-btn">Verify</button>
+                        <div class="resend-otp">Resend code in 0:45</div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+           
+            <!-- Role Selection Screen -->
+            <div class="screen-content" id="role-screen">
+                <div class="role-screen">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                   
+                    <button class="back-button" id="role-back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="role-content">
+                        <div class="logo">
+                            <div class="logo-icon rotating">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="logo-text">rada.<span>ke</span></div>
+                        </div>
+                        <div class="role-title">Choose Your Role</div>
+                        <div class="role-subtitle">Select how you want to contribute to Kenya's civic future</div>
+                        <div class="role-cards">
+                            <div class="role-card" data-role="student">
+                                <div class="role-icon">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <div class="role-name">Student</div>
+                                <div class="role-desc">Learn civics, document experiences</div>
+                            </div>
+                            <div class="role-card" data-role="activist">
+                                <div class="role-icon">
+                                    <i class="fas fa-microphone-alt"></i>
+                                </div>
+                                <div class="role-name">Activist</div>
+                                <div class="role-desc">Organize, document protests</div>
+                            </div>
+                            <div class="role-card" data-role="researcher">
+                                <div class="role-icon">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="role-name">Researcher</div>
+                                <div class="role-desc">Analyze data, verify content</div>
+                            </div>
+                            <div class="role-card" data-role="creator">
+                                <div class="role-icon">
+                                    <i class="fas fa-paint-brush"></i>
+                                </div>
+                                <div class="role-name">Creator</div>
+                                <div class="role-desc">Share stories, creative content</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="confirm-role">Continue</button>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+           
+            <!-- XP Tracker Screen -->
+            <div class="screen-content" id="xp-screen">
+                <div class="xp-screen">
+                    <div class="shape shape-2 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                   
+                    <button class="back-button" id="xp-back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="xp-content">
+                        <div class="logo">
+                            <div class="logo-icon rotating">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="logo-text">rada.<span>ke</span></div>
+                        </div>
+                        <div class="xp-title">Your Civic XP</div>
+                        <div class="xp-card">
+                            <div class="xp-level">Civic Observer • Level 3</div>
+                            <div class="xp-progress">
+                                <div class="xp-progress-bar"></div>
+                            </div>
+                            <div class="xp-stats">
+                                <div class="xp-stat">
+                                    <div class="xp-stat-value">1,250</div>
+                                    <div class="xp-stat-label">XP</div>
+                                </div>
+                                <div class="xp-stat">
+                                    <div class="xp-stat-value">15</div>
+                                    <div class="xp-stat-label">Days</div>
+                                </div>
+                                <div class="xp-stat">
+                                    <div class="xp-stat-value">3</div>
+                                    <div class="xp-stat-label">Badges</div>
+                                </div>
+                            </div>
+                            <div class="xp-badges-title">Your Badges</div>
+                            <div class="xp-badges">
+                                <div class="xp-badge">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="xp-badge">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <div class="xp-badge">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="xp-badge">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="continue-xp">Continue to Platform</button>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+           
+            <!-- Data Load Screen -->
+            <div class="screen-content" id="data-screen">
+                <div class="data-screen">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-2 floating"></div>
+                   
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="data-content">
+                        <div class="logo">
+                            <div class="logo-icon rotating">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <div class="logo-text">rada.<span>ke</span></div>
+                        </div>
+                        <div class="data-title">Loading Your Data</div>
+                        <div class="data-subtitle">Preparing your personalized civic experience</div>
+                        <div class="loading-circle"></div>
+                        <div class="data-stats">
+                            <div class="data-stat">
+                                <div class="data-stat-label">Profile</div>
+                                <div class="data-stat-value">100%</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-stat-label">Local Updates</div>
+                                <div class="data-stat-value">75%</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-stat-label">Civic Tools</div>
+                                <div class="data-stat-value">90%</div>
+                            </div>
+                        </div>
+                        <div class="error-message" id="error-message">
+                            <i class="fas fa-exclamation-triangle"></i> Network connection lost. Please check your internet.
+                        </div>
+                        <button class="retry-button" id="retry-btn">Retry Connection</button>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AppNavigator {
+            constructor() {
+                this.currentScreen = 0;
+                this.screens = [
+                    'splash-screen',
+                    'onboarding-1',
+                    'onboarding-2',
+                    'onboarding-3',
+                    'login-screen',
+                    'register-screen',
+                    'otp-screen',
+                    'role-screen',
+                    'xp-screen',
+                    'data-screen'
+                ];
+                this.initializeEvents();
+                this.setupOTPInputs();
+                this.setupRoleSelection();
+                this.simulateDataLoad();
+            }
+           
+            initializeEvents() {
+                // Splash screen navigation
+                document.getElementById('splash-screen').addEventListener('click', () => {
+                    this.navigateTo(1);
+                });
+               
+                // Onboarding navigation
+                document.getElementById('skip-btn').addEventListener('click', () => {
+                    this.navigateTo(4); // Skip to login
+                });
+               
+                document.getElementById('next-1').addEventListener('click', () => {
+                    this.navigateTo(2);
+                });
+               
+                document.getElementById('back-btn').addEventListener('click', () => {
+                    this.navigateTo(1);
+                });
+               
+                document.getElementById('next-2').addEventListener('click', () => {
+                    this.navigateTo(3);
+                });
+               
+                document.getElementById('back-btn-2').addEventListener('click', () => {
+                    this.navigateTo(2);
+                });
+               
+                document.getElementById('get-started').addEventListener('click', () => {
+                    this.navigateTo(4); // Go to login
+                });
+               
+                // Login screen interactions
+                document.getElementById('login-btn').addEventListener('click', () => {
+                    this.navigateTo(7); // Go to role selection
+                });
+               
+                document.getElementById('create-account').addEventListener('click', () => {
+                    this.navigateTo(5); // Go to register screen
+                });
+               
+                // Social login
+                document.querySelectorAll('.social-icon').forEach(icon => {
+                    icon.addEventListener('click', () => {
+                        this.showAlert('Social login would be implemented here');
+                    });
+                });
+               
+                // Back buttons
+                document.getElementById('login-back-btn').addEventListener('click', () => {
+                    this.navigateTo(3);
+                });
+               
+                document.getElementById('register-back-btn').addEventListener('click', () => {
+                    this.navigateTo(4); // Back to login
+                });
+               
+                document.getElementById('otp-back-btn').addEventListener('click', () => {
+                    this.navigateTo(5); // Back to register
+                });
+               
+                document.getElementById('role-back-btn').addEventListener('click', () => {
+                    this.navigateTo(4); // Back to login
+                });
+               
+                document.getElementById('xp-back-btn').addEventListener('click', () => {
+                    this.navigateTo(7); // Back to role selection
+                });
+               
+                // Register screen
+                document.getElementById('register-btn').addEventListener('click', () => {
+                    this.navigateTo(6); // Go to OTP screen
+                });
+               
+                // OTP screen
+                document.getElementById('verify-btn').addEventListener('click', () => {
+                    this.navigateTo(7); // Go to role selection
+                });
+               
+                // Role screen
+                document.getElementById('confirm-role').addEventListener('click', () => {
+                    this.navigateTo(8); // Go to XP screen
+                });
+               
+                // XP screen
+                document.getElementById('continue-xp').addEventListener('click', () => {
+                    this.navigateTo(9); // Go to data load screen
+                });
+               
+                // Data load screen
+                document.getElementById('retry-btn').addEventListener('click', () => {
+                    this.simulateDataLoad();
+                });
+            }
+           
+            setupOTPInputs() {
+                const inputs = document.querySelectorAll('.otp-input');
+                inputs.forEach((input, index) => {
+                    input.addEventListener('input', () => {
+                        if (input.value.length === 1 && index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        }
+                    });
+                   
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Backspace' && input.value === '' && index > 0) {
+                            inputs[index - 1].focus();
+                        }
+                    });
+                });
+            }
+           
+            setupRoleSelection() {
+                const roleCards = document.querySelectorAll('.role-card');
+                roleCards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        // Remove selected class from all cards
+                        roleCards.forEach(c => c.classList.remove('selected'));
+                        // Add selected class to clicked card
+                        card.classList.add('selected');
+                    });
+                });
+            }
+           
+            simulateDataLoad() {
+                const errorMessage = document.getElementById('error-message');
+                const retryButton = document.getElementById('retry-btn');
+                const loadingCircle = document.querySelector('.loading-circle');
+                const dataStats = document.querySelectorAll('.data-stat-value');
+                
+                // Hide error and retry button initially
+                errorMessage.style.display = 'none';
+                retryButton.style.display = 'none';
+                
+                // Reset stats
+                dataStats[0].textContent = '0%';
+                dataStats[1].textContent = '0%';
+                dataStats[2].textContent = '0%';
+                
+                // Simulate loading with random network failure
+                const hasNetworkError = Math.random() < 0.3;
+                
+                if (hasNetworkError) {
+                    // Simulate network error after delay
+                    setTimeout(() => {
+                        errorMessage.style.display = 'block';
+                        retryButton.style.display = 'block';
+                    }, 2500);
+                } else {
+                    // Simulate successful loading
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 5;
+                        
+                        // Update stats with different progress
+                        dataStats[0].textContent = Math.min(100, progress + 20) + '%';
+                        dataStats[1].textContent = Math.min(100, progress) + '%';
+                        dataStats[2].textContent = Math.min(100, progress + 10) + '%';
+                        
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            // Navigate to main app (simulated)
+                            setTimeout(() => {
+                                this.showAlert('App loaded successfully! Main dashboard would appear next.');
+                            }, 500);
+                        }
+                    }, 150);
+                }
+            }
+           
+            navigateTo(screenIndex) {
+                if (screenIndex < 0 || screenIndex >= this.screens.length) return;
+               
+                const currentElement = document.getElementById(this.screens[this.currentScreen]);
+                const nextElement = document.getElementById(this.screens[screenIndex]);
+               
+                // Remove active class from current screen
+                currentElement.classList.remove('active');
+               
+                // Add appropriate transition class
+                if (screenIndex > this.currentScreen) {
+                    currentElement.classList.add('prev');
+                } else {
+                    currentElement.style.transform = 'translateX(100%)';
+                }
+               
+                // Activate next screen
+                setTimeout(() => {
+                    nextElement.classList.add('active');
+                    this.currentScreen = screenIndex;
+                   
+                    // Clean up previous screen
+                    setTimeout(() => {
+                        currentElement.classList.remove('prev');
+                        currentElement.style.transform = '';
+                    }, 400);
+                }, 50);
+            }
+           
+            showAlert(message) {
+                // Create custom alert
+                const alertDiv = document.createElement('div');
+                alertDiv.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background: rgba(0, 0, 0, 0.9);
+                        color: white;
+                        padding: 20px 30px;
+                        border-radius: 15px;
+                        z-index: 1000;
+                        backdrop-filter: blur(10px);
+                        text-align: center;
+                        font-size: 16px;
+                        max-width: 300px;
+                        animation: fadeIn 0.3s ease;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    ">${message}</div>
+                `;
+               
+                document.body.appendChild(alertDiv);
+               
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 2000);
+            }
+        }
+       
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new AppNavigator();
+        });
+       
+        // Add fade in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

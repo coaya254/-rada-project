@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rada.ke - Civic Engagement Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: #000;
+            border-radius: 40px;
+            padding: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px 8px;
+            background: #1a1a1a;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .app-header {
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 16px 20px;
+            position: relative;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+        }
+        
+        .notifications {
+            position: relative;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 8px;
+            cursor: pointer;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #FF4757;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .user-greeting {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .greeting-text h2 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .greeting-text p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .profile-avatar {
+            width: 45px;
+            height: 45px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            overflow: hidden;
+        }
+        
+        .user-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+        
+        .persona-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        /* FEATURED SECTION */
+        .featured-section {
+            padding: 16px 20px 8px;
+            background: #f8f9fa;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .featured-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        .featured-main {
+            background: linear-gradient(135deg, #9d4edd, #667eea);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 16px;
+            color: white;
+            box-shadow: 0 8px 20px rgba(157, 78, 221, 0.2);
+        }
+        
+        .featured-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 60%);
+            z-index: 0;
+        }
+        
+        .featured-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 12px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .featured-name {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .featured-desc {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .featured-stats {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .featured-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .featured-grid-small {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .featured-item {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .featured-item-icon {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(157, 78, 221, 0.1);
+            color: #9d4edd;
+        }
+        
+        .featured-item-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            max-width: 70%;
+        }
+        
+        .featured-item-subtitle {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .featured-item-stats {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #9d4edd;
+            font-weight: 600;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            padding: 16px 20px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .quick-actions h3 {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        
+        .action-item {
+            text-align: center;
+            padding: 12px 8px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .action-item:hover, .action-item:active {
+            transform: translateY(-2px);
+            border-color: #4ECDC4;
+            background: #ffffff;
+        }
+        
+        .action-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+            display: block;
+        }
+        
+        .action-label {
+            font-size: 11px;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .xp-indicator {
+            background: #28a745;
+            color: white;
+            font-size: 8px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+        
+        .section {
+            margin-bottom: 16px;
+            background: white;
+            border-radius: 12px;
+            margin: 0 20px 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .section-header {
+            padding: 16px 16px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .view-all {
+            color: #4ECDC4;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .honor-wall-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f3f4;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .honor-wall-item:last-child {
+            border-bottom: none;
+        }
+        
+        .memorial-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .memorial-info {
+            flex: 1;
+        }
+        
+        .memorial-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .memorial-details {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        .candle-action {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #e74c3c;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        
+        .candle-action:hover {
+            background: #fff5f5;
+        }
+        
+        .candle-count {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .story-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .story-item:last-child {
+            border-bottom: none;
+        }
+        
+        .story-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .author-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .author-info {
+            flex: 1;
+        }
+        
+        .author-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .story-time {
+            font-size: 11px;
+            color: #6c757d;
+        }
+        
+        .story-content {
+            color: #495057;
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+        
+        .story-engagement {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .engagement-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .engagement-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .mood-panel {
+            padding: 16px;
+        }
+        
+        .mood-question {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 12px;
+        }
+        
+        .mood-options {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        
+        .mood-option {
+            flex: 1;
+            padding: 12px 8px;
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mood-option:hover, .mood-option.active {
+            border-color: #4ECDC4;
+            background: #e8f5f3;
+        }
+        
+        .mood-emoji {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
+        }
+        
+        .mood-label {
+            font-size: 11px;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .challenge-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 16px 20px;
+        }
+        
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .challenge-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .challenge-xp {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .challenge-description {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+        
+        .challenge-progress {
+            background: rgba(255,255,255,0.2);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .challenge-progress-fill {
+            background: #4ECDC4;
+            height: 100%;
+            width: 60%;
+            border-radius: 3px;
+        }
+        
+        .challenge-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        .bottom-nav {
+            background: white;
+            border-top: 1px solid #e9ecef;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item {
+            text-align: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: color 0.2s;
+            flex: 1;
+        }
+        
+        .nav-item.active {
+            color: #4ECDC4;
+        }
+        
+        .nav-item:not(.active) {
+            color: #6c757d;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        .trending-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        
+        /* Scrollbar styling */
+        .main-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .main-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .main-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+        
+        .floating-action {
+            position: absolute;
+            bottom: 80px;
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+        
+        .floating-action:hover {
+            transform: scale(1.1);
+        }
+        
+        .promise-tracker-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .promise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .promise-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .promise-status {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .status-not-started { background: #e9ecef; color: #666; }
+        .status-ongoing { background: #d0ebff; color: #1971c2; }
+        .status-completed { background: #d3f9d8; color: #2f9e44; }
+        .status-broken { background: #ffe3e3; color: #e03131; }
+        
+        .promise-progress {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 3px;
+        }
+        
+        .progress-25 { width: 25%; background: #ff6b35; }
+        .progress-50 { width: 50%; background: #4dabf7; }
+        .progress-75 { width: 75%; background: #40c057; }
+        
+        .protest-card {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .protest-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .protest-location {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .protest-date {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .protest-stats {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .learn-section {
+            padding: 16px;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 0 20px 16px;
+        }
+        
+        .cta-button {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255,107,53,0.3);
+        }
+        
+        /* Animations */
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateY(-10px); }
+            10%, 90% { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="phone-screen">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <span>9:41</span>
+                <span>📶 🔋 100%</span>
+            </div>
+            
+            <!-- App Header (non-sticky) -->
+            <div class="app-header">
+                <div class="header-top">
+                    <div class="logo">Rada.ke</div>
+                    <div class="notifications">
+                        🔔
+                        <div class="notification-badge">437</div>
+                    </div>
+                </div>
+                
+                <div class="user-greeting">
+                    <div class="greeting-text">
+                        <h2>Hujambo, Amara!</h2>
+                        <p>Ready to drive change today?</p>
+                    </div>
+                    <div class="profile-avatar">🌱</div>
+                </div>
+                
+                <div class="user-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">1,338</span>
+                        <span class="stat-label">XP Points</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">🔥 7</span>
+                        <span class="stat-label">Day Streak</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">🔍</span>
+                        <span class="stat-label">Tracker</span>
+                        <div class="persona-badge">SPARK</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Featured Today Section -->
+                <div class="featured-section">
+                    <div class="section-title">
+                        <i class="fas fa-star"></i> Featured Today
+                    </div>
+                    
+                    <div class="featured-grid">
+                        <!-- Main Featured Card -->
+                        <div class="featured-main" onclick="showFeaturedDetail('youth-climate-action')">
+                            <div class="featured-badge">
+                                <i class="fas fa-crown"></i> Top Story
+                            </div>
+                            <div class="featured-name">Youth Climate Action</div>
+                            <div class="featured-desc">Over 5,000 youth participated in nationwide climate protests demanding immediate environmental reforms</div>
+                            <div class="featured-stats">
+                                <div class="featured-stat">
+                                    <i class="fas fa-eye"></i> 12.4K Views
+                                </div>
+                                <div class="featured-stat">
+                                    <i class="fas fa-heart"></i> 2.1K Reactions
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Small Cards Grid -->
+                        <div class="featured-grid-small">
+                            <!-- Shujaa of the Day -->
+                            <div class="featured-item" onclick="showFeaturedDetail('amina-juma')">
+                                <div class="featured-item-icon">
+                                    <i class="fas fa-medal"></i>
+                                </div>
+                                <div class="featured-item-title">Amina Juma</div>
+                                <div class="featured-item-subtitle">Education activist</div>
+                                <div class="featured-item-stats">
+                                    <i class="fas fa-star"></i> 4.8 Rating
+                                </div>
+                            </div>
+                            
+                            <!-- Youth Group of the Day -->
+                            <div class="featured-item" onclick="showFeaturedDetail('green-warriors')">
+                                <div class="featured-item-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="featured-item-title">Green Warriors</div>
+                                <div class="featured-item-subtitle">Nairobi • 2.3K Members</div>
+                                <div class="featured-item-stats">
+                                    <i class="fas fa-fire"></i> Trending
+                                </div>
+                            </div>
+                            
+                            <!-- Top Mood -->
+                            <div class="featured-item" onclick="showFeaturedDetail('civic-mood')">
+                                <div class="featured-item-icon">
+                                    <i class="fas fa-smile"></i>
+                                </div>
+                                <div class="featured-item-title">Hopeful</div>
+                                <div class="featured-item-subtitle">72% yesterday</div>
+                                <div class="featured-item-stats">
+                                    <i class="fas fa-chart-line"></i> +12% since last week
+                                </div>
+                            </div>
+                            
+                            <!-- Top Tracked Promise -->
+                            <div class="featured-item" onclick="showFeaturedDetail('healthcare-reform')">
+                                <div class="featured-item-icon">
+                                    <i class="fas fa-bullseye"></i>
+                                </div>
+                                <div class="featured-item-title">Healthcare Reform</div>
+                                <div class="featured-item-subtitle">45% progress</div>
+                                <div class="featured-item-stats">
+                                    <i class="fas fa-users"></i> 4.2K tracking
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Daily Civic Actions</h3>
+                    <div class="action-grid">
+                        <div class="action-item">
+                            <span class="action-icon">📚</span>
+                            <span class="action-label">Read Article</span>
+                            <div class="xp-indicator">+10 XP</div>
+                        </div>
+                        <div class="action-item">
+                            <span class="action-icon">🕯️</span>
+                            <span class="action-label">Light Candle</span>
+                            <div class="xp-indicator">+15 XP</div>
+                        </div>
+                        <div class="action-item">
+                            <span class="action-icon">📊</span>
+                            <span class="action-label">Track Promise</span>
+                            <div class="xp-indicator">+20 XP</div>
+                        </div>
+                        <div class="action-item">
+                            <span class="action-icon">✍️</span>
+                            <span class="action-label">Share Story</span>
+                            <div class="xp-indicator">+25 XP</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weekly Challenge -->
+                <div class="challenge-card">
+                    <div class="challenge-header">
+                        <span class="challenge-title">📊 Accountability Week</span>
+                        <span class="challenge-xp">+50 XP Bonus</span>
+                    </div>
+                    <div class="challenge-description">
+                        Submit evidence for 3 government promises this week
+                    </div>
+                    <div class="challenge-progress">
+                        <div class="challenge-progress-fill"></div>
+                    </div>
+                    <div class="challenge-stats">
+                        <span>Progress: 2/3 submissions</span>
+                        <span>3 days left</span>
+                    </div>
+                </div>
+                
+                <!-- Honor Wall -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            🏛️ Honor Wall
+                            <span class="trending-tag">TRENDING</span>
+                        </div>
+                        <span class="view-all">View All</span>
+                    </div>
+                    <div class="honor-wall-item">
+                        <div class="memorial-photo">RO</div>
+                        <div class="memorial-info">
+                            <div class="memorial-name">Rex Omonyoi</div>
+                            <div class="memorial-details">Lost during Finance Bill protests • Nairobi</div>
+                        </div>
+                        <div class="candle-action">
+                            <span>🕯️</span>
+                            <span class="candle-count">234</span>
+                        </div>
+                    </div>
+                    <div class="honor-wall-item">
+                        <div class="memorial-photo">EK</div>
+                        <div class="memorial-info">
+                            <div class="memorial-name">Evans Kiratu</div>
+                            <div class="memorial-details">Student activist • Nakuru</div>
+                        </div>
+                        <div class="candle-action">
+                            <span>🕯️</span>
+                            <span class="candle-count">189</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mood Panel -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">📊 Today's Mood</div>
+                        <span class="view-all">Results</span>
+                    </div>
+                    <div class="mood-panel">
+                        <div class="mood-question">How do you feel about Kenya's direction today?</div>
+                        <div class="mood-options">
+                            <div class="mood-option">
+                                <span class="mood-emoji">😠</span>
+                                <span class="mood-label">Frustrated</span>
+                            </div>
+                            <div class="mood-option">
+                                <span class="mood-emoji">😐</span>
+                                <span class="mood-label">Concerned</span>
+                            </div>
+                            <div class="mood-option active">
+                                <span class="mood-emoji">😊</span>
+                                <span class="mood-label">Hopeful</span>
+                            </div>
+                            <div class="mood-option">
+                                <span class="mood-emoji">🙂</span>
+                                <span class="mood-label">Optimistic</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Protest Archive -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">📸 Protest Archive</div>
+                        <span class="view-all">View All</span>
+                    </div>
+                    <div class="protest-card">
+                        <div class="protest-header">
+                            <div class="protest-location">Nairobi CBD</div>
+                            <div class="protest-date">June 18, 2024</div>
+                        </div>
+                        <div class="story-content">Youth protest against tax increases with peaceful demonstrations...</div>
+                        <div class="protest-stats">
+                            <span>📸 24 photos</span>
+                            <span>👥 2,500+</span>
+                        </div>
+                    </div>
+                    <div class="protest-card">
+                        <div class="protest-header">
+                            <div class="protest-location">Mombasa</div>
+                            <div class="protest-date">June 12, 2024</div>
+                        </div>
+                        <div class="story-content">Climate activists demand action on coastal pollution...</div>
+                        <div class="protest-stats">
+                            <span>📸 18 photos</span>
+                            <span>👥 1,200+</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Promise Tracker -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">🎯 Promise Tracker</div>
+                        <span class="view-all">View All</span>
+                    </div>
+                    <div class="promise-tracker-item">
+                        <div class="promise-header">
+                            <div class="promise-title">Education Funding Increase</div>
+                            <div class="promise-status status-ongoing">Ongoing</div>
+                        </div>
+                        <div class="story-content">Promise to increase funding by 30% in all public schools</div>
+                        <div class="promise-progress">
+                            <div class="progress-bar progress-50"></div>
+                        </div>
+                    </div>
+                    <div class="promise-tracker-item">
+                        <div class="promise-header">
+                            <div class="promise-title">Youth Employment Program</div>
+                            <div class="promise-status status-not-started">Not Started</div>
+                        </div>
+                        <div class="story-content">Create 500,000 jobs for youth by end of 2024</div>
+                        <div class="promise-progress">
+                            <div class="progress-bar progress-25"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Civic Journal -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">📰 Civic Journal</div>
+                        <span class="view-all">View All</span>
+                    </div>
+                    <div class="story-item">
+                        <div class="story-header">
+                            <div class="author-avatar">A</div>
+                            <div class="author-info">
+                                <div class="author-name">Amina Salim</div>
+                                <div class="story-time">2h ago • Mombasa</div>
+                            </div>
+                        </div>
+                        <div class="story-content">
+                            Just witnessed an incredible town hall meeting where youth voices were actually heard! The county government committed to...
+                        </div>
+                        <div class="story-engagement">
+                            <div class="engagement-item">
+                                <span>❤️</span>
+                                <span>23</span>
+                            </div>
+                            <div class="engagement-item">
+                                <span>💬</span>
+                                <span>8</span>
+                            </div>
+                            <div class="engagement-item">
+                                <span>🔄</span>
+                                <span>5</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="story-item">
+                        <div class="story-header">
+                            <div class="author-avatar">J</div>
+                            <div class="author-info">
+                                <div class="author-name">John Kiprop</div>
+                                <div class="story-time">4h ago • Eldoret</div>
+                            </div>
+                        </div>
+                        <div class="story-content">
+                            Breaking: County government responds to our petition about road infrastructure. They've allocated 50M for repairs starting next month!
+                        </div>
+                        <div class="story-engagement">
+                            <div class="engagement-item">
+                                <span>❤️</span>
+                                <span>67</span>
+                            </div>
+                            <div class="engagement-item">
+                                <span>💬</span>
+                                <span>15</span>
+                            </div>
+                            <div class="engagement-item">
+                                <span>🔄</span>
+                                <span>12</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Learn Civics -->
+                <div class="learn-section">
+                    <h3 class="section-title">📚 Learn Civics</h3>
+                    <p>Complete courses and earn badges to level up your civic knowledge</p>
+                    <button class="cta-button" onclick="navigateToFeature('learn-civics')">Start Learning</button>
+                </div>
+                
+                <div style="height: 100px;"></div>
+            </div>
+            
+            <!-- Floating Action Button -->
+            <div class="floating-action" onclick="createNewContent()">
+                ✏️
+            </div>
+            
+            <!-- Bottom Navigation -->
+            <div class="bottom-nav">
+                <div class="nav-item active">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Home</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">🏛️</span>
+                    <span class="nav-label">Honor</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Track</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-label">Learn</span>
+                </div>
+                <div class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-label">Profile</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mood panel interaction
+            const moodOptions = document.querySelectorAll('.mood-option');
+            moodOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    moodOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    showToast(`Mood submitted: ${this.querySelector('.mood-label').textContent} (+8 XP)`);
+                    updateXP(8);
+                });
+            });
+            
+            // Action items animation
+            const actionItems = document.querySelectorAll('.action-item');
+            actionItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.95)';
+                    const xp = parseInt(this.querySelector('.xp-indicator').textContent.replace('+', '').replace(' XP', ''));
+                    showToast(`Action completed! +${xp} XP`);
+                    updateXP(xp);
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+            
+            // Candle lighting animation
+            const candleActions = document.querySelectorAll('.candle-action');
+            candleActions.forEach(candle => {
+                candle.addEventListener('click', function() {
+                    const count = this.querySelector('.candle-count');
+                    const currentCount = parseInt(count.textContent);
+                    count.textContent = currentCount + 1;
+                    
+                    // Add glow effect
+                    this.style.background = 'rgba(231, 76, 60, 0.1)';
+                    setTimeout(() => {
+                        this.style.background = '';
+                    }, 1000);
+                    
+                    showToast(`Lit a candle for a hero (+15 XP)`);
+                    updateXP(15);
+                });
+            });
+            
+            // Engagement buttons
+            const engagementItems = document.querySelectorAll('.engagement-item');
+            engagementItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const countSpan = this.querySelector('span:last-child');
+                    if (countSpan && !isNaN(countSpan.textContent)) {
+                        const currentCount = parseInt(countSpan.textContent);
+                        countSpan.textContent = currentCount + 1;
+                    }
+                });
+            });
+            
+            // Bottom navigation
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Simulate real-time updates
+            setInterval(() => {
+                const notifications = document.querySelector('.notification-badge');
+                const currentCount = parseInt(notifications.textContent);
+                if (Math.random() > 0.95) { // 5% chance every second
+                    notifications.textContent = currentCount + 1;
+                }
+            }, 1000);
+        });
+        
+        function createNewContent() {
+            showToast("Create new civic content!");
+        }
+        
+        function navigateToFeature(feature) {
+            showToast(`Navigating to ${feature.replace('-', ' ')}`);
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 20px;
+                font-size: 14px;
+                z-index: 1000;
+                animation: fadeInOut 3s ease-in-out;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 3000);
+        }
+        
+        function updateXP(points) {
+            const xpElement = document.querySelector('.stat-value');
+            const currentXP = parseInt(xpElement.textContent.replace(/,/g, ''));
+            const newXP = currentXP + points;
+            
+            // Format with commas
+            const formattedXP = newXP.toLocaleString();
+            xpElement.textContent = formattedXP;
+            
+            // Add animation
+            xpElement.style.animation = 'pulse 0.5s ease-in-out';
+            setTimeout(() => {
+                xpElement.style.animation = '';
+            }, 500);
+            
+            // Check for level up
+            if (newXP >= 500 && currentXP < 500) {
+                showToast('Level Up! You are now a Civic Star 🌟');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rada.ke | Youth Civic Engagement Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Changa:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Updated 2025 Design Variables */
+        :root {
+            /* Core Brand Colors */
+            --rada-gold: #ffc107;
+            --rada-teal: #00e5ff;
+            --rada-orange: #ff5722;
+            
+            /* Neutrals & Backgrounds */
+            --dark-bg: #0a0a0a;
+            --dark-card: #1a1a1a;
+            --dark-border: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            
+            /* Status Colors */
+            --success-bright: #00ff88;
+            --success-main: #10b981;
+            --success-dark: #065f46;
+            --warning-bright: #ffff00;
+            --warning-main: #f59e0b;
+            --error-bright: #ff6b6b;
+            --error-main: #dc2626;
+            
+            /* Accent Colors */
+            --purple-accent: #8b5cf6;
+            --pink-accent: #ec4899;
+            --blue-accent: #3b82f6;
+            --green-accent: #22c55e;
+            
+            /* Existing variables */
+            --transition: all 0.3s ease;
+            --glow: 0 0 15px rgba(255, 193, 7, 0.3); /* Updated to rada-gold */
+            --card-radius: 16px;
+            --blur-bg: rgba(10, 10, 10, 0.85);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 193, 7, 0.05) 0%, transparent 15%),
+                radial-gradient(circle at 90% 80%, rgba(255, 193, 7, 0.05) 0%, transparent 15%);
+        }
+        
+        /* Modern Glassmorphism Components */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--card-radius);
+            border: 1px solid var(--dark-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transition: var(--transition);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow), 0 15px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 193, 7, 0.3); /* rada-gold */
+        }
+        
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+        
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            text-transform: uppercase;
+            font-family: 'Changa', sans-serif;
+        }
+        
+        h2 {
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            position: relative;
+            display: inline-block;
+            margin-bottom: 2rem;
+            padding-bottom: 0.5rem;
+        }
+        
+        h2:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: var(--rada-gold);
+        }
+        
+        h3 {
+            font-family: 'Changa', sans-serif;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Particles Background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Header & Navigation */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: var(--blur-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 193, 7, 0.2); /* rada-gold */
+            transition: var(--transition);
+        }
+        
+        .logo {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--rada-gold);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo span {
+            color: var(--text-primary);
+            margin-left: 0.5rem;
+        }
+        
+        .nav {
+            display: flex;
+        }
+        
+        .nav-item {
+            margin: 0 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: var(--transition);
+            color: var(--text-secondary);
+        }
+        
+        .nav-item:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--rada-gold);
+            transition: var(--transition);
+        }
+        
+        .nav-item:hover:after {
+            width: 100%;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 0 5%;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+        }
+        
+        .hero-title {
+            font-size: clamp(2.8rem, 6vw, 4.5rem);
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            text-shadow: 0 0 10px rgba(0,0,0,0.7);
+        }
+        
+        .hero-title span {
+            color: var(--rada-gold);
+            display: block;
+            text-shadow: var(--glow);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.4rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            font-weight: 300;
+            color: var(--text-secondary);
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.8rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 20px;
+            height: 200%;
+            background: rgba(255,255,255,0.3);
+            transform: rotate(25deg);
+            transition: all 0.4s;
+        }
+        
+        .btn:hover:after {
+            left: 120%;
+        }
+        
+        .btn-primary {
+            background: var(--rada-gold);
+            color: var(--dark-bg);
+        }
+        
+        .btn-primary:hover {
+            background: var(--rada-orange);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 87, 34, 0.2); /* rada-orange */
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--text-primary);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 50%;
+            background: linear-gradient(90deg, transparent 0%, var(--dark-bg) 100%), 
+                        url('https://images.unsplash.com/photo-1581833971351-0d15b526b9d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.8;
+            clip-path: polygon(25% 0%, 100% 0%, 100% 100%, 0% 100%);
+        }
+        
+        /* Section Styles */
+        .section {
+            padding: 5rem 5%;
+            position: relative;
+        }
+        
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .view-all {
+            color: var(--rada-gold);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        
+        .view-all:hover {
+            text-decoration: underline;
+        }
+        
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+        
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+        
+        /* Civic Feed */
+        .civic-feed {
+            background: var(--dark-card);
+        }
+        
+        .feed-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--card-radius);
+            overflow: hidden;
+            transition: var(--transition);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .feed-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow);
+        }
+        
+        .feed-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .feed-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .feed-category {
+            color: var(--rada-gold);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+            background: rgba(255, 193, 7, 0.1); /* rada-gold */
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+        }
+        
+        .feed-title {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+        
+        .feed-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .feed-author {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--rada-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark-bg);
+            font-weight: bold;
+        }
+        
+        /* XP & Badges */
+        .xp-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            background: rgba(0, 229, 255, 0.1); /* rada-teal */
+            padding: 0.5rem;
+            border-radius: 30px;
+            width: fit-content;
+        }
+        
+        .xp-badge i {
+            color: var(--rada-teal);
+        }
+        
+        /* Civic Memory */
+        .civic-memory {
+            background: linear-gradient(to bottom, var(--dark-card) 0%, var(--dark-bg) 100%);
+        }
+        
+        .memory-card {
+            height: 300px;
+            position: relative;
+            border-radius: var(--card-radius);
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            padding: 1.5rem;
+            color: var(--text-primary);
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .memory-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+            z-index: 1;
+        }
+        
+        .memory-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .memory-tag {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--rada-gold);
+            color: var(--dark-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            z-index: 3;
+        }
+        
+        .candle-count {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .candle-count i {
+            color: var(--rada-gold);
+        }
+        
+        /* Promise Tracker */
+        .promise-tracker {
+            background: var(--dark-card);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .status-completed {
+            background: rgba(16, 185, 129, 0.2); /* success-main */
+            color: var(--success-main);
+        }
+        
+        .status-ongoing {
+            background: rgba(245, 158, 11, 0.2); /* warning-main */
+            color: var(--warning-main);
+        }
+        
+        .status-broken {
+            background: rgba(220, 38, 38, 0.2); /* error-main */
+            color: var(--error-main);
+        }
+        
+        .status-planned {
+            background: rgba(59, 130, 246, 0.2); /* blue-accent */
+            color: var(--blue-accent);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        /* Expression Space */
+        .expression-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .audio-player {
+            background: rgba(0,0,0,0.5);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--rada-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark-bg);
+            cursor: pointer;
+        }
+        
+        /* Youth Hub */
+        .youth-card {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .org-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .org-tag {
+            background: rgba(255, 193, 7, 0.1); /* rada-gold */
+            color: var(--rada-gold);
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--dark-card);
+            padding: 4rem 5% 2rem;
+            border-top: 1px solid rgba(255, 193, 7, 0.2); /* rada-gold */
+        }
+        
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .footer-col h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .footer-col h3:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: var(--rada-gold);
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+        
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: var(--transition);
+            display: inline-block;
+        }
+        
+        .footer-links a:hover {
+            color: var(--rada-gold);
+            transform: translateX(5px);
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            text-decoration: none;
+        }
+        
+        .social-link:hover {
+            background: var(--rada-gold);
+            color: var(--dark-bg);
+            transform: translateY(-5px);
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .powered-by {
+            color: var(--rada-gold);
+            font-weight: 700;
+            margin-top: 0.5rem;
+            display: block;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes progress {
+            0% { width: 0; }
+        }
+        
+        .animate {
+            animation: fadeIn 0.6s ease forwards;
+        }
+        
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* ENHANCEMENTS */
+        /* Interactive Particles */
+        .particle-connect {
+            position: absolute;
+            background: rgba(255, 193, 7, 0.1); /* rada-gold */
+        }
+        
+        /* Active Navigation */
+        .nav-item.active {
+            color: var(--rada-gold);
+        }
+        
+        .nav-item.active:after {
+            width: 100%;
+        }
+        
+        /* Scroll Progress */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--rada-gold);
+            z-index: 1001;
+            transition: width 0.2s ease;
+        }
+        
+        /* Back to Top */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: var(--rada-gold);
+            color: var(--dark-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+            z-index: 999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+        }
+        
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 30px;
+            cursor: pointer;
+            margin-left: 1rem;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            transition: var(--transition);
+        }
+        
+        .theme-toggle::before {
+            content: '\f186';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            color: var(--rada-gold);
+            position: absolute;
+            left: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .theme-toggle::after {
+            content: '\f185';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            color: var(--rada-gold);
+            position: absolute;
+            right: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .theme-toggle-handle {
+            width: 24px;
+            height: 24px;
+            background: var(--rada-gold);
+            border-radius: 50%;
+            position: absolute;
+            left: 3px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark-bg);
+            font-size: 0.8rem;
+        }
+        
+        .theme-toggle.dark .theme-toggle-handle {
+            transform: translateX(30px);
+        }
+        
+        /* Mobile Menu */
+        .mobile-nav {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 280px;
+            height: 100vh;
+            background: var(--blur-bg);
+            backdrop-filter: blur(10px);
+            z-index: 1100;
+            padding: 80px 30px 30px;
+            transition: var(--transition);
+            border-left: 1px solid rgba(255, 193, 7, 0.2); /* rada-gold */
+        }
+        
+        .mobile-nav.active {
+            right: 0;
+        }
+        
+        .mobile-nav .nav-item {
+            display: block;
+            margin: 1.5rem 0;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        
+        .mobile-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        
+        /* Newsletter Form */
+        .newsletter-form {
+            display: flex;
+            margin-top: 1rem;
+        }
+        
+        .newsletter-form input {
+            flex-grow: 1;
+            padding: 0.8rem;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px 0 0 4px;
+            color: var(--text-primary);
+        }
+        
+        .newsletter-form button {
+            background: var(--rada-gold);
+            color: var(--dark-bg);
+            border: none;
+            padding: 0 1.5rem;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        
+        .newsletter-form button:hover {
+            background: var(--rada-orange);
+        }
+        
+        /* New Enhancements */
+        .xp-counter {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 999;
+            border: 1px solid var(--rada-gold);
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
+        }
+        
+        .xp-counter i {
+            color: var(--rada-gold);
+            font-size: 1.2rem;
+        }
+        
+        .xp-counter span {
+            font-weight: bold;
+        }
+        
+        .flame {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #ff5722 0%, #ffc107 70%, transparent 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 10;
+        }
+        
+        .candle-btn {
+            background: rgba(255, 193, 7, 0.2);
+            color: var(--rada-gold);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .candle-btn:hover {
+            background: rgba(255, 193, 7, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .candle-btn i {
+            transition: transform 0.3s;
+        }
+        
+        .candle-btn:hover i {
+            transform: scale(1.2);
+        }
+        
+        .progress-animate .progress-fill {
+            animation: progress 1.5s ease-out forwards;
+        }
+        
+        .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--purple-accent);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+            transform: scale(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .feed-item:hover .badge {
+            transform: scale(1);
+        }
+        
+        .dynamic-text span {
+            display: inline-block;
+            position: relative;
+            color: var(--rada-gold);
+        }
+        
+        .dynamic-text span::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--rada-gold);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+        }
+        
+        .dynamic-text span:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+        
+        .interactive-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--x) var(--y), rgba(255, 193, 7, 0.1) 0%, transparent 30%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        /* Mobile Styles */
+        @media (max-width: 992px) {
+            .nav {
+                display: none;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .hero {
+                padding-top: 80px;
+            }
+            
+            .hero-bg {
+                width: 100%;
+                opacity: 0.3;
+            }
+            
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .xp-counter {
+                top: 80px;
+                right: 15px;
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .hero-buttons {
+                flex-direction: column;
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .theme-toggle {
+                margin-left: 0.5rem;
+            }
+        }
+        
+        /* NEW SECTION: Learn Hub */
+        .learn-hub {
+            background: var(--dark-card);
+            padding: 5rem 5%;
+        }
+        
+        .module-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .module-image {
+            height: 180px;
+            background-size: cover;
+            background-position: center;
+            border-radius: var(--card-radius) var(--card-radius) 0 0;
+        }
+        
+        .module-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .module-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .module-progress-fill {
+            height: 100%;
+            background: var(--rada-teal);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .module-tag {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--purple-accent);
+        }
+        
+        /* NEW SECTION: AMA Sessions */
+        .ama-section {
+            background: linear-gradient(to bottom, var(--dark-bg) 0%, var(--dark-card) 100%);
+            padding: 5rem 5%;
+        }
+        
+        .ama-card {
+            height: 250px;
+            position: relative;
+            border-radius: var(--card-radius);
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            padding: 1.5rem;
+            color: var(--text-primary);
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .ama-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+            z-index: 1;
+        }
+        
+        .ama-content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+        }
+        
+        .ama-tag {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--rada-gold);
+            color: var(--dark-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            z-index: 3;
+        }
+        
+        /* NEW SECTION: Civic Polls */
+        .polls-section {
+            background: var(--dark-card);
+            padding: 5rem 5%;
+        }
+        
+        .poll-card {
+            padding: 1.5rem;
+        }
+        
+        .poll-options {
+            margin: 1.5rem 0;
+        }
+        
+        .poll-option {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .poll-option:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        
+        .poll-option input {
+            margin-right: 1rem;
+        }
+        
+        .poll-results {
+            margin-top: 1.5rem;
+            display: none;
+        }
+        
+        .result-bar {
+            height: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .result-fill {
+            height: 100%;
+            border-radius: 15px;
+            min-width: 30px;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark-bg);
+            transition: width 1s ease;
+        }
+        
+        /* XP Badges Display */
+        .badges-section {
+            padding: 5rem 5%;
+            background: linear-gradient(to bottom, var(--dark-card) 0%, var(--dark-bg) 100%);
+        }
+        
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .badge-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .badge-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--dark-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+        }
+        
+        .badge-item:hover .badge-icon {
+            transform: translateY(-5px);
+            box-shadow: var(--glow);
+        }
+        
+        .badge-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        /* Anon Mode Indicator */
+        .anon-indicator {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 999;
+            border: 1px solid var(--rada-teal);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+        
+        .anon-indicator i {
+            color: var(--rada-teal);
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Scroll Progress Indicator -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+    
+    <!-- Particles Background -->
+    <canvas class="particles" id="particles"></canvas>
+    
+    <!-- Interactive Background -->
+    <div class="interactive-bg" id="interactiveBg"></div>
+    
+    <!-- Back to Top Button -->
+    <div class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+    
+    <!-- XP Counter -->
+    <div class="xp-counter">
+        <i class="fas fa-star"></i>
+        <span id="xpValue">0</span> XP
+    </div>
+    
+    <!-- Anon Mode Indicator -->
+    <div class="anon-indicator">
+        <i class="fas fa-user-secret"></i>
+        <span>AnonMode™ Active</span>
+    </div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-democrat"></i>
+            <span>Rada.ke</span>
+        </div>
+        <nav class="nav">
+            <div class="nav-item active">Home</div>
+            <div class="nav-item">Civic Feed</div>
+            <div class="nav-item">Learn</div>
+            <div class="nav-item">Memory</div>
+            <div class="nav-item">Tracker</div>
+            <div class="nav-item">Express</div>
+            <div class="nav-item">Youth Hub</div>
+        </nav>
+        <div class="theme-toggle dark" id="themeToggle">
+            <div class="theme-toggle-handle">
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+        <div class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </div>
+    </header>
+    
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav" id="mobileNav">
+        <div class="mobile-close-btn" id="mobileCloseBtn">
+            <i class="fas fa-times"></i>
+        </div>
+        <div class="nav-item active">Home</div>
+        <div class="nav-item">Civic Feed</div>
+        <div class="nav-item">Learn</div>
+        <div class="nav-item">Memory</div>
+        <div class="nav-item">Tracker</div>
+        <div class="nav-item">Express</div>
+        <div class="nav-item">Youth Hub</div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="dynamic-text">Civic Power</span> <span>In Your Hands</span>
+            </h1>
+            <p class="hero-subtitle">
+                Kenya's platform where youth document, learn, and mobilize. Track government promises, honor civic memory, and make your voice heard - all anonymously and securely.
+            </p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" id="joinBtn">Join the Movement</button>
+                <button class="btn btn-secondary">How It Works</button>
+                <button class="btn btn-secondary">Anonymous Mode</button>
+            </div>
+            
+            <div class="xp-badge" style="margin-top: 2rem;">
+                <i class="fas fa-shield-alt"></i>
+                <span>AnonMode™ Enabled - 100% Private Civic Engagement</span>
+            </div>
+        </div>
+        <div class="hero-bg"></div>
+    </section>
+
+    <!-- Civic Feed -->
+    <section class="section civic-feed">
+        <div class="section-title">
+            <h2>Civic Feed</h2>
+            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="grid-3">
+            <!-- Story 1 -->
+            <div class="glass-card feed-item animate">
+                <div class="badge pulse">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="feed-image" style="background-image: url('https://images.unsplash.com/photo-1544531586-fde5298cdd40?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');"></div>
+                <div class="feed-content">
+                    <div class="feed-category">Youth Action</div>
+                    <h3 class="feed-title">Nairobi Youth Clean-Up Initiative Gains Momentum</h3>
+                    <p>Young activists in Mathare lead weekly clean-ups, demanding better waste management from county government.</p>
+                    <div class="feed-meta">
+                        <div class="feed-author">
+                            <div class="avatar">🐆</div>
+                            <span>@GreenWarrior</span>
+                        </div>
+                        <div class="xp-badge">
+                            <i class="fas fa-star"></i>
+                            <span>85 XP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Story 2 -->
+            <div class="glass-card feed-item animate" style="animation-delay: 0.1s;">
+                <div class="badge pulse">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="feed-image" style="background-image: url('https://images.unsplash.com/photo-1527613426441-4da17471b66d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');"></div>
+                <div class="feed-content">
+                    <div class="feed-category">Policy Analysis</div>
+                    <h3 class="feed-title">Breaking Down the New Education Bill</h3>
+                    <p>What the proposed changes mean for students and teachers across Kenya's public schools.</p>
+                    <div class="feed-meta">
+                        <div class="feed-author">
+                            <div class="avatar">📚</div>
+                            <span>@EduAnalyst</span>
+                        </div>
+                        <div class="xp-badge">
+                            <i class="fas fa-star"></i>
+                            <span>120 XP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Story 3 -->
+            <div class="glass-card feed-item animate" style="animation-delay: 0.2s;">
+                <div class="badge pulse">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <div class="feed-image" style="background-image: url('https://images.unsplash.com/photo-1518834107812-67b0b7c58434?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');"></div>
+                <div class="feed-content">
+                    <div class="feed-category">Community Voice</div>
+                    <h3 class="feed-title">The Water Crisis in Turkana: A Youth Perspective</h3>
+                    <p>Young residents document their daily struggles and proposed solutions for water access.</p>
+                    <div class="feed-meta">
+                        <div class="feed-author">
+                            <div class="avatar">💧</div>
+                            <span>@TurkanaYouth</span>
+                        </div>
+                        <div class="xp-badge">
+                            <i class="fas fa-star"></i>
+                            <span>65 XP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Learn Hub -->
+    <section class="section learn-hub">
+        <div class="section-title">
+            <h2>Learn Hub</h2>
+            <a href="#" class="view-all">All Modules <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="grid-3">
+            <div class="glass-card module-card animate">
+                <div class="module-image" style="background-image: url('https://images.unsplash.com/photo-1581092921461-7a4c8c0c9c1d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');"></div>
+                <div class="module-content">
+                    <div class="module-tag">Level 1</div>
+                    <h3 class="feed-title">Kenyan Government 101</h3>
+                    <p>Understand the structure of Kenya's government from national to county level.</p>
+                    <div class="module-progress">
+                        <div class="module-progress-fill" style="width: 30%;"></div>
+                    </div>
+                    <button class="btn btn-secondary">Continue Learning</button>
+                </div>
+            </div>
+            
+            <div class="glass-card module-card animate" style="animation-delay: 0.1s;">
+                <div class="module-image" style="background-image: url('https://images.unsplash.com/photo-1581094794327-2d2b6d8d2735?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');"></div>
+                <div class="module-content">
+                    <div class="module-tag">Level 2</div>
+                    <h3 class="feed-title">Budget Tracking Skills</h3>
+                    <p>Learn how to analyze government budgets and track spending.</p>
+                    <div class="module-progress">
+                        <div class="module-progress-fill" style="width: 75%;"></div>
+                    </div>
+                    <button class="btn btn-secondary">Continue Learning</button>
+                </div>
+            </div>
+            
+            <div class="glass-card module-card animate" style="animation-delay: 0.2s;">
+                <div class="module-image" style="background-image: url('https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');"></div>
+                <div class="module-content">
+                    <div class="module-tag">Level 3</div>
+                    <h3 class="feed-title">Digital Security for Activists</h3>
+                    <p>Protect yourself online while engaging in civic activities.</p>
+                    <div class="module-progress">
+                        <div class="module-progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <button class="btn btn-secondary">Start Learning</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Civic Memory Archive -->
+    <section class="section civic-memory">
+        <div class="section-title">
+            <h2>Civic Memory Archive</h2>
+            <a href="#" class="view-all">View Memorial <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="grid-3">
+            <div class="memory-card animate" style="background-image: url('https://images.unsplash.com/photo-1487180144351-b8472da7d491?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');">
+                <div class="memory-tag">Hero</div>
+                <div class="memory-content">
+                    <h3>Wangari Maathai</h3>
+                    <p>Environmental activist, Nobel Peace Prize laureate, founder of the Green Belt Movement</p>
+                    <div class="candle-count">
+                        <i class="fas fa-candle"></i>
+                        <span id="candle-count-1">2,458</span> candles lit
+                    </div>
+                    <button class="candle-btn" data-target="candle-count-1">
+                        <i class="fas fa-fire"></i> Light a Candle
+                    </button>
+                </div>
+            </div>
+            
+            <div class="memory-card animate" style="animation-delay: 0.1s; background-image: url('https://images.unsplash.com/photo-1559703248-dca2ecb883f3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');">
+                <div class="memory-tag">Protest</div>
+                <div class="memory-content">
+                    <h3>Saba Saba March 2023</h3>
+                    <p>Youth-led protests against the Finance Bill that drew thousands to Nairobi streets</p>
+                    <div class="candle-count">
+                        <i class="fas fa-candle"></i>
+                        <span id="candle-count-2">1,892</span> candles lit
+                    </div>
+                    <button class="candle-btn" data-target="candle-count-2">
+                        <i class="fas fa-fire"></i> Light a Candle
+                    </button>
+                </div>
+            </div>
+            
+            <div class="memory-card animate" style="animation-delay: 0.2s; background-image: url('https://images.unsplash.com/photo-1545235617-9465d2a55698?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');">
+                <div class="memory-tag">Hero</div>
+                <div class="memory-content">
+                    <h3>Caroline Mwatha</h3>
+                    <p>Human rights activist who fought against extrajudicial killings and police brutality</p>
+                    <div class="candle-count">
+                        <i class="fas fa-candle"></i>
+                        <span id="candle-count-3">3,120</span> candles lit
+                    </div>
+                    <button class="candle-btn" data-target="candle-count-3">
+                        <i class="fas fa-fire"></i> Light a Candle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Promise Tracker -->
+    <section class="section promise-tracker">
+        <div class="section-title">
+            <h2>Promise Tracker</h2>
+            <a href="#" class="view-all">Track All Promises <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="grid-2">
+            <div class="glass-card">
+                <div class="feed-content">
+                    <div class="feed-category">Education</div>
+                    <h3 class="feed-title">Laptop Promise for Grade 1 Students</h3>
+                    <p>Government promise to provide laptops to all Grade 1 students in public schools</p>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-animate status-ongoing" style="width: 45%; background: var(--warning-main);"></div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <div>
+                            <span class="status-badge status-ongoing">Ongoing</span>
+                        </div>
+                        <div class="xp-badge">
+                            <i class="fas fa-users"></i>
+                            <span>142 evidence submissions</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-secondary">Submit Evidence</button>
+                </div>
+            </div>
+            
+            <div class="glass-card">
+                <div class="feed-content">
+                    <div class="feed-category">Infrastructure</div>
+                    <h3 class="feed-title">Nairobi Commuter Rail Upgrade</h3>
+                    <p>Modernization of Nairobi's commuter rail system with new trains and stations</p>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-animate status-completed" style="width: 85%; background: var(--success-main);"></div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <div>
+                            <span class="status-badge status-completed">Completed</span>
+                        </div>
+                        <div class="xp-badge">
+                            <i class="fas fa-users"></i>
+                            <span>89 evidence submissions</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-secondary">Review Evidence</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Expression Space -->
+    <section class="section">
+        <div class="section-title">
+            <h2>Expression Space</h2>
+            <a href="#" class="view-all">All Expressions <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="grid-3">
+            <div class="glass-card expression-card">
+                <div class="feed-content">
+                    <div class="feed-category">Poetry</div>
+                    <h3 class="feed-title">Bones of the Ancestors</h3>
+                    <p>They tried to bury us, but didn't know we were seeds...</p>
+                    
+                    <div class="feed-meta">
+                        <div class="feed-author">
+                            <div class="avatar">✍️</div>
+                            <span>@WordWarrior</span>
+                        </div>
+                        <div class="xp-badge">
+                            <i class="fas fa-star"></i>
+                            <span>75 XP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card expression-card">
+                <div class="feed-content">
+                    <div class="feed-category">Audio Story</div>
+                    <h3 class="feed-title">Voices from Kibera</h3>
+                    <p>Daily life, struggles, and resilience in Nairobi's largest informal settlement</p>
+                    
+                    <div class="audio-player">
+                        <div class="audio-controls">
+                            <div class="play-btn">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <div style="flex-grow: 1;">
+                                <div style="font-weight: 600;">Voices from Kibera</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">15:42</div>
+                            </div>
+                            <div>
+                                <i class="fas fa-share-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="feed-meta" style="margin-top: 1rem;">
+                        <div class="feed-author">
+                            <div class="avatar">🎙️</div>
+                            <span>@KiberaChronicles</span>
+                        </div>
+                        <div class="xp-badge">
+                            <i class="fas fa-star"></i>
+                            <span>110 XP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card expression-card">
+                <div class="feed-content">
+                    <div class="feed-category">Visual Art</div>
+                    <h3 class="feed-title">Freedom Mural</h3>
+                    <p>Street art project celebrating Kenya's journey to independence</p>
+                    <div style="height: 150px; background: var(--dark-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 1rem 0;">
+                        <i class="fas fa-palette" style="font-size: 3rem; color: var(--text-muted);"></i>
+                    </div>
+                    
+                    <div class="feed-meta">
+                        <div class="feed-author">
+                            <div class="avatar">🎨</div>
+                            <span>@ArtivistKE</span>
+                        </div>
+                        <div class="xp-badge">
+                            <i class="fas fa-star"></i>
+                            <span>95 XP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Youth Hub -->
+    <section class="section" style="background: var(--dark-card);">
+        <div class="section-title">
+            <h2>Youth Hub</h2>
+            <a href="#" class="view-all">All Organizations <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="grid-4">
+            <div class="glass-card youth-card">
+                <div class="org-icon" style="font-size: 2rem; margin-bottom: 1rem; color: var(--green-accent);">
+                    <i class="fas fa-seedling"></i>
+                </div>
+                <h3>Green Future Collective</h3>
+                <p>Youth-led reforestation and sustainable agriculture initiatives across 12 counties.</p>
+                <div class="org-tags">
+                    <span class="org-tag">Environment</span>
+                    <span class="org-tag">Agriculture</span>
+                </div>
+                <button class="btn btn-secondary" style="margin-top: auto;">Join Movement</button>
+            </div>
+            
+            <div class="glass-card youth-card">
+                <div class="org-icon" style="font-size: 2rem; margin-bottom: 1rem; color: var(--blue-accent);">
+                    <i class="fas fa-laptop-code"></i>
+                </div>
+                <h3>AfroTech Liberation</h3>
+                <p>Open-source tech education and digital rights advocacy for African youth.</p>
+                <div class="org-tags">
+                    <span class="org-tag">Technology</span>
+                    <span class="org-tag">Education</span>
+                </div>
+                <button class="btn btn-secondary" style="margin-top: auto;">Join Movement</button>
+            </div>
+            
+            <div class="glass-card youth-card">
+                <div class="org-icon" style="font-size: 2rem; margin-bottom: 1rem; color: var(--pink-accent);">
+                    <i class="fas fa-microphone-alt"></i>
+                </div>
+                <h3>Artivist Network</h3>
+                <p>Connecting artists and activists through creative resistance projects.</p>
+                <div class="org-tags">
+                    <span class="org-tag">Arts</span>
+                    <span class="org-tag">Activism</span>
+                </div>
+                <button class="btn btn-secondary" style="margin-top: auto;">Join Movement</button>
+            </div>
+            
+            <div class="glass-card youth-card">
+                <div class="org-icon" style="font-size: 2rem; margin-bottom: 1rem; color: var(--purple-accent);">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h3>Education Reform Alliance</h3>
+                <p>Advocating for accessible, quality education for all Kenyan youth.</p>
+                <div class="org-tags">
+                    <span class="org-tag">Education</span>
+                    <span class="org-tag">Policy</span>
+                </div>
+                <button class="btn btn-secondary" style="margin-top: auto;">Join Movement</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- AMA Sessions -->
+    <section class="section ama-section">
+        <div class="section-title">
+            <h2>Ask Me Anything (AMA)</h2>
+            <a href="#" class="view-all">All Sessions <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="grid-2">
+            <div class="ama-card animate" style="background-image: url('https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');">
+                <div class="ama-tag">Upcoming</div>
+                <div class="ama-content">
+                    <h3>Youth Affairs Director</h3>
+                    <p>Thursday, July 15 • 2:00 PM</p>
+                    <p>Ask about youth development programs</p>
+                    <button class="btn btn-primary" style="margin-top: 1rem;">Submit Question</button>
+                </div>
+            </div>
+            
+            <div class="ama-card animate" style="animation-delay: 0.1s; background-image: url('https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');">
+                <div class="ama-tag">Past Session</div>
+                <div class="ama-content">
+                    <h3>Environmental Minister</h3>
+                    <p>July 5, 2025</p>
+                    <p>Discussed climate change policies</p>
+                    <button class="btn btn-secondary" style="margin-top: 1rem;">View Recording</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Civic Polls -->
+    <section class="section polls-section">
+        <div class="section-title">
+            <h2>Civic Mood Panel</h2>
+            <a href="#" class="view-all">All Polls <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="grid-2">
+            <div class="glass-card poll-card animate">
+                <h3>How confident are you in your county government?</h3>
+                <p>Share your opinion anonymously</p>
+                
+                <div class="poll-options">
+                    <div class="poll-option">
+                        <input type="radio" name="confidence" id="very-confident">
+                        <label for="very-confident">Very Confident</label>
+                    </div>
+                    <div class="poll-option">
+                        <input type="radio" name="confidence" id="somewhat-confident">
+                        <label for="somewhat-confident">Somewhat Confident</label>
+                    </div>
+                    <div class="poll-option">
+                        <input type="radio" name="confidence" id="not-confident">
+                        <label for="not-confident">Not Confident</label>
+                    </div>
+                    <div class="poll-option">
+                        <input type="radio" name="confidence" id="no-opinion">
+                        <label for="no-opinion">No Opinion</label>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary">Submit Vote</button>
+                
+                <div class="poll-results" id="results-1">
+                    <h4>Results:</h4>
+                    <div class="result-bar">
+                        <div class="result-fill" style="width: 25%; background: var(--success-main);">25%</div>
+                    </div>
+                    <div class="result-bar">
+                        <div class="result-fill" style="width: 40%; background: var(--warning-main);">40%</div>
+                    </div>
+                    <div class="result-bar">
+                        <div class="result-fill" style="width: 30%; background: var(--error-main);">30%</div>
+                    </div>
+                    <div class="result-bar">
+                        <div class="result-fill" style="width: 5%; background: var(--text-muted);">5%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card poll-card animate" style="animation-delay: 0.1s;">
+                <h3>Should Kenya invest more in renewable energy?</h3>
+                <p>Share your opinion anonymously</p>
+                
+                <div class="poll-options">
+                    <div class="poll-option">
+                        <input type="radio" name="energy" id="yes-energy">
+                        <label for="yes-energy">Yes, absolutely</label>
+                    </div>
+                    <div class="poll-option">
+                        <input type="radio" name="energy" id="maybe-energy">
+                        <label for="maybe-energy">Only if affordable</label>
+                    </div>
+                    <div class="poll-option">
+                        <input type="radio" name="energy" id="no-energy">
+                        <label for="no-energy">No, focus on other priorities</label>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary">Submit Vote</button>
+                
+                <div class="poll-results" id="results-2">
+                    <h4>Results:</h4>
+                    <div class="result-bar">
+                        <div class="result-fill" style="width: 65%; background: var(--success-main);">65%</div>
+                    </div>
+                    <div class="result-bar">
+                        <div class="result-fill" style="width: 25%; background: var(--warning-main);">25%</div>
+                    </div>
+                    <div class="result-bar">
+                        <div class="result-fill" style="width: 10%; background: var(--error-main);">10%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- XP Badges Display -->
+    <section class="section badges-section">
+        <div class="section-title">
+            <h2>Your Civic Badges</h2>
+            <a href="#" class="view-all">View All Badges <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="badges-grid">
+            <div class="badge-item">
+                <div class="badge-icon">📚</div>
+                <div class="badge-name">Civic Scholar</div>
+            </div>
+            <div class="badge-item">
+                <div class="badge-icon">🔍</div>
+                <div class="badge-name">Truth Seeker</div>
+            </div>
+            <div class="badge-item">
+                <div class="badge-icon">🕯️</div>
+                <div class="badge-name">Memory Keeper</div>
+            </div>
+            <div class="badge-item">
+                <div class="badge-icon">✍️</div>
+                <div class="badge-name">Civic Storyteller</div>
+            </div>
+            <div class="badge-item">
+                <div class="badge-icon">🌱</div>
+                <div class="badge-name">Newcomer</div>
+            </div>
+            <div class="badge-item">
+                <div class="badge-icon">🔥</div>
+                <div class="badge-name">Streak Champion</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h3>About Rada.ke</h3>
+                <p>
+                    Kenya's civic engagement platform empowering youth to document, learn, and mobilize towards a better future.
+                </p>
+                <div class="social-links">
+                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-tiktok"></i></a>
+                </div>
+                
+                <div class="newsletter-form">
+                    <input type="email" placeholder="Your email">
+                    <button><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+            
+            <div class="footer-col">
+                <h3>Platform</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Civic Feed</a></li>
+                    <li><a href="#">Learn Hub</a></li>
+                    <li><a href="#">Memory Archive</a></li>
+                    <li><a href="#">Promise Tracker</a></li>
+                    <li><a href="#">Expression Space</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-col">
+                <h3>Resources</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Civic Toolkit</a></li>
+                    <li><a href="#">Safety Guide</a></li>
+                    <li><a href="#">AnonMode™</a></li>
+                    <li><a href="#">XP & Badges</a></li>
+                    <li><a href="#">Government Contacts</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-col">
+                <h3>Legal</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Use</a></li>
+                    <li><a href="#">Content Policy</a></li>
+                    <li><a href="#">Safety & Reporting</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 Rada.ke. Empowering Kenyan youth through civic engagement.</p>
+            <span class="powered-by">AnonMode™ - 100% Anonymous Civic Participation</span>
+        </div>
+    </footer>
+
+    <script>
+        // Particles Background
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particlesArray = [];
+        const numberOfParticles = 100;
+        const connections = [];
+        
+        // Updated to rada-gold (#ffc107)
+        const primaryRgb = [255, 193, 7];
+        
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.color = `rgba(${primaryRgb[0]}, ${primaryRgb[1]}, ${primaryRgb[2]}, ${Math.random() * 0.5})`;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                if (this.x > canvas.width || this.x < 0) {
+                    this.speedX = -this.speedX;
+                }
+                if (this.y > canvas.height || this.y < 0) {
+                    this.speedY = -this.speedY;
+                }
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function init() {
+            for (let i = 0; i < numberOfParticles; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+        
+        function connectParticles() {
+            for (let i = 0; i < particlesArray.length; i++) {
+                for (let j = i; j < particlesArray.length; j++) {
+                    const dx = particlesArray[i].x - particlesArray[j].x;
+                    const dy = particlesArray[i].y - particlesArray[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 150) {
+                        const opacity = 1 - distance/150;
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(${primaryRgb[0]}, ${primaryRgb[1]}, ${primaryRgb[2]}, ${opacity * 0.1})`;
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
+                        ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            connectParticles();
+            requestAnimationFrame(animate);
+        }
+        
+        init();
+        animate();
+        
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Animation on scroll
+        document.addEventListener('DOMContentLoaded', function() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate');
+                        
+                        // Animate progress bars when they come into view
+                        if (entry.target.querySelector('.progress-fill')) {
+                            entry.target.querySelector('.progress-fill').classList.add('progress-animate');
+                        }
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+            
+            document.querySelectorAll('.animate').forEach(el => {
+                observer.observe(el);
+            });
+            
+            // Mobile menu toggle
+            const mobileMenuBtn = document.querySelector('#mobileMenuBtn');
+            const mobileCloseBtn = document.querySelector('#mobileCloseBtn');
+            const mobileNav = document.querySelector('#mobileNav');
+            
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileNav.classList.add('active');
+            });
+            
+            mobileCloseBtn.addEventListener('click', () => {
+                mobileNav.classList.remove('active');
+            });
+            
+            // Theme toggle
+            const themeToggle = document.querySelector('#themeToggle');
+            themeToggle.addEventListener('click', () => {
+                themeToggle.classList.toggle('dark');
+                document.body.classList.toggle('light-mode');
+            });
+            
+            // Active navigation
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    navItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Close mobile nav if open
+                    mobileNav.classList.remove('active');
+                });
+            });
+            
+            // XP Counter
+            let xp = 0;
+            const xpCounter = document.getElementById('xpValue');
+            
+            // Join button XP gain
+            const joinBtn = document.getElementById('joinBtn');
+            joinBtn.addEventListener('click', function() {
+                addXP(50);
+            });
+            
+            // Function to add XP
+            function addXP(amount) {
+                xp += amount;
+                xpCounter.textContent = xp;
+                createXPAnimation(amount);
+            }
+            
+            // Create XP animation
+            function createXPAnimation(amount) {
+                const xpAnim = document.createElement('div');
+                xpAnim.className = 'xp-anim';
+                xpAnim.textContent = `+${amount} XP`;
+                xpAnim.style.position = 'fixed';
+                xpAnim.style.top = '50%';
+                xpAnim.style.left = '50%';
+                xpAnim.style.transform = 'translate(-50%, -50%)';
+                xpAnim.style.color = '#ffc107';
+                xpAnim.style.fontSize = '2rem';
+                xpAnim.style.fontWeight = 'bold';
+                xpAnim.style.opacity = '0';
+                xpAnim.style.zIndex = '10000';
+                xpAnim.style.textShadow = '0 0 10px rgba(0,0,0,0.8)';
+                xpAnim.style.transition = 'all 1s ease';
+                
+                document.body.appendChild(xpAnim);
+                
+                setTimeout(() => {
+                    xpAnim.style.opacity = '1';
+                    xpAnim.style.transform = 'translate(-50%, -100%)';
+                }, 10);
+                
+                setTimeout(() => {
+                    xpAnim.style.opacity = '0';
+                    xpAnim.style.transform = 'translate(-50%, -150%)';
+                }, 1000);
+                
+                setTimeout(() => {
+                    document.body.removeChild(xpAnim);
+                }, 2000);
+            }
+            
+            // Candle lighting interaction
+            const candleButtons = document.querySelectorAll('.candle-btn');
+            candleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const candleCount = document.getElementById(targetId);
+                    let count = parseInt(candleCount.textContent.replace(/,/g, ''));
+                    count++;
+                    candleCount.textContent = count.toLocaleString();
+                    
+                    // Create flame animation
+                    createFlame(this);
+                    
+                    // Add XP for lighting candle
+                    addXP(10);
+                });
+            });
+            
+            // Create flame animation
+            function createFlame(button) {
+                const rect = button.getBoundingClientRect();
+                const flame = document.createElement('div');
+                flame.className = 'flame';
+                flame.style.left = `${rect.left + rect.width/2}px`;
+                flame.style.top = `${rect.top}px`;
+                
+                document.body.appendChild(flame);
+                
+                // Animate flame
+                flame.animate([
+                    { opacity: 1, transform: 'translateY(0) scale(1)' },
+                    { opacity: 0, transform: 'translateY(-100px) scale(0.2)' }
+                ], {
+                    duration: 1000,
+                    easing: 'ease-out'
+                });
+                
+                // Remove after animation
+                setTimeout(() => {
+                    document.body.removeChild(flame);
+                }, 1000);
+            }
+            
+            // Interactive background effect
+            const interactiveBg = document.getElementById('interactiveBg');
+            document.addEventListener('mousemove', function(e) {
+                interactiveBg.style.setProperty('--x', `${e.clientX}px`);
+                interactiveBg.style.setProperty('--y', `${e.clientY}px`);
+            });
+            
+            // Poll functionality
+            document.querySelectorAll('.btn-primary').forEach(btn => {
+                if(btn.textContent === 'Submit Vote') {
+                    btn.addEventListener('click', function() {
+                        const pollCard = this.closest('.poll-card');
+                        const results = pollCard.querySelector('.poll-results');
+                        results.style.display = 'block';
+                        addXP(5);
+                    });
+                }
+            });
+        });
+        
+        // Scroll progress
+        window.addEventListener('scroll', () => {
+            const scrollProgress = document.getElementById('scrollProgress');
+            const scrollPosition = window.scrollY;
+            const totalHeight = document.body.scrollHeight - window.innerHeight;
+            const progressWidth = (scrollPosition / totalHeight) * 100;
+            scrollProgress.style.width = `${progressWidth}%`;
+        });
+        
+        // Back to top button
+        const backToTopBtn = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.add('visible');
+            } else {
+                backToTopBtn.classList.remove('visible');
+            }
+        });
+        
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // Audio player functionality
+        document.querySelectorAll('.play-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('fa-play')) {
+                    icon.classList.remove('fa-play');
+                    icon.classList.add('fa-pause');
+                } else {
+                    icon.classList.remove('fa-pause');
+                    icon.classList.add('fa-play');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

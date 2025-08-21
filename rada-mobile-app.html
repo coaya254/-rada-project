@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rada.ke - Civic Engagement Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: #000;
+            border-radius: 40px;
+            padding: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .phone-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 30px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            z-index: 10;
+        }
+        
+        .phone-container::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            z-index: 11;
+        }
+        
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .screen-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            overflow: hidden;
+        }
+        
+        .screen-content.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .screen-content.prev {
+            transform: translateX(-100%);
+        }
+        
+        /* Color System */
+        :root {
+            --rada-gold: #ffc107;
+            --rada-teal: #00bcd4;
+            --rada-orange: #ff5722;
+            --light-bg: #f5f5f7;
+            --light-card: #ffffff;
+            --light-border: #e0e0e0;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --success-main: #4caf50;
+            --warning-main: #ff9800;
+            --error-main: #f44336;
+            --purple-accent: #7e57c2;
+            --pink-accent: #ec407a;
+            --blue-accent: #42a5f5;
+            --green-accent: #66bb6a;
+            --grad-primary: linear-gradient(135deg, #ffd54f, #ffb300);
+            --grad-secondary: linear-gradient(135deg, #80deea, #4dd0e1);
+            --grad-accent: linear-gradient(135deg, #ff9e80, #ff7043);
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px 0;
+            color: #333;
+            font-size: 15px;
+            font-weight: 600;
+            height: 44px;
+            z-index: 10;
+        }
+        
+        .status-time {
+            font-weight: 700;
+        }
+        
+        .status-icons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-size: 16px;
+        }
+        
+        /* Splash Screen */
+        .splash-screen {
+            background: var(--grad-primary);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .splash-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            z-index: 5;
+        }
+        
+        .splash-logo {
+            width: 140px;
+            height: 140px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            font-weight: bold;
+            color: var(--rada-gold);
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            animation: pulse 2s infinite;
+        }
+        
+        .splash-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        
+        .splash-subtitle {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 60px;
+            font-weight: 500;
+            max-width: 280px;
+        }
+        
+        .loading-dots {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: #333;
+            border-radius: 50%;
+            animation: bounce 1.5s infinite;
+        }
+        
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        .continue-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 24px;
+            right: 24px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 12px;
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            animation: fadeInOut 2s infinite;
+        }
+        
+        /* Main App Layout */
+        .app-header {
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 16px 20px;
+            position: relative;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+        }
+        
+        .notifications {
+            position: relative;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 8px;
+            cursor: pointer;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #FF4757;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .user-greeting {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .greeting-text h2 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .greeting-text p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .profile-avatar {
+            width: 45px;
+            height: 45px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        .user-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+        
+        .persona-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        /* Featured Section */
+        .featured-section {
+            padding: 16px 20px 8px;
+            background: #f8f9fa;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .featured-main {
+            background: linear-gradient(135deg, #9d4edd, #667eea);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 16px;
+            color: white;
+            box-shadow: 0 8px 20px rgba(157, 78, 221, 0.2);
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+        
+        .featured-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 60%);
+            z-index: 0;
+        }
+        
+        .placeholder-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0),
+                        linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 14px;
+            z-index: 1;
+        }
+        
+        .featured-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 12px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .featured-name {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .featured-desc {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .featured-stats {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .featured-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .featured-grid-small {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .featured-item {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .featured-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .featured-item-icon {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(157, 78, 221, 0.1);
+            color: #9d4edd;
+        }
+        
+        .featured-item-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            max-width: 70%;
+        }
+        
+        .featured-item-subtitle {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .featured-item-stats {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #9d4edd;
+            font-weight: 600;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            padding: 16px 20px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        
+        .action-item {
+            text-align: center;
+            padding: 12px 8px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .action-item:hover, .action-item:active {
+            transform: translateY(-2px);
+            border-color: #4ECDC4;
+            background: #ffffff;
+        }
+        
+        .action-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+            display: block;
+        }
+        
+        .action-label {
+            font-size: 11px;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .xp-indicator {
+            background: #28a745;
+            color: white;
+            font-size: 8px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+        
+        /* Section Cards */
+        .section {
+            margin-bottom: 16px;
+            background: white;
+            border-radius: 12px;
+            margin: 0 20px 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .section-header {
+            padding: 16px 16px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .view-all {
+            color: #4ECDC4;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        /* Honor Wall */
+        .honor-wall-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f3f4;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .honor-wall-item:last-child {
+            border-bottom: none;
+        }
+        
+        .memorial-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            position: relative;
+        }
+        
+        .memorial-info {
+            flex: 1;
+        }
+        
+        .memorial-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .memorial-details {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        .candle-action {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #e74c3c;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .candle-action:hover {
+            background: #fff5f5;
+            transform: scale(1.1);
+        }
+        
+        .candle-count {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* Story Items */
+        .story-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .story-item:last-child {
+            border-bottom: none;
+        }
+        
+        .story-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .author-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .author-info {
+            flex: 1;
+        }
+        
+        .author-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .story-time {
+            font-size: 11px;
+            color: #6c757d;
+        }
+        
+        .story-content {
+            color: #495057;
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+        
+        .story-engagement {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .engagement-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .engagement-item:hover {
+            background: #f8f9fa;
+        }
+        
+        /* Mood Panel */
+        .mood-panel {
+            padding: 16px;
+        }
+        
+        .mood-question {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 12px;
+        }
+        
+        .mood-options {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        
+        .mood-option {
+            flex: 1;
+            padding: 12px 8px;
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mood-option:hover, .mood-option.active {
+            border-color: #4ECDC4;
+            background: #e8f5f3;
+        }
+        
+        .mood-emoji {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
+        }
+        
+        .mood-label {
+            font-size: 11px;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        /* Promise Tracker */
+        .promise-tracker-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .promise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .promise-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .promise-status {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .status-not-started { background: #e9ecef; color: #666; }
+        .status-ongoing { background: #d0ebff; color: #1971c2; }
+        .status-completed { background: #d3f9d8; color: #2f9e44; }
+        .status-broken { background: #ffe3e3; color: #e03131; }
+        
+        .promise-progress {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-25 { width: 25%; background: #ff6b35; }
+        .progress-50 { width: 50%; background: #4dabf7; }
+        .progress-75 { width: 75%; background: #40c057; }
+        
+        /* Challenge Card */
+        .challenge-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 16px 20px;
+        }
+        
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .challenge-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .challenge-xp {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .challenge-description {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+        
+        .challenge-progress {
+            background: rgba(255,255,255,0.2);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .challenge-progress-fill {
+            background: #4ECDC4;
+            height: 100%;
+            width: 60%;
+            border-radius: 3px;
+        }
+        
+        .challenge-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            background: white;
+            border-top: 1px solid #e9ecef;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .nav-item {
+            text-align: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: color 0.2s;
+            flex: 1;
+        }
+        
+        .nav-item.active {
+            color: #4ECDC4;
+        }
+        
+        .nav-item:not(.active) {
+            color: #6c757d;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* Floating Action Button */
+        .floating-action {
+            position: absolute;
+            bottom: 80px;
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+        
+        .floating-action:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Onboarding Styles */
+        .onboarding {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .onboarding-1 {
+            background: var(--grad-secondary);
+        }
+        
+        .onboarding-2 {
+            background: var(--grad-accent);
+        }
+        
+        .onboarding-3 {
+            background: var(--grad-primary);
+        }
+        
+        .onboarding-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px 24px;
+            position: relative;
+            z-index: 5;
+        }
+        
+        .onboarding-illustration {
+            width: 180px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .onboarding-illustration i {
+            font-size: 80px;
+            color: #333;
+            opacity: 0.9;
+        }
+        
+        .onboarding-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .onboarding-text {
+            font-size: 16px;
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            max-width: 280px;
+            font-weight: 500;
+        }
+        
+        .feature-list {
+            text-align: left;
+            margin-bottom: 30px;
+            max-width: 280px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            color: #444;
+            font-size: 14px;
+        }
+        
+        .feature-icon {
+            margin-right: 10px;
+            color: var(--rada-gold);
+            font-size: 18px;
+            min-width: 24px;
+        }
+        
+        .progress-dots {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .progress-dot.active {
+            background: #333;
+            transform: scale(1.2);
+        }
+        
+        .onboarding-actions {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 16px 24px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 120px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #333;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-outline:hover {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-primary {
+            background: var(--rada-gold);
+            color: #333;
+            font-weight: 700;
+        }
+        
+        .btn-primary:hover {
+            background: #ffca28;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Home Indicator */
+        .home-indicator {
+            width: 134px;
+            height: 5px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 3px;
+            margin: 0 auto 8px;
+        }
+        
+        /* Organic Shapes */
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.2;
+            z-index: 1;
+        }
+        
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--rada-orange);
+            top: -100px;
+            right: -100px;
+        }
+        
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: var(--rada-teal);
+            bottom: -50px;
+            left: -50px;
+        }
+        
+        .shape-3 {
+            width: 250px;
+            height: 250px;
+            background: var(--purple-accent);
+            bottom: -100px;
+            right: -50px;
+        }
+        
+        /* Scrollbar styling */
+        .main-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .main-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .main-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 213, 79, 0.5);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 20px rgba(255, 213, 79, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 213, 79, 0);
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        /* Toast Messages */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+            animation: fadeInOut 3s ease-in-out;
+            pointer-events: none;
+        }
+        
+        /* Learn Section */
+        .learn-section {
+            padding: 16px;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 0 20px 16px;
+        }
+        
+        .cta-button {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255,107,53,0.3);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 400px) {
+            .phone-container {
+                width: 320px;
+                height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="screen">
+            <!-- Splash Screen -->
+            <div class="screen-content active" id="splash-screen">
+                <div class="splash-screen">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-2 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                    
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="splash-content">
+                        <div class="splash-logo floating">
+                            <i class="fas fa-hands-helping"></i>
+                        </div>
+                        <div class="splash-title">rada.ke</div>
+                        <div class="splash-subtitle">Your Civic Engagement Platform</div>
+                        <div class="loading-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+                    <div class="continue-hint">
+                        Tap anywhere to continue
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Onboarding Screen 1: Civic Engagement -->
+            <div class="screen-content" id="onboarding-1">
+                <div class="onboarding onboarding-1">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-2 floating"></div>
+                    
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="onboarding-content">
+                        <div class="onboarding-illustration floating">
+                            <div class="placeholder-image">👥 Community</div>
+                        </div>
+                        <div class="onboarding-title">Your Civic Hub</div>
+                        <div class="onboarding-text">Join Kenya's youth movement for civic education and democratic participation.</div>
+                        
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-check-circle"></i></div>
+                                <div>Document community updates & development</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-check-circle"></i></div>
+                                <div>Access verified support services</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-check-circle"></i></div>
+                                <div>Participate in civic assignments</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-dots">
+                            <div class="progress-dot active"></div>
+                            <div class="progress-dot"></div>
+                            <div class="progress-dot"></div>
+                        </div>
+                        <div class="onboarding-actions">
+                            <button class="btn btn-outline" id="skip-btn">Skip</button>
+                            <button class="btn btn-primary" id="next-1">Next</button>
+                        </div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Onboarding Screen 2: Civic Memory Archive -->
+            <div class="screen-content" id="onboarding-2">
+                <div class="onboarding onboarding-2">
+                    <div class="shape shape-2 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                    
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="onboarding-content">
+                        <div class="onboarding-illustration floating">
+                            <div class="placeholder-image">🏛️ Memorial</div>
+                        </div>
+                        <div class="onboarding-title">Civic Memory Archive</div>
+                        <div class="onboarding-text">Honor Kenya's civic journey and document our democratic progress.</div>
+                        
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-monument"></i></div>
+                                <div>Honour Wall: Remember those who fought for justice</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                                <div>Protest Archive: Documented movements that shaped Kenya</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                                <div>Development Tracker: Monitor public projects</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-dots">
+                            <div class="progress-dot"></div>
+                            <div class="progress-dot active"></div>
+                            <div class="progress-dot"></div>
+                        </div>
+                        <div class="onboarding-actions">
+                            <button class="btn btn-outline" id="back-btn">Back</button>
+                            <button class="btn btn-primary" id="next-2">Next</button>
+                        </div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Onboarding Screen 3: Youth Hub -->
+            <div class="screen-content" id="onboarding-3">
+                <div class="onboarding onboarding-3">
+                    <div class="shape shape-1 floating"></div>
+                    <div class="shape shape-3 floating"></div>
+                    
+                    <div class="status-bar">
+                        <span class="status-time">9:41</span>
+                        <div class="status-icons">
+                            <span>📶</span>
+                            <span>📶</span>
+                            <span>🔋</span>
+                        </div>
+                    </div>
+                    <div class="onboarding-content">
+                        <div class="onboarding-illustration floating">
+                            <div class="placeholder-image">🤝 Collaboration</div>
+                        </div>
+                        <div class="onboarding-title">Youth Hub</div>
+                        <div class="onboarding-text">Connect, create, and access support within Kenya's youth community.</div>
+                        
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-users"></i></div>
+                                <div>Youth Group Directory & Assignment Center</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-life-ring"></i></div>
+                                <div>Help & Referral Hub with verified services</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon"><i class="fas fa-podcast"></i></div>
+                                <div>Media & Storytelling: Share your civic journey</div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-dots">
+                            <div class="progress-dot"></div>
+                            <div class="progress-dot"></div>
+                            <div class="progress-dot active"></div>
+                        </div>
+                        <div class="onboarding-actions">
+                            <button class="btn btn-outline" id="back-btn-2">Back</button>
+                            <button class="btn btn-primary" id="get-started">Get Started</button>
+                        </div>
+                    </div>
+                    <div class="home-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- Main App Screen -->
+            <div class="screen-content" id="main-app">
+                <!-- Status Bar -->
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span>📶 🔋 100%</span>
+                </div>
+                
+                <!-- App Header -->
+                <div class="app-header">
+                    <div class="header-top">
+                        <div class="logo">rada.ke</div>
+                        <div class="notifications">
+                            🔔
+                            <div class="notification-badge">437</div>
+                        </div>
+                    </div>
+                    
+                    <div class="user-greeting">
+                        <div class="greeting-text">
+                            <h2>Hujambo, Amara!</h2>
+                            <p>Ready to drive change today?</p>
+                        </div>
+                        <div class="profile-avatar">
+                            <div class="placeholder-image">📸</div>
+                        </div>
+                    </div>
+                    
+                    <div class="user-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">1,338</span>
+                            <span class="stat-label">XP Points</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">🔥 7</span>
+                            <span class="stat-label">Day Streak</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">🔍</span>
+                            <span class="stat-label">Tracker</span>
+                            <div class="persona-badge">SPARK</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Main Content -->
+                <div class="main-content">
+                    <!-- Featured Today Section -->
+                    <div class="featured-section">
+                        <div class="section-title">
+                            <i class="fas fa-star"></i> Featured Today
+                        </div>
+                        
+                        <!-- Main Featured Card -->
+                        <div class="featured-main" onclick="showFeaturedDetail('youth-climate-action')">
+                            <div class="placeholder-image">🌍 Climate Action Rally</div>
+                            <div class="featured-badge">
+                                <i class="fas fa-crown"></i> Top Story
+                            </div>
+                            <div class="featured-name">Youth Climate Action</div>
+                            <div class="featured-desc">Over 5,000 youth participated in nationwide climate protests demanding immediate environmental reforms</div>
+                            <div class="featured-stats">
+                                <div class="featured-stat">
+                                    <i class="fas fa-eye"></i> 12.4K Views
+                                </div>
+                                <div class="featured-stat">
+                                    <i class="fas fa-heart"></i> 2.1K Reactions
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Small Cards Grid -->
+                        <div class="featured-grid-small">
+                            <!-- Shujaa of the Day -->
+                            <div class="featured-item" onclick="showFeaturedDetail('amina-juma')">
+                                <div class="featured-item-icon">
+                                    <i class="fas fa-medal"></i>
+                                </div>
+                                <div class="featured-item-title">Amina Juma</div>
+                                <div class="featured-item-subtitle">Education activist</div>
+                                <div class="featured-item-stats">
+                                    <i class="fas fa-star"></i> 4.8 Rating
+                                </div>
+                            </div>
+                            
+                            <!-- Youth Group of the Day -->
+                            <div class="featured-item" onclick="showFeaturedDetail('green-warriors')">
+                                <div class="featured-item-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="featured-item-title">Green Warriors</div>
+                                <div class="featured-item-subtitle">Nairobi • 2.3K Members</div>
+                                <div class="featured-item-stats">
+                                    <i class="fas fa-fire"></i> Trending
+                                </div>
+                            </div>
+                            
+                            <!-- Top Mood -->
+                            <div class="featured-item" onclick="showFeaturedDetail('civic-mood')">
+                                <div class="featured-item-icon">
+                                    <i class="fas fa-smile"></i>
+                                </div>
+                                <div class="featured-item-title">Hopeful</div>
+                                <div class="featured-item-subtitle">72% yesterday</div>
+                                <div class="featured-item-stats">
+                                    <i class="fas fa-chart-line"></i> +12% since last week
+                                </div>
+                            </div>
+                            
+                            <!-- Top Tracked Promise -->
+                            <div class="featured-item" onclick="showFeaturedDetail('healthcare-reform')">
+                                <div class="featured-item-icon">
+                                    <i class="fas fa-bullseye"></i>
+                                </div>
+                                <div class="featured-item-title">Healthcare Reform</div>
+                                <div class="featured-item-subtitle">45% progress</div>
+                                <div class="featured-item-stats">
+                                    <i class="fas fa-users"></i> 4.2K tracking
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <h3>Daily Civic Actions</h3>
+                        <div class="action-grid">
+                            <div class="action-item">
+                                <span class="action-icon">📚</span>
+                                <span class="action-label">Read Article</span>
+                                <div class="xp-indicator">+10 XP</div>
+                            </div>
+                            <div class="action-item">
+                                <span class="action-icon">🕯️</span>
+                                <span class="action-label">Light Candle</span>
+                                <div class="xp-indicator">+15 XP</div>
+                            </div>
+                            <div class="action-item">
+                                <span class="action-icon">📊</span>
+                                <span class="action-label">Track Promise</span>
+                                <div class="xp-indicator">+20 XP</div>
+                            </div>
+                            <div class="action-item">
+                                <span class="action-icon">✍️</span>
+                                <span class="action-label">Share Story</span>
+                                <div class="xp-indicator">+25 XP</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Weekly Challenge -->
+                    <div class="challenge-card">
+                        <div class="challenge-header">
+                            <span class="challenge-title">📊 Accountability Week</span>
+                            <span class="challenge-xp">+50 XP Bonus</span>
+                        </div>
+                        <div class="challenge-description">
+                            Submit evidence for 3 government promises this week
+                        </div>
+                        <div class="challenge-progress">
+                            <div class="challenge-progress-fill"></div>
+                        </div>
+                        <div class="challenge-stats">
+                            <span>Progress: 2/3 submissions</span>
+                            <span>3 days left</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Honor Wall -->
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="section-title">
+                                🏛️ Honor Wall
+                            </div>
+                            <span class="view-all">View All</span>
+                        </div>
+                        <div class="honor-wall-item">
+                            <div class="memorial-photo">
+                                <div class="placeholder-image">RO</div>
+                            </div>
+                            <div class="memorial-info">
+                                <div class="memorial-name">Rex Omonyoi</div>
+                                <div class="memorial-details">Lost during Finance Bill protests • Nairobi</div>
+                            </div>
+                            <div class="candle-action">
+                                <span>🕯️</span>
+                                <span class="candle-count">234</span>
+                            </div>
+                        </div>
+                        <div class="honor-wall-item">
+                            <div class="memorial-photo">
+                                <div class="placeholder-image">EK</div>
+                            </div>
+                            <div class="memorial-info">
+                                <div class="memorial-name">Evans Kiratu</div>
+                                <div class="memorial-details">Student activist • Nakuru</div>
+                            </div>
+                            <div class="candle-action">
+                                <span>🕯️</span>
+                                <span class="candle-count">189</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Mood Panel -->
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="section-title">📊 Today's Mood</div>
+                            <span class="view-all">Results</span>
+                        </div>
+                        <div class="mood-panel">
+                            <div class="mood-question">How do you feel about Kenya's direction today?</div>
+                            <div class="mood-options">
+                                <div class="mood-option">
+                                    <span class="mood-emoji">😠</span>
+                                    <span class="mood-label">Frustrated</span>
+                                </div>
+                                <div class="mood-option">
+                                    <span class="mood-emoji">😐</span>
+                                    <span class="mood-label">Concerned</span>
+                                </div>
+                                <div class="mood-option active">
+                                    <span class="mood-emoji">😊</span>
+                                    <span class="mood-label">Hopeful</span>
+                                </div>
+                                <div class="mood-option">
+                                    <span class="mood-emoji">🙂</span>
+                                    <span class="mood-label">Optimistic</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Promise Tracker -->
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="section-title">🎯 Promise Tracker</div>
+                            <span class="view-all">View All</span>
+                        </div>
+                        <div class="promise-tracker-item">
+                            <div class="promise-header">
+                                <div class="promise-title">Education Funding Increase</div>
+                                <div class="promise-status status-ongoing">Ongoing</div>
+                            </div>
+                            <div class="story-content">Promise to increase funding by 30% in all public schools</div>
+                            <div class="promise-progress">
+                                <div class="progress-bar progress-50"></div>
+                            </div>
+                        </div>
+                        <div class="promise-tracker-item">
+                            <div class="promise-header">
+                                <div class="promise-title">Youth Employment Program</div>
+                                <div class="promise-status status-not-started">Not Started</div>
+                            </div>
+                            <div class="story-content">Create 500,000 jobs for youth by end of 2024</div>
+                            <div class="promise-progress">
+                                <div class="progress-bar progress-25"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Civic Journal -->
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="section-title">📰 Civic Journal</div>
+                            <span class="view-all">View All</span>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-header">
+                                <div class="author-avatar">A</div>
+                                <div class="author-info">
+                                    <div class="author-name">Amina Salim</div>
+                                    <div class="story-time">2h ago • Mombasa</div>
+                                </div>
+                            </div>
+                            <div class="story-content">
+                                Just witnessed an incredible town hall meeting where youth voices were actually heard! The county government committed to...
+                            </div>
+                            <div class="story-engagement">
+                                <div class="engagement-item">
+                                    <span>❤️</span>
+                                    <span>23</span>
+                                </div>
+                                <div class="engagement-item">
+                                    <span>💬</span>
+                                    <span>8</span>
+                                </div>
+                                <div class="engagement-item">
+                                    <span>🔄</span>
+                                    <span>5</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="story-item">
+                            <div class="story-header">
+                                <div class="author-avatar">J</div>
+                                <div class="author-info">
+                                    <div class="author-name">John Kiprop</div>
+                                    <div class="story-time">4h ago • Eldoret</div>
+                                </div>
+                            </div>
+                            <div class="story-content">
+                                Breaking: County government responds to our petition about road infrastructure. They've allocated 50M for repairs starting next month!
+                            </div>
+                            <div class="story-engagement">
+                                <div class="engagement-item">
+                                    <span>❤️</span>
+                                    <span>67</span>
+                                </div>
+                                <div class="engagement-item">
+                                    <span>💬</span>
+                                    <span>15</span>
+                                </div>
+                                <div class="engagement-item">
+                                    <span>🔄</span>
+                                    <span>12</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Learn Civics -->
+                    <div class="learn-section">
+                        <h3 class="section-title">📚 Learn Civics</h3>
+                        <p>Complete courses and earn badges to level up your civic knowledge</p>
+                        <button class="cta-button" onclick="navigateToFeature('learn-civics')">Start Learning</button>
+                    </div>
+                    
+                    <div style="height: 100px;"></div>
+                </div>
+                
+                <!-- Floating Action Button -->
+                <div class="floating-action" onclick="createNewContent()">
+                    ✏️
+                </div>
+                
+                <!-- Bottom Navigation -->
+                <div class="bottom-nav">
+                    <div class="nav-item active">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-label">Home</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon">🏛️</span>
+                        <span class="nav-label">Honor</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-label">Track</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon">📚</span>
+                        <span class="nav-label">Learn</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-label">Profile</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RadaApp {
+            constructor() {
+                this.currentScreen = 0;
+                this.screens = [
+                    'splash-screen',
+                    'onboarding-1',
+                    'onboarding-2',
+                    'onboarding-3',
+                    'main-app'
+                ];
+                this.userXP = 1338;
+                this.dayStreak = 7;
+                this.initializeEvents();
+            }
+            
+            initializeEvents() {
+                // Splash screen navigation
+                document.getElementById('splash-screen').addEventListener('click', () => {
+                    this.navigateTo(1);
+                });
+                
+                // Onboarding navigation
+                document.getElementById('skip-btn')?.addEventListener('click', () => {
+                    this.navigateTo(4); // Skip to main app
+                });
+                
+                document.getElementById('next-1')?.addEventListener('click', () => {
+                    this.navigateTo(2);
+                });
+                
+                document.getElementById('back-btn')?.addEventListener('click', () => {
+                    this.navigateTo(1);
+                });
+                
+                document.getElementById('next-2')?.addEventListener('click', () => {
+                    this.navigateTo(3);
+                });
+                
+                document.getElementById('back-btn-2')?.addEventListener('click', () => {
+                    this.navigateTo(2);
+                });
+                
+                document.getElementById('get-started')?.addEventListener('click', () => {
+                    this.navigateTo(4); // Go to main app
+                });
+                
+                this.initializeMainAppEvents();
+            }
+            
+            initializeMainAppEvents() {
+                // Mood panel interaction
+                const moodOptions = document.querySelectorAll('.mood-option');
+                moodOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        moodOptions.forEach(opt => opt.classList.remove('active'));
+                        option.classList.add('active');
+                        this.showToast(`Mood submitted: ${option.querySelector('.mood-label').textContent} (+8 XP)`);
+                        this.updateXP(8);
+                    });
+                });
+                
+                // Action items
+                const actionItems = document.querySelectorAll('.action-item');
+                actionItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        item.style.transform = 'scale(0.95)';
+                        const xpText = item.querySelector('.xp-indicator').textContent;
+                        const xp = parseInt(xpText.replace('+', '').replace(' XP', ''));
+                        this.showToast(`Action completed! +${xp} XP`);
+                        this.updateXP(xp);
+                        setTimeout(() => {
+                            item.style.transform = '';
+                        }, 150);
+                    });
+                });
+                
+                // Candle lighting
+                const candleActions = document.querySelectorAll('.candle-action');
+                candleActions.forEach(candle => {
+                    candle.addEventListener('click', () => {
+                        const count = candle.querySelector('.candle-count');
+                        const currentCount = parseInt(count.textContent);
+                        count.textContent = currentCount + 1;
+                        
+                        candle.style.background = 'rgba(231, 76, 60, 0.1)';
+                        setTimeout(() => {
+                            candle.style.background = '';
+                        }, 1000);
+                        
+                        this.showToast(`Lit a candle for a hero (+15 XP)`);
+                        this.updateXP(15);
+                    });
+                });
+                
+                // Engagement buttons
+                const engagementItems = document.querySelectorAll('.engagement-item');
+                engagementItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        const countSpan = item.querySelector('span:last-child');
+                        if (countSpan && !isNaN(countSpan.textContent)) {
+                            const currentCount = parseInt(countSpan.textContent);
+                            countSpan.textContent = currentCount + 1;
+                            this.showToast('Thanks for engaging! (+5 XP)');
+                            this.updateXP(5);
+                        }
+                    });
+                });
+                
+                // Bottom navigation
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        navItems.forEach(nav => nav.classList.remove('active'));
+                        item.classList.add('active');
+                        const label = item.querySelector('.nav-label').textContent;
+                        this.showToast(`Navigating to ${label}`);
+                    });
+                });
+                
+                // Promise tracker interaction
+                const promiseItems = document.querySelectorAll('.promise-tracker-item');
+                promiseItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        this.showToast('Viewing promise details...');
+                    });
+                });
+                
+                // Featured items
+                const featuredItems = document.querySelectorAll('.featured-item, .featured-main');
+                featuredItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        this.showToast('Opening featured content...');
+                    });
+                });
+            }
+            
+            navigateTo(screenIndex) {
+                if (screenIndex < 0 || screenIndex >= this.screens.length) return;
+                
+                const currentElement = document.getElementById(this.screens[this.currentScreen]);
+                const nextElement = document.getElementById(this.screens[screenIndex]);
+                
+                currentElement.classList.remove('active');
+                
+                if (screenIndex > this.currentScreen) {
+                    currentElement.classList.add('prev');
+                } else {
+                    currentElement.style.transform = 'translateX(100%)';
+                }
+                
+                setTimeout(() => {
+                    nextElement.classList.add('active');
+                    this.currentScreen = screenIndex;
+                    
+                    setTimeout(() => {
+                        currentElement.classList.remove('prev');
+                        currentElement.style.transform = '';
+                    }, 400);
+                }, 50);
+            }
+            
+            updateXP(points) {
+                this.userXP += points;
+                const xpElement = document.querySelector('.stat-value');
+                if (xpElement) {
+                    const formattedXP = this.userXP.toLocaleString();
+                    xpElement.textContent = formattedXP;
+                    
+                    xpElement.style.animation = 'pulse 0.5s ease-in-out';
+                    setTimeout(() => {
+                        xpElement.style.animation = '';
+                    }, 500);
+                }
+                
+                // Check for level up
+                if (this.userXP >= 1500 && (this.userXP - points) < 1500) {
+                    this.showToast('Level Up! You are now a Civic Star 🌟', 4000);
+                }
+            }
+            
+            showToast(message, duration = 3000) {
+                const existingToast = document.querySelector('.toast');
+                if (existingToast) {
+                    existingToast.remove();
+                }
+                
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, duration);
+            }
+        }
+        
+        // Global functions for onclick handlers
+        function createNewContent() {
+            app.showToast("Create new civic content!");
+        }
+        
+        function navigateToFeature(feature) {
+            app.showToast(`Navigating to ${feature.replace('-', ' ')}`);
+        }
+        
+        function showFeaturedDetail(item) {
+            app.showToast(`Opening ${item.replace('-', ' ')} details`);
+        }
+        
+        // Initialize the app
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new RadaApp();
+            
+            // Simulate real-time updates
+            setInterval(() => {
+                const notifications = document.querySelector('.notification-badge');
+                if (notifications && Math.random() > 0.98) { // 2% chance every second
+                    const currentCount = parseInt(notifications.textContent);
+                    notifications.textContent = currentCount + 1;
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

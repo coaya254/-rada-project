@@ -1,0 +1,2654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rada.ke - Civic Learning Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: #f5f7fa;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+            border: 10px solid #fff;
+        }
+        
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 24px 0;
+            height: 50px;
+            background: #ffffff;
+            z-index: 10;
+        }
+        
+        .status-time {
+            font-weight: 700;
+            color: #2d3748;
+        }
+        
+        .status-icons {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            font-size: 16px;
+            color: #4a5568;
+        }
+        
+        /* Navigation Header */
+        .nav-header {
+            padding: 20px 24px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            border-bottom: 1px solid #edf2f7;
+            z-index: 5;
+        }
+        
+        .nav-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .nav-title i {
+            color: #ff6b35;
+            background: rgba(255, 107, 53, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-icon {
+            width: 40px;
+            height: 40px;
+            background: #f8f9fc;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a5568;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .nav-icon:hover {
+            background: #edf2f7;
+            transform: translateY(-2px);
+        }
+        
+        /* Main Content */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            position: relative;
+        }
+        
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: #f8f9fc;
+            border-radius: 15px;
+            padding: 5px;
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            border-radius: 12px;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #ffffff;
+            color: #ff6b35;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* XP Tracker */
+        .xp-tracker {
+            background: linear-gradient(135deg, #9d4edd 0%, #7b3cbb 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            color: white;
+            box-shadow: 0 10px 25px rgba(157, 78, 221, 0.2);
+        }
+        
+        .xp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .xp-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .xp-level {
+            font-size: 16px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        
+        .xp-progress {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .xp-progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #ff9a3d, #ff6b35);
+            border-radius: 6px;
+            width: 65%;
+        }
+        
+        .xp-stats {
+            display: flex;
+            justify-content: space-between;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+        
+        /* Bento Grid Layout */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+        
+        .bento-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #edf2f7;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        }
+        
+        .bento-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border-color: #e2e8f0;
+        }
+        
+        .bento-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(157, 78, 221, 0.1);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            font-size: 24px;
+            color: #9d4edd;
+        }
+        
+        .bento-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .bento-desc {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .bento-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #a0aec0;
+            font-size: 13px;
+        }
+        
+        .bento-xp {
+            color: #06c281;
+            font-weight: 600;
+        }
+        
+        /* Module Cards */
+        .module-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #edf2f7;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        }
+        
+        .module-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .module-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .module-title i {
+            color: #ff6b35;
+            background: rgba(255, 107, 53, 0.1);
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .module-progress {
+            font-size: 14px;
+            color: #718096;
+            font-weight: 600;
+        }
+        
+        .module-content {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .module-image {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ffefea 0%, #fff8f5 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #ff6b35;
+            flex-shrink: 0;
+            border: 1px solid #ffddd3;
+        }
+        
+        .module-desc {
+            font-size: 14px;
+            color: #718096;
+            line-height: 1.6;
+        }
+        
+        .module-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .module-stats {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .module-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #a0aec0;
+            font-size: 13px;
+        }
+        
+        .module-action {
+            padding: 8px 16px;
+            background: #ff6b35;
+            border-radius: 30px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .module-action:hover {
+            background: #e55a2b;
+            transform: translateY(-2px);
+        }
+        
+        /* Badges Section */
+        .badges-section {
+            margin-top: 25px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        
+        .view-all {
+            color: #06c281;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        .badge-item {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 15px 10px;
+            text-align: center;
+            border: 1px solid #edf2f7;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.03);
+        }
+        
+        .badge-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        }
+        
+        .badge-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ff6b35 0%, #ff9a3d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 20px;
+            color: white;
+        }
+        
+        .badge-name {
+            font-size: 12px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+        
+        /* Weekly Challenge */
+        .challenge-card {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff9a3d 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+        
+        .challenge-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .challenge-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: white;
+        }
+        
+        .challenge-timer {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .challenge-desc {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .challenge-xp {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 30px;
+            width: fit-content;
+            color: white;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .challenge-action {
+            width: 100%;
+            padding: 15px;
+            background: white;
+            border: none;
+            border-radius: 15px;
+            color: #ff6b35;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .challenge-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            background: #ffffff;
+            border-top: 1px solid #edf2f7;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.03);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: #a0aec0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: #ff6b35;
+        }
+        
+        .nav-item:hover {
+            color: #9d4edd;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+        }
+        
+        .nav-label {
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+            opacity: 0;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Scrollbar */
+        .content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        
+        .content::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 10px;
+        }
+        
+        .content::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+        
+        /* Section Screens */
+        .section-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 100;
+            transform: translateX(100%);
+            transition: transform 0.4s ease;
+        }
+        
+        .section-screen.active {
+            transform: translateX(0);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-top: 10px;
+        }
+        
+        .back-button {
+            width: 40px;
+            height: 40px;
+            background: #f8f9fc;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background: #edf2f7;
+            transform: translateY(-2px);
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #2d3748;
+        }
+        
+        /* Path Detail Screen */
+        .path-header {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .path-image {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #ffefea 0%, #fff8f5 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #ff6b35;
+            border: 1px solid #ffddd3;
+            flex-shrink: 0;
+        }
+        
+        .path-info {
+            flex: 1;
+        }
+        
+        .path-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .path-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .path-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .path-desc {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .path-progress {
+            width: 100%;
+            height: 10px;
+            background: #edf2f7;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .path-progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #9d4edd, #ff6b35);
+            border-radius: 5px;
+            width: 45%;
+        }
+        
+        .path-xp {
+            font-size: 14px;
+            color: #06c281;
+            font-weight: 600;
+            text-align: right;
+        }
+        
+        /* Module List */
+        .module-list {
+            margin-top: 30px;
+        }
+        
+        .module-item {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .module-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        
+        .module-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(157, 78, 221, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #9d4edd;
+            flex-shrink: 0;
+        }
+        
+        .module-content {
+            flex: 1;
+        }
+        
+        .module-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        
+        .module-duration {
+            font-size: 14px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .module-status {
+            width: 24px;
+            height: 24px;
+            background: #edf2f7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #718096;
+        }
+        
+        .module-status.completed {
+            background: #06c281;
+            color: white;
+        }
+        
+        /* Quiz Screen */
+        .quiz-container {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .quiz-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .quiz-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .quiz-question {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .quiz-options {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .quiz-option {
+            padding: 15px;
+            border: 2px solid #edf2f7;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .quiz-option:hover {
+            border-color: #9d4edd;
+            background: #f9f5ff;
+        }
+        
+        .quiz-option.selected {
+            border-color: #9d4edd;
+            background: #f9f5ff;
+            position: relative;
+        }
+        
+        .quiz-option.selected::after {
+            content: '✓';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: #9d4edd;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .quiz-action {
+            width: 100%;
+            padding: 15px;
+            background: #ff6b35;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .quiz-action:hover {
+            background: #e55a2b;
+            transform: translateY(-2px);
+        }
+        
+        /* Badge Detail Screen */
+        .badge-detail {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .badge-large {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ff6b35 0%, #ff9a3d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+        }
+        
+        .badge-name-large {
+            font-size: 24px;
+            font-weight: 800;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .badge-desc {
+            color: #718096;
+            line-height: 1.6;
+            max-width: 300px;
+            margin: 0 auto 20px;
+        }
+        
+        .badge-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .badge-stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #2d3748;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        .earned-by {
+            margin-bottom: 25px;
+        }
+        
+        .earned-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        .user-item {
+            text-align: center;
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background: #f8f9fc;
+            border-radius: 50%;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #9d4edd;
+        }
+        
+        .user-name {
+            font-size: 12px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+        
+        /* Challenge Detail Screen */
+        .challenge-detail-card {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff9a3d 100%);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .challenge-large-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+        
+        .challenge-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .challenge-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .challenge-desc {
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        
+        .task-list {
+            margin-top: 25px;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .task-check {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .task-check.completed {
+            background: white;
+            color: #ff6b35;
+        }
+        
+        .task-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        /* Quiz Screen Specific */
+        #quizzes-screen .bento-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        #quizzes-screen .bento-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        #quizzes-screen .bento-icon {
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
+        
+        #quizzes-screen .bento-content {
+            flex: 1;
+        }
+        
+        #quizzes-screen .bento-title {
+            margin-bottom: 5px;
+        }
+        
+        /* Challenges Screen Specific */
+        #challenges-screen .bento-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .challenge-item {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #edf2f7;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        }
+        
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .challenge-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 107, 53, 0.1);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #ff6b35;
+            flex-shrink: 0;
+        }
+        
+        .challenge-content {
+            flex: 1;
+        }
+        
+        .challenge-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        
+        .challenge-meta {
+            display: flex;
+            gap: 15px;
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        /* Badges Screen Specific */
+        #badges-screen .section-header {
+            margin-top: 15px;
+        }
+        
+        .badge-category {
+            margin-bottom: 25px;
+        }
+        
+        .category-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-title i {
+            color: #9d4edd;
+        }
+        
+        /* Profile Screen */
+        #profile-screen .profile-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 25px;
+        }
+        
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b35 0%, #ff9a3d 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .profile-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .profile-level {
+            background: #9d4edd;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #ff6b35;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        /* Community Screen */
+        .leaderboard {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .leaderboard-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #edf2f7;
+        }
+        
+        .leaderboard-rank {
+            width: 30px;
+            height: 30px;
+            background: #f8f9fc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: 700;
+        }
+        
+        .leaderboard-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e6f7ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: 600;
+        }
+        
+        .leaderboard-info {
+            flex: 1;
+        }
+        
+        .leaderboard-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .leaderboard-xp {
+            font-size: 13px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Settings Screen */
+        .settings-item {
+            display: flex;
+            align-items: center;
+            padding: 20px 15px;
+            border-bottom: 1px solid #edf2f7;
+            cursor: pointer;
+        }
+        
+        .settings-icon {
+            width: 40px;
+            height: 40px;
+            background: #f8f9fc;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: #ff6b35;
+        }
+        
+        .settings-content {
+            flex: 1;
+        }
+        
+        .settings-title {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .settings-desc {
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        .settings-arrow {
+            color: #a0aec0;
+        }
+        
+        /* New Screens Container */
+        .new-screens {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="screen">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <span class="status-time">9:41</span>
+                <div class="status-icons">
+                    <i class="fas fa-signal"></i>
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-three-quarters"></i>
+                </div>
+            </div>
+            
+            <!-- Navigation Header -->
+            <div class="nav-header">
+                <div class="nav-title">
+                    <i class="fas fa-graduation-cap"></i>
+                    Learn Civics
+                </div>
+                <div class="nav-actions">
+                    <div class="nav-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="nav-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabs Navigation -->
+            <div class="tabs">
+                <div class="tab active" data-tab="paths">Paths</div>
+                <div class="tab" data-tab="quizzes">Quizzes</div>
+                <div class="tab" data-tab="challenges">Challenges</div>
+                <div class="tab" data-tab="badges">Badges</div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="content">
+                <!-- Paths Screen -->
+                <div id="paths-screen" class="tab-content active">
+                    <div class="xp-tracker fade-in">
+                        <div class="xp-header">
+                            <div class="xp-title">Civic XP Tracker</div>
+                            <div class="xp-level">Level 4</div>
+                        </div>
+                        <div class="xp-progress">
+                            <div class="xp-progress-bar"></div>
+                        </div>
+                        <div class="xp-stats">
+                            <div>1,250/2,000 XP</div>
+                            <div>65% Complete</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bento-grid fade-in">
+                        <div class="bento-card" onclick="openSection('path-detail')">
+                            <div class="bento-icon">
+                                <i class="fas fa-landmark"></i>
+                            </div>
+                            <div class="bento-title">Gov Structure</div>
+                            <div class="bento-desc">Learn how Kenya's government works</div>
+                            <div class="bento-meta">
+                                <div>3 Modules</div>
+                                <div class="bento-xp">+120 XP</div>
+                            </div>
+                        </div>
+                        <div class="bento-card" onclick="openSection('path-detail')">
+                            <div class="bento-icon">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="bento-title">Budget Literacy</div>
+                            <div class="bento-desc">Understand national budgeting</div>
+                            <div class="bento-meta">
+                                <div>5 Modules</div>
+                                <div class="bento-xp">+150 XP</div>
+                            </div>
+                        </div>
+                        <div class="bento-card" onclick="openSection('quiz-screen')">
+                            <div class="bento-icon">
+                                <i class="fas fa-newspaper"></i>
+                            </div>
+                            <div class="bento-title">Media Literacy</div>
+                            <div class="bento-desc">Spot misinformation & fake news</div>
+                            <div class="bento-meta">
+                                <div>4 Modules</div>
+                                <div class="bento-xp">+100 XP</div>
+                            </div>
+                        </div>
+                        <div class="bento-card" onclick="openSection('path-detail')">
+                            <div class="bento-icon">
+                                <i class="fas fa-fist-raised"></i>
+                            </div>
+                            <div class="bento-title">Protest Rights</div>
+                            <div class="bento-desc">Know your rights as a citizen</div>
+                            <div class="bento-meta">
+                                <div>2 Modules</div>
+                                <div class="bento-xp">+80 XP</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="module-card fade-in" onclick="openSection('path-detail')">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-star"></i>
+                                Featured Module
+                            </div>
+                            <div class="module-progress">45% Complete</div>
+                        </div>
+                        <div class="module-content">
+                            <div class="module-image">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <div class="module-desc">
+                                Explore Kenya's judicial system and understand how laws are made, interpreted, and enforced in our democracy.
+                            </div>
+                        </div>
+                        <div class="module-footer">
+                            <div class="module-stats">
+                                <div class="module-stat">
+                                    <i class="fas fa-play-circle"></i> 5 Lessons
+                                </div>
+                                <div class="module-stat">
+                                    <i class="fas fa-clock"></i> 45 Min
+                                </div>
+                            </div>
+                            <div class="module-action">
+                                Continue
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="challenge-card fade-in pulse" onclick="openSection('challenge-detail')">
+                        <div class="challenge-content">
+                            <div class="challenge-header">
+                                <div class="challenge-title">Weekly Challenge</div>
+                                <div class="challenge-timer">48h left</div>
+                            </div>
+                            <div class="challenge-desc">
+                                "Debunk a Rumor" - Find and fact-check 3 viral claims about Kenyan politics or policies.
+                            </div>
+                            <div class="challenge-xp">
+                                <i class="fas fa-bolt"></i> Complete to earn 200 XP + "Truth Defender" badge
+                            </div>
+                            <button class="challenge-action">Start Challenge</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quizzes Screen -->
+                <div id="quizzes-screen" class="tab-content">
+                    <div class="xp-tracker fade-in">
+                        <div class="xp-header">
+                            <div class="xp-title">Civic XP Tracker</div>
+                            <div class="xp-level">Level 4</div>
+                        </div>
+                        <div class="xp-progress">
+                            <div class="xp-progress-bar"></div>
+                        </div>
+                        <div class="xp-stats">
+                            <div>1,250/2,000 XP</div>
+                            <div>65% Complete</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bento-grid fade-in">
+                        <div class="bento-card" onclick="openSection('quiz-screen')">
+                            <div class="bento-icon">
+                                <i class="fas fa-landmark"></i>
+                            </div>
+                            <div class="bento-content">
+                                <div class="bento-title">Government Structure</div>
+                                <div class="bento-desc">Test your knowledge of Kenya's government branches</div>
+                                <div class="bento-meta">
+                                    <div>15 Questions</div>
+                                    <div class="bento-xp">+50 XP</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bento-card" onclick="openSection('quiz-screen')">
+                            <div class="bento-icon">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <div class="bento-content">
+                                <div class="bento-title">Judicial System</div>
+                                <div class="bento-desc">Quiz on Kenya's courts and legal processes</div>
+                                <div class="bento-meta">
+                                    <div>12 Questions</div>
+                                    <div class="bento-xp">+40 XP</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bento-card" onclick="openSection('quiz-screen')">
+                            <div class="bento-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="bento-content">
+                                <div class="bento-title">Constitution 2010</div>
+                                <div class="bento-desc">Key provisions of Kenya's constitution</div>
+                                <div class="bento-meta">
+                                    <div>20 Questions</div>
+                                    <div class="bento-xp">+75 XP</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bento-card" onclick="openSection('quiz-screen')">
+                            <div class="bento-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="bento-content">
+                                <div class="bento-title">Citizen Rights</div>
+                                <div class="bento-desc">Know your rights as a Kenyan citizen</div>
+                                <div class="bento-meta">
+                                    <div>10 Questions</div>
+                                    <div class="bento-xp">+30 XP</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bento-card" onclick="openSection('quiz-screen')">
+                            <div class="bento-icon">
+                                <i class="fas fa-vote-yea"></i>
+                            </div>
+                            <div class="bento-content">
+                                <div class="bento-title">Electoral Process</div>
+                                <div class="bento-desc">Understanding Kenya's voting system</div>
+                                <div class="bento-meta">
+                                    <div>18 Questions</div>
+                                    <div class="bento-xp">+60 XP</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="module-card fade-in" onclick="openSection('quiz-screen')">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <i class="fas fa-medal"></i>
+                                Daily Quiz Challenge
+                            </div>
+                            <div class="module-progress">Streak: 7 days</div>
+                        </div>
+                        <div class="module-content">
+                            <div class="module-image">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="module-desc">
+                                Complete today's quiz to maintain your streak and earn bonus XP. Today's topic: County Governments.
+                            </div>
+                        </div>
+                        <div class="module-footer">
+                            <div class="module-stats">
+                                <div class="module-stat">
+                                    <i class="fas fa-bolt"></i> +15 XP
+                                </div>
+                                <div class="module-stat">
+                                    <i class="fas fa-fire"></i> Streak Bonus
+                                </div>
+                            </div>
+                            <div class="module-action">
+                                Take Quiz
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Challenges Screen -->
+                <div id="challenges-screen" class="tab-content">
+                    <div class="xp-tracker fade-in">
+                        <div class="xp-header">
+                            <div class="xp-title">Civic XP Tracker</div>
+                            <div class="xp-level">Level 4</div>
+                        </div>
+                        <div class="xp-progress">
+                            <div class="xp-progress-bar"></div>
+                        </div>
+                        <div class="xp-stats">
+                            <div>1,250/2,000 XP</div>
+                            <div>65% Complete</div>
+                        </div>
+                    </div>
+                    
+                    <div class="challenge-card fade-in pulse" onclick="openSection('challenge-detail')">
+                        <div class="challenge-content">
+                            <div class="challenge-header">
+                                <div class="challenge-title">Weekly Challenge</div>
+                                <div class="challenge-timer">48h left</div>
+                            </div>
+                            <div class="challenge-desc">
+                                "Debunk a Rumor" - Find and fact-check 3 viral claims about Kenyan politics or policies.
+                            </div>
+                            <div class="challenge-xp">
+                                <i class="fas fa-bolt"></i> Complete to earn 200 XP + "Truth Defender" badge
+                            </div>
+                            <button class="challenge-action">Start Challenge</button>
+                        </div>
+                    </div>
+                    
+                    <div class="bento-grid fade-in">
+                        <div class="challenge-item" onclick="openSection('challenge-detail')">
+                            <div class="challenge-header">
+                                <div class="challenge-icon">
+                                    <i class="fas fa-tree"></i>
+                                </div>
+                                <div class="challenge-content">
+                                    <div class="challenge-title">Environmental Stewardship</div>
+                                    <div class="challenge-meta">
+                                        <div><i class="fas fa-clock"></i> 7 days</div>
+                                        <div><i class="fas fa-bolt"></i> 150 XP</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="challenge-desc">
+                                Participate in a local cleanup or tree planting event and document your experience.
+                            </div>
+                        </div>
+                        
+                        <div class="challenge-item" onclick="openSection('challenge-detail')">
+                            <div class="challenge-header">
+                                <div class="challenge-icon">
+                                    <i class="fas fa-microphone"></i>
+                                </div>
+                                <div class="challenge-content">
+                                    <div class="challenge-title">Community Voice</div>
+                                    <div class="challenge-meta">
+                                        <div><i class="fas fa-clock"></i> Ongoing</div>
+                                        <div><i class="fas fa-bolt"></i> 100 XP</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="challenge-desc">
+                                Attend a local government meeting and share your perspective on community issues.
+                            </div>
+                        </div>
+                        
+                        <div class="challenge-item" onclick="openSection('challenge-detail')">
+                            <div class="challenge-header">
+                                <div class="challenge-icon">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <div class="challenge-content">
+                                    <div class="challenge-title">Civic Educator</div>
+                                    <div class="challenge-meta">
+                                        <div><i class="fas fa-clock"></i> 30 days</div>
+                                        <div><i class="fas fa-bolt"></i> 300 XP</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="challenge-desc">
+                                Teach 5 people about their civic rights and responsibilities in Kenya.
+                            </div>
+                        </div>
+                        
+                        <div class="challenge-item" onclick="openSection('challenge-detail')">
+                            <div class="challenge-header">
+                                <div class="challenge-icon">
+                                    <i class="fas fa-hands-helping"></i>
+                                </div>
+                                <div class="challenge-content">
+                                    <div class="challenge-title">Community Builder</div>
+                                    <div class="challenge-meta">
+                                        <div><i class="fas fa-clock"></i> 14 days</div>
+                                        <div><i class="fas fa-bolt"></i> 200 XP</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="challenge-desc">
+                                Organize or participate in a community service project in your neighborhood.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Badges Screen -->
+                <div id="badges-screen" class="tab-content">
+                    <div class="xp-tracker fade-in">
+                        <div class="xp-header">
+                            <div class="xp-title">Civic XP Tracker</div>
+                            <div class="xp-level">Level 4</div>
+                        </div>
+                        <div class="xp-progress">
+                            <div class="xp-progress-bar"></div>
+                        </div>
+                        <div class="xp-stats">
+                            <div>1,250/2,000 XP</div>
+                            <div>65% Complete</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-header">
+                        <div class="section-title">Your Badges</div>
+                        <div class="view-all">View All</div>
+                    </div>
+                    
+                    <div class="badges-grid fade-in">
+                        <div class="badge-item" onclick="openSection('badge-detail')">
+                            <div class="badge-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="badge-name">Scholar</div>
+                        </div>
+                        <div class="badge-item" onclick="openSection('badge-detail')">
+                            <div class="badge-icon">
+                                <i class="fas fa-check-double"></i>
+                            </div>
+                            <div class="badge-name">Fact Checker</div>
+                        </div>
+                        <div class="badge-item" onclick="openSection('badge-detail')">
+                            <div class="badge-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="badge-name">Community</div>
+                        </div>
+                        <div class="badge-item" onclick="openSection('badge-detail')">
+                            <div class="badge-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="badge-name">Rising Star</div>
+                        </div>
+                    </div>
+                    
+                    <div class="badge-category fade-in">
+                        <div class="category-title">
+                            <i class="fas fa-graduation-cap"></i>
+                            Learning Badges
+                        </div>
+                        <div class="badges-grid">
+                            <div class="badge-item" onclick="openSection('badge-detail')">
+                                <div class="badge-icon" style="background: linear-gradient(135deg, #9d4edd 0%, #7b3cbb 100%);">
+                                    <i class="fas fa-landmark"></i>
+                                </div>
+                                <div class="badge-name">Gov Expert</div>
+                            </div>
+                            <div class="badge-item" onclick="openSection('badge-detail')">
+                                <div class="badge-icon" style="background: linear-gradient(135deg, #06c281 0%, #04a868 100%);">
+                                    <i class="fas fa-leaf"></i>
+                                </div>
+                                <div class="badge-name">Eco Champion</div>
+                            </div>
+                            <div class="badge-item" onclick="openSection('badge-detail')">
+                                <div class="badge-icon" style="background: linear-gradient(135deg, #ff9a3d 0%, #ff6b35 100%);">
+                                    <i class="fas fa-gavel"></i>
+                                </div>
+                                <div class="badge-name">Justice Advocate</div>
+                            </div>
+                            <div class="badge-item" onclick="openSection('badge-detail')">
+                                <div class="badge-icon" style="background: linear-gradient(135deg, #3498db 0%, #2c80b9 100%);">
+                                    <i class="fas fa-vote-yea"></i>
+                                </div>
+                                <div class="badge-name">Informed Voter</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="badge-category fade-in">
+                        <div class="category-title">
+                            <i class="fas fa-trophy"></i>
+                            Achievement Badges
+                        </div>
+                        <div class="badges-grid">
+                            <div class="badge-item" onclick="openSection('badge-detail')">
+                                <div class="badge-icon" style="background: linear-gradient(135deg, #f1c40f 0%, #e67e22 100%);">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <div class="badge-name">Streak Master</div>
+                            </div>
+                            <div class="badge-item" onclick="openSection('badge-detail')">
+                                <div class="badge-icon" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div class="badge-name">XP Collector</div>
+                            </div>
+                            <div class="badge-item" onclick="openSection('badge-detail')">
+                                <div class="badge-icon" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="badge-name">Community Leader</div>
+                            </div>
+                            <div class="badge-item" onclick="openSection('badge-detail')">
+                                <div class="badge-icon" style="background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%);">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="badge-name">Truth Defender</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Navigation -->
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="showHomeScreen()">
+                    <div class="nav-icon"><i class="fas fa-home"></i></div>
+                    <div class="nav-label">Home</div>
+                </div>
+                <div class="nav-item active">
+                    <div class="nav-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="nav-label">Learn</div>
+                </div>
+                <div class="nav-item" onclick="showCommunityScreen()">
+                    <div class="nav-icon"><i class="fas fa-bullhorn"></i></div>
+                    <div class="nav-label">Voice</div>
+                </div>
+                <div class="nav-item" onclick="showProfileScreen()">
+                    <div class="nav-icon"><i class="fas fa-user"></i></div>
+                    <div class="nav-label">Profile</div>
+                </div>
+            </div>
+            
+            <!-- Section Screens -->
+            <div class="section-screen" id="path-detail">
+                <div class="section-header">
+                    <div class="back-button" onclick="closeSection()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="section-title">Government Structure</div>
+                </div>
+                
+                <div class="path-header">
+                    <div class="path-image">
+                        <i class="fas fa-landmark"></i>
+                    </div>
+                    <div class="path-info">
+                        <div class="path-title">Kenyan Government Structure</div>
+                        <div class="path-stats">
+                            <div class="path-stat">
+                                <i class="fas fa-play-circle"></i> 5 Modules
+                            </div>
+                            <div class="path-stat">
+                                <i class="fas fa-clock"></i> 2 Hours
+                            </div>
+                        </div>
+                        <div class="path-desc">
+                            Learn about the three arms of Kenyan government and how they work together to maintain democracy in Kenya.
+                        </div>
+                        <div class="path-progress">
+                            <div class="path-progress-bar"></div>
+                        </div>
+                        <div class="path-xp">+120 XP upon completion</div>
+                    </div>
+                </div>
+                
+                <div class="module-list">
+                    <div class="module-item" onclick="openSection('quiz-screen')">
+                        <div class="module-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="module-content">
+                            <div class="module-name">The Constitution of Kenya</div>
+                            <div class="module-duration">
+                                <i class="fas fa-clock"></i> 25 min • 3 Lessons
+                            </div>
+                        </div>
+                        <div class="module-status">1</div>
+                    </div>
+                    
+                    <div class="module-item" onclick="openSection('quiz-screen')">
+                        <div class="module-icon">
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <div class="module-content">
+                            <div class="module-name">The Executive Branch</div>
+                            <div class="module-duration">
+                                <i class="fas fa-clock"></i> 20 min • 4 Lessons
+                            </div>
+                        </div>
+                        <div class="module-status completed">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="module-item" onclick="openSection('quiz-screen')">
+                        <div class="module-icon">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <div class="module-content">
+                            <div class="module-name">The Judiciary System</div>
+                            <div class="module-duration">
+                                <i class="fas fa-clock"></i> 30 min • 5 Lessons
+                            </div>
+                        </div>
+                        <div class="module-status">3</div>
+                    </div>
+                    
+                    <div class="module-item" onclick="openSection('quiz-screen')">
+                        <div class="module-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="module-content">
+                            <div class="module-name">The Legislative Branch</div>
+                            <div class="module-duration">
+                                <i class="fas fa-clock"></i> 25 min • 4 Lessons
+                            </div>
+                        </div>
+                        <div class="module-status">4</div>
+                    </div>
+                    
+                    <div class="module-item" onclick="openSection('quiz-screen')">
+                        <div class="module-icon">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </div>
+                        <div class="module-content">
+                            <div class="module-name">County Governments</div>
+                            <div class="module-duration">
+                                <i class="fas fa-clock"></i> 20 min • 3 Lessons
+                            </div>
+                        </div>
+                        <div class="module-status">5</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-screen" id="quiz-screen">
+                <div class="section-header">
+                    <div class="back-button" onclick="closeSection()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="section-title">Civics Quiz</div>
+                </div>
+                
+                <div class="quiz-container">
+                    <div class="quiz-header">
+                        <div class="quiz-title">The Constitution of Kenya</div>
+                        <div class="quiz-stats">
+                            <span>Question 3 of 10</span>
+                            <span>+10 XP per question</span>
+                        </div>
+                    </div>
+                    
+                    <div class="quiz-question">
+                        Which year was the current Constitution of Kenya promulgated?
+                    </div>
+                    
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="selectOption(this)">2002</div>
+                        <div class="quiz-option" onclick="selectOption(this)">2005</div>
+                        <div class="quiz-option selected" onclick="selectOption(this)">2010</div>
+                        <div class="quiz-option" onclick="selectOption(this)">2013</div>
+                    </div>
+                    
+                    <button class="quiz-action">Submit Answer</button>
+                </div>
+                
+                <div class="quiz-container">
+                    <div class="quiz-header">
+                        <div class="quiz-title">Question Explanation</div>
+                    </div>
+                    
+                    <div class="quiz-question">
+                        The Constitution of Kenya was promulgated on 27 August 2010, replacing the 1963 independence constitution.
+                    </div>
+                    
+                    <div class="quiz-desc">
+                        <p>The 2010 Constitution marked a major milestone in Kenya's democratic journey, introducing:</p>
+                        <ul style="padding-left: 20px; margin-top: 10px;">
+                            <li>Devolution of power to 47 counties</li>
+                            <li>Bill of Rights expansion</li>
+                            <li>Strengthened judicial independence</li>
+                            <li>Land reforms and environmental protections</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-screen" id="badge-detail">
+                <div class="section-header">
+                    <div class="back-button" onclick="closeSection()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="section-title">Badge Details</div>
+                </div>
+                
+                <div class="badge-detail">
+                    <div class="badge-large">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <div class="badge-name-large">Truth Defender</div>
+                    <div class="badge-desc">
+                        Awarded to citizens who demonstrate exceptional skill in identifying and debunking misinformation in civic discourse.
+                    </div>
+                    
+                    <div class="badge-stats">
+                        <div class="badge-stat">
+                            <div class="stat-value">1,250</div>
+                            <div class="stat-label">Earned By</div>
+                        </div>
+                        <div class="badge-stat">
+                            <div class="stat-value">200</div>
+                            <div class="stat-label">XP Value</div>
+                        </div>
+                        <div class="badge-stat">
+                            <div class="stat-value">#23</div>
+                            <div class="stat-label">Rarity</div>
+                        </div>
+                    </div>
+                    
+                    <button class="quiz-action" style="max-width: 300px; margin: 0 auto;">
+                        <i class="fas fa-share-alt"></i> Share Badge
+                    </button>
+                </div>
+                
+                <div class="earned-by">
+                    <div class="earned-title">Recently Earned By</div>
+                    <div class="user-grid">
+                        <div class="user-item">
+                            <div class="user-avatar">JK</div>
+                            <div class="user-name">J. Kamau</div>
+                        </div>
+                        <div class="user-item">
+                            <div class="user-avatar">AM</div>
+                            <div class="user-name">A. Mwangi</div>
+                        </div>
+                        <div class="user-item">
+                            <div class="user-avatar">NO</div>
+                            <div class="user-name">N. Ochieng</div>
+                        </div>
+                        <div class="user-item">
+                            <div class="user-avatar">PK</div>
+                            <div class="user-name">P. Kiprop</div>
+                        </div>
+                        <div class="user-item">
+                            <div class="user-avatar">SM</div>
+                            <div class="user-name">S. Mohammed</div>
+                        </div>
+                        <div class="user-item">
+                            <div class="user-avatar">WM</div>
+                            <div class="user-name">W. Mumbi</div>
+                        </div>
+                        <div class="user-item">
+                            <div class="user-avatar">RO</div>
+                            <div class="user-name">R. Otieno</div>
+                        </div>
+                        <div class="user-item">
+                            <div class="user-avatar">+25</div>
+                            <div class="user-name">Others</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-screen" id="challenge-detail">
+                <div class="section-header">
+                    <div class="back-button" onclick="closeSection()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="section-title">Weekly Challenge</div>
+                </div>
+                
+                <div class="challenge-detail-card">
+                    <div class="challenge-large-title">Debunk a Rumor</div>
+                    <div class="challenge-stats">
+                        <div class="challenge-stat">
+                            <i class="fas fa-bolt"></i> 200 XP
+                        </div>
+                        <div class="challenge-stat">
+                            <i class="fas fa-users"></i> 1,250 Participants
+                        </div>
+                        <div class="challenge-stat">
+                            <i class="fas fa-clock"></i> 48h left
+                        </div>
+                    </div>
+                    <div class="challenge-desc">
+                        Help combat misinformation by identifying and debunking 3 viral claims about Kenyan politics or policies. Contribute to a more informed civic space!
+                    </div>
+                </div>
+                
+                <div class="task-list">
+                    <div class="section-title">Challenge Tasks</div>
+                    
+                    <div class="task-item">
+                        <div class="task-check completed">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="task-name">Identify a viral claim about Kenyan politics</div>
+                    </div>
+                    
+                    <div class="task-item">
+                        <div class="task-check">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="task-name">Research and verify factual information</div>
+                    </div>
+                    
+                    <div class="task-item">
+                        <div class="task-check">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="task-name">Submit your fact-check with sources</div>
+                    </div>
+                    
+                    <div class="task-item">
+                        <div class="task-check">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="task-name">Share your findings on social media</div>
+                    </div>
+                </div>
+                
+                <button class="quiz-action" style="margin-top: 20px;">
+                    <i class="fas fa-play-circle"></i> Start Challenge
+                </button>
+            </div>
+            
+            <!-- New Screens -->
+            <div class="section-screen" id="home-screen">
+                <div class="section-header">
+                    <div class="back-button" onclick="closeSection()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="section-title">Home</div>
+                </div>
+                
+                <div class="xp-tracker fade-in">
+                    <div class="xp-header">
+                        <div class="xp-title">Civic XP Tracker</div>
+                        <div class="xp-level">Level 4</div>
+                    </div>
+                    <div class="xp-progress">
+                        <div class="xp-progress-bar"></div>
+                    </div>
+                    <div class="xp-stats">
+                        <div>1,250/2,000 XP</div>
+                        <div>65% Complete</div>
+                    </div>
+                </div>
+                
+                <div class="bento-grid fade-in">
+                    <div class="bento-card" onclick="openSection('path-detail')">
+                        <div class="bento-icon">
+                            <i class="fas fa-landmark"></i>
+                        </div>
+                        <div class="bento-title">Continue Learning</div>
+                        <div class="bento-desc">Government Structure - Module 3</div>
+                        <div class="bento-meta">
+                            <div>45% Complete</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bento-card" onclick="openSection('challenge-detail')">
+                        <div class="bento-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="bento-title">Active Challenge</div>
+                        <div class="bento-desc">Debunk a Rumor - 48h left</div>
+                        <div class="bento-meta">
+                            <div>2/3 Completed</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section-header">
+                    <div class="section-title">Recent Activity</div>
+                </div>
+                
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-book"></i>
+                            Completed Module
+                        </div>
+                        <div class="module-progress">+25 XP</div>
+                    </div>
+                    <div class="module-content">
+                        <div class="module-image">
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <div class="module-desc">
+                            You've completed "The Executive Branch" module. Great job understanding the roles of Kenya's executive arm!
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-users"></i>
+                            Community Activity
+                        </div>
+                        <div class="module-progress">New</div>
+                    </div>
+                    <div class="module-content">
+                        <div class="module-image">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="module-desc">
+                            Samuel commented on your fact-check submission: "Great sources! This really helps clarify the budget allocation issue."
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-screen" id="profile-screen">
+                <div class="section-header">
+                    <div class="back-button" onclick="closeSection()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="section-title">Your Profile</div>
+                </div>
+                
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="profile-name">Alex Mwangi</div>
+                    <div class="profile-level">Level 4 Civic Scholar</div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">1,250</div>
+                        <div class="stat-label">XP Earned</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Badges</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">7</div>
+                        <div class="stat-label">Streak Days</div>
+                    </div>
+                </div>
+                
+                <div class="section-header">
+                    <div class="section-title">Your Progress</div>
+                </div>
+                
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-landmark"></i>
+                            Government Structure
+                        </div>
+                        <div class="module-progress">65%</div>
+                    </div>
+                    <div class="xp-progress" style="height: 8px;">
+                        <div class="xp-progress-bar" style="width: 65%;"></div>
+                    </div>
+                </div>
+                
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-coins"></i>
+                            Budget Literacy
+                        </div>
+                        <div class="module-progress">40%</div>
+                    </div>
+                    <div class="xp-progress" style="height: 8px;">
+                        <div class="xp-progress-bar" style="width: 40%;"></div>
+                    </div>
+                </div>
+                
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-newspaper"></i>
+                            Media Literacy
+                        </div>
+                        <div class="module-progress">85%</div>
+                    </div>
+                    <div class="xp-progress" style="height: 8px;">
+                        <div class="xp-progress-bar" style="width: 85%;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-screen" id="community-screen">
+                <div class="section-header">
+                    <div class="back-button" onclick="closeSection()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="section-title">Community Voice</div>
+                </div>
+                
+                <div class="bento-card fade-in">
+                    <div class="bento-icon">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <div class="bento-title">Start a Discussion</div>
+                    <div class="bento-desc">Share your thoughts on civic issues and engage with the community</div>
+                    <button class="module-action" style="width: 100%; margin-top: 10px;">
+                        Create Post
+                    </button>
+                </div>
+                
+                <div class="section-header">
+                    <div class="section-title">Hot Topics</div>
+                </div>
+                
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-fire"></i>
+                            County Budget Allocations
+                        </div>
+                        <div class="module-progress">142 comments</div>
+                    </div>
+                    <div class="module-content">
+                        <div class="module-desc">
+                            How do you feel about the recent county budget allocations? Are resources being distributed fairly across regions?
+                        </div>
+                    </div>
+                    <div class="module-footer">
+                        <div class="module-stats">
+                            <div class="module-stat">
+                                <i class="fas fa-user"></i> James K.
+                            </div>
+                            <div class="module-stat">
+                                <i class="fas fa-clock"></i> 2h ago
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-title">
+                            <i class="fas fa-fire"></i>
+                            Youth in Politics
+                        </div>
+                        <div class="module-progress">89 comments</div>
+                    </div>
+                    <div class="module-content">
+                        <div class="module-desc">
+                            What can be done to encourage more youth participation in Kenyan politics? Share your ideas!
+                        </div>
+                    </div>
+                    <div class="module-footer">
+                        <div class="module-stats">
+                            <div class="module-stat">
+                                <i class="fas fa-user"></i> Sarah W.
+                            </div>
+                            <div class="module-stat">
+                                <i class="fas fa-clock"></i> 5h ago
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="leaderboard fade-in">
+                    <div class="leaderboard-header">
+                        <div class="leaderboard-title">Top Contributors</div>
+                        <div class="view-all">View All</div>
+                    </div>
+                    
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank">1</div>
+                        <div class="leaderboard-avatar">JM</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">James Mwangi</div>
+                            <div class="leaderboard-xp"><i class="fas fa-bolt"></i> 2,450 XP</div>
+                        </div>
+                    </div>
+                    
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank">2</div>
+                        <div class="leaderboard-avatar">AW</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">Amina Wanjiru</div>
+                            <div class="leaderboard-xp"><i class="fas fa-bolt"></i> 2,120 XP</div>
+                        </div>
+                    </div>
+                    
+                    <div class="leaderboard-item">
+                        <div class="leaderboard-rank">3</div>
+                        <div class="leaderboard-avatar">PO</div>
+                        <div class="leaderboard-info">
+                            <div class="leaderboard-name">Peter Ochieng</div>
+                            <div class="leaderboard-xp"><i class="fas fa-bolt"></i> 1,980 XP</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-screen" id="settings-screen">
+                <div class="section-header">
+                    <div class="back-button" onclick="closeSection()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <div class="section-title">Settings</div>
+                </div>
+                
+                <div class="settings-item">
+                    <div class="settings-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="settings-content">
+                        <div class="settings-title">Account Settings</div>
+                        <div class="settings-desc">Update your profile information and password</div>
+                    </div>
+                    <div class="settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item">
+                    <div class="settings-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="settings-content">
+                        <div class="settings-title">Notifications</div>
+                        <div class="settings-desc">Manage your notification preferences</div>
+                    </div>
+                    <div class="settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item">
+                    <div class="settings-icon">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <div class="settings-content">
+                        <div class="settings-title">Dark Mode</div>
+                        <div class="settings-desc">Switch between light and dark themes</div>
+                    </div>
+                    <div class="settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item">
+                    <div class="settings-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="settings-content">
+                        <div class="settings-title">Privacy & Security</div>
+                        <div class="settings-desc">Manage your data and security settings</div>
+                    </div>
+                    <div class="settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item">
+                    <div class="settings-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div class="settings-content">
+                        <div class="settings-title">Help & Support</div>
+                        <div class="settings-desc">Get help with the app or report issues</div>
+                    </div>
+                    <div class="settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item">
+                    <div class="settings-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="settings-content">
+                        <div class="settings-title">About Rada.ke</div>
+                        <div class="settings-desc">Learn more about our mission and team</div>
+                    </div>
+                    <div class="settings-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Hide all tab contents
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                // Show the selected tab content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-screen`).classList.add('active');
+            });
+        });
+        
+        // Section navigation
+        function openSection(sectionId) {
+            document.getElementById(sectionId).classList.add('active');
+        }
+        
+        function closeSection() {
+            document.querySelectorAll('.section-screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+        }
+        
+        // Quiz option selection
+        function selectOption(element) {
+            document.querySelectorAll('.quiz-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            element.classList.add('selected');
+        }
+        
+        // Navigation functions
+        function showHomeScreen() {
+            closeSection();
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item')[0].classList.add('active');
+            openSection('home-screen');
+        }
+        
+        function showCommunityScreen() {
+            closeSection();
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item')[2].classList.add('active');
+            openSection('community-screen');
+        }
+        
+        function showProfileScreen() {
+            closeSection();
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item')[3].classList.add('active');
+            openSection('profile-screen');
+        }
+        
+        // Module card interactions
+        const moduleCards = document.querySelectorAll('.module-card, .bento-card, .challenge-item');
+        moduleCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Add a visual feedback effect
+                card.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = '';
+                }, 200);
+            });
+        });
+        
+        // Challenge action
+        document.querySelectorAll('.challenge-action').forEach(button => {
+            button.addEventListener('click', function() {
+                const originalText = this.textContent;
+                this.textContent = 'Challenge Started!';
+                this.style.background = '#06c281';
+                this.style.color = 'white';
+                
+                setTimeout(() => {
+                    this.textContent = originalText;
+                    this.style.background = 'white';
+                    this.style.color = '#ff6b35';
+                }, 2000);
+            });
+        });
+        
+        // Quiz action
+        document.querySelectorAll('.quiz-action').forEach(button => {
+            button.addEventListener('click', function() {
+                this.textContent = 'Answer Submitted!';
+                this.style.background = '#06c281';
+                
+                setTimeout(() => {
+                    this.textContent = 'Submit Answer';
+                    this.style.background = '#ff6b35';
+                }, 2000);
+            });
+        });
+        
+        // Animate elements on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((el, index) => {
+                // Stagger the animation
+                setTimeout(() => {
+                    el.style.opacity = 1;
+                    el.style.transform = 'translateY(0)';
+                }, 150 * index);
+            });
+        });
+        
+        // Navigation items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
