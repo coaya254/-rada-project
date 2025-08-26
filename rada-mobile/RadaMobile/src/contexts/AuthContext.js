@@ -23,6 +23,18 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // Update API service when user changes
+  useEffect(() => {
+    console.log('🔍 AuthContext - User changed:', user);
+    if (user) {
+      console.log('🔍 AuthContext - Setting current user in API service:', user);
+      apiService.setCurrentUser(user);
+    } else {
+      console.log('🔍 AuthContext - No user data, clearing API service');
+      apiService.setCurrentUser(null);
+    }
+  }, [user]);
+
   const initializeAuth = async () => {
     try {
       // Check for stored token
@@ -179,6 +191,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const setUserData = async (userData) => {
+    try {
+      setUser(userData);
+      setIsAnonymous(false);
+      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Set user failed:', error);
+    }
+  };
+
   const value = {
     user,
     token,
@@ -188,6 +210,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    setUserData,
     createAnonymousUser,
   };
 

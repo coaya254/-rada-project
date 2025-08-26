@@ -1,320 +1,250 @@
-// Real API service for connecting to the existing backend
-import { currentConfig } from '../config/api';
+import axios from 'axios';
 
-class ApiService {
-  constructor() {
-    this.baseURL = currentConfig.baseURL;
-    this.timeout = currentConfig.timeout;
-    this.retryAttempts = currentConfig.retryAttempts;
-    this.token = null;
-  }
+const API_BASE_URL = 'http://192.168.100.41:5001';
 
-  // Set authentication token
-  setToken(token) {
-    this.token = token;
-  }
+const apiService = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  // Get auth headers
-  getHeaders() {
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+// Global variable to store current user data
+let currentUser = null;
+
+// Function to set current user data for the interceptor
+const setCurrentUser = (user) => {
+  console.log('🔍 setCurrentUser called with:', user);
+  currentUser = user;
+  console.log('🔍 currentUser updated to:', currentUser);
+};
+
+// Request interceptor to add auth headers
+apiService.interceptors.request.use(
+  (config) => {
+    console.log('🔍 API Request Interceptor - Current User:', currentUser);
+    console.log('🔍 API Request Interceptor - Base URL:', config.baseURL);
+    console.log('🔍 API Request Interceptor - URL:', config.url);
+    console.log('🔍 API Request Interceptor - Full URL:', `${config.baseURL}${config.url}`);
     
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Add authentication headers if user data is available
+    if (currentUser && currentUser.uuid && currentUser.role) {
+      config.headers['x-user-uuid'] = currentUser.uuid;
+      config.headers['x-user-role'] = currentUser.role;
+      console.log('🔍 API Request Interceptor - Headers added:', {
+        'x-user-uuid': currentUser.uuid,
+        'x-user-role': currentUser.role
+      });
+    } else {
+      console.log('🔍 API Request Interceptor - No user data available for headers');
     }
     
-    return headers;
+    console.log('🔍 API Request Interceptor - Final headers:', config.headers);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
+);
 
-  // Generic request method
-  async request(endpoint, options = {}) {
-    try {
-      const url = `${this.baseURL}${endpoint}`;
-      const config = {
-        headers: this.getHeaders(),
-        ...options,
-      };
+// Response interceptor for error handling
+apiService.interceptors.response.use(
+  (response) => {
+    return response.data;
+  },
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
 
-      const response = await fetch(url, config);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
+// Learning API methods
+const getModules = () => apiService.get('/api/learning/modules');
+const getModule = (moduleId) => apiService.get(`/api/learning/modules/${moduleId}`);
+const getChallenges = () => apiService.get('/api/learning/challenges');
+const getBadges = () => apiService.get('/api/learning/badges');
+const getUserStats = (userId) => apiService.get(`/api/learning/stats/${userId}`);
+const getUserLearningStats = () => apiService.get('/api/learning/user-stats');
+const getLessons = (moduleId) => apiService.get(`/api/learning/lessons/${moduleId}`);
+const getUserProgress = (userId) => apiService.get(`/api/learning/user-progress/${userId}`);
+
+// Admin API methods
+const adminLogin = (email, password) => apiService.post('/api/admin/login', { email, password });
+const getAdminDashboard = () => apiService.get('/api/admin/dashboard');
+const getAdminUsers = () => apiService.get('/api/admin/users');
+const getAdminContent = () => apiService.get('/api/admin/content');
+
+// Admin Content Management API methods
+const getAdminContentModules = () => apiService.get('/api/admin/content/modules');
+const getAdminContentLessons = () => apiService.get('/api/admin/content/lessons');
+const getAdminContentQuizzes = () => apiService.get('/api/admin/content/quizzes');
+const getAdminContentChallenges = () => apiService.get('/api/admin/content/challenges');
+const getAdminContentBadges = () => apiService.get('/api/admin/content/badges');
+
+// Publishing Workflow API methods
+const submitForReview = (type, id, reviewNotes) => apiService.post(`/api/admin/content/${type}/${id}/submit-for-review`, { review_notes: reviewNotes });
+const approveContent = (type, id, reviewNotes) => apiService.post(`/api/admin/content/${type}/${id}/approve`, { review_notes: reviewNotes });
+const rejectContent = (type, id, reviewNotes) => apiService.post(`/api/admin/content/${type}/${id}/reject`, { review_notes: reviewNotes });
+const publishContent = (type, id) => apiService.post(`/api/admin/content/${type}/${id}/publish`);
+const getModerationQueue = (status = 'review', type = null) => {
+  const params = type ? { status, type } : { status };
+  return apiService.get('/api/admin/moderation/queue', { params });
+};
+const getModerationStats = () => apiService.get('/api/admin/moderation/stats');
+
+// Content Creation API methods
+const createContent = (formData) => {
+  const data = new FormData();
+  
+  // Add text fields
+  Object.keys(formData).forEach(key => {
+    if (key !== 'media_files' && formData[key] !== undefined && formData[key] !== null) {
+      data.append(key, formData[key]);
     }
-  }
-
-  // GET request
-  async get(endpoint) {
-    return this.request(endpoint, { method: 'GET' });
-  }
-
-  // POST request
-  async post(endpoint, data) {
-    return this.request(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data),
+  });
+  
+  // Add media files if any
+  if (formData.media_files && formData.media_files.length > 0) {
+    formData.media_files.forEach((file, index) => {
+      data.append('media_files', file);
     });
   }
+  
+  return apiService.post('/api/content/create', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
 
-  // PUT request
-  async put(endpoint, data) {
-    return this.request(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
+const getUserContent = (userId, page = 1, limit = 10, status = null) => {
+  const params = { page, limit };
+  if (status) params.status = status;
+  return apiService.get(`/api/content/user/${userId}`, { params });
+};
 
-  // DELETE request
-  async delete(endpoint) {
-    return this.request(endpoint, { method: 'DELETE' });
-  }
+const getContentFeed = (page = 1, limit = 20, category = null, location = null) => {
+  const params = { page, limit };
+  if (category) params.category = category;
+  if (location) params.location = location;
+  return apiService.get('/api/content/feed', { params });
+};
 
-  // =====================================================
-  // AUTHENTICATION ENDPOINTS
-  // =====================================================
+// Reddit-style voting system
+const voteContent = (contentId, userId, voteType) => apiService.post(`/api/content/${contentId}/vote`, { userId, voteType });
+const upvoteContent = (contentId, userId) => voteContent(contentId, userId, 'upvote');
+const downvoteContent = (contentId, userId) => voteContent(contentId, userId, 'downvote');
+const removeVote = (contentId, userId) => voteContent(contentId, userId, 'remove');
 
-  // User login
-  async login(email, password) {
-    return this.post('/api/auth/login', { email, password });
-  }
+const commentOnContent = (contentId, userId, comment, isAnonymous = false) => 
+  apiService.post(`/api/content/${contentId}/comment`, { userId, comment, is_anonymous: isAnonymous });
 
-  // User registration
-  async register(userData) {
-    return this.post('/api/auth/register', userData);
-  }
+// Generic HTTP methods
+const post = (url, data) => apiService.post(url, data);
+const get = (url) => apiService.get(url);
+const put = (url, data) => apiService.put(url, data);
+const del = (url) => apiService.delete(url);
 
-  // Anonymous user creation
-  async createAnonymousUser(userData) {
-    return this.post('/api/users/create', userData);
-  }
+// Auth API methods
+const userLogin = (credentials) => apiService.post('/api/auth/login', credentials);
+const userRegister = (userData) => apiService.post('/api/auth/register', userData);
 
-  // Get current user
-  async getCurrentUser() {
-    return this.get('/api/auth/me');
-  }
+// Content Management API methods
+const createModule = (moduleData) => apiService.post('/api/admin/modules', moduleData);
+const updateModule = (moduleId, moduleData) => apiService.put(`/api/admin/modules/${moduleId}`, moduleData);
+const deleteModule = (moduleId) => apiService.delete(`/api/admin/modules/${moduleId}`);
 
-  // =====================================================
-  // LEARNING ENDPOINTS
-  // =====================================================
+const createLesson = (lessonData) => apiService.post('/api/admin/lessons', lessonData);
+const updateLesson = (lessonId, lessonData) => apiService.put(`/api/admin/lessons/${lessonId}`, lessonData);
+const deleteLesson = (lessonId) => apiService.delete(`/api/admin/lessons/${lessonId}`);
 
-  // Get all learning modules
-  async getModules() {
-    return this.get('/api/learning/modules');
-  }
+const createQuiz = (quizData) => apiService.post('/api/admin/quizzes', quizData);
+const updateQuiz = (quizId, quizData) => apiService.put(`/api/admin/quizzes/${quizId}`, quizData);
+const deleteQuiz = (quizId) => apiService.delete(`/api/admin/quizzes/${quizId}`);
 
-  // Get specific module
-  async getModule(moduleId) {
-    return this.get(`/api/learning/modules/${moduleId}`);
-  }
+const createChallenge = (challengeData) => apiService.post('/api/admin/challenges', challengeData);
+const updateChallenge = (challengeId, challengeData) => apiService.put(`/api/admin/challenges/${challengeId}`, challengeData);
+const deleteChallenge = (challengeId) => apiService.delete(`/api/admin/challenges/${challengeId}`);
 
-  // Get module lessons
-  async getModuleLessons(moduleId) {
-    return this.get(`/api/learning/modules/${moduleId}/lessons`);
-  }
+const createBadge = (badgeData) => apiService.post('/api/admin/badges', badgeData);
+const updateBadge = (badgeId, badgeData) => apiService.put(`/api/admin/badges/${badgeId}`, badgeData);
+const deleteBadge = (badgeId) => apiService.delete(`/api/admin/badges/${badgeId}`);
 
-  // Get all quizzes
-  async getQuizzes() {
-    return this.get('/api/learning/quizzes');
-  }
-
-  // Get specific quiz
-  async getQuiz(quizId) {
-    return this.get(`/api/learning/quizzes/${quizId}`);
-  }
-
-  // Get challenges
-  async getChallenges() {
-    return this.get('/api/learning/challenges');
-  }
-
-  // Get badges
-  async getBadges() {
-    return this.get('/api/learning/badges');
-  }
-
-  // Get user learning stats
-  async getUserLearningStats(userId) {
-    return this.get(`/api/learning/stats/${userId}`);
-  }
-
-  // Get user progress
-  async getUserProgress(userId) {
-    return this.get(`/api/learning/user-progress/${userId}`);
-  }
-
-  // Update module progress
-  async updateModuleProgress(userId, moduleId, progressData) {
-    return this.put(`/api/learning/progress/${userId}/${moduleId}`, progressData);
-  }
-
-  // Submit quiz attempt
-  async submitQuizAttempt(attemptData) {
-    return this.post('/api/learning/quiz-attempt', attemptData);
-  }
-
-  // Join challenge
-  async joinChallenge(challengeId, userId) {
-    return this.post(`/api/learning/challenges/${challengeId}/join`, { userId });
-  }
-
-  // =====================================================
-  // USER PROFILE ENDPOINTS
-  // =====================================================
-
-  // Get user profile
-  async getUserProfile(userId) {
-    return this.get(`/api/users/${userId}`);
-  }
-
-  // Update user profile
-  async updateUserProfile(userId, profileData) {
-    return this.put(`/api/users/${userId}/profile`, profileData);
-  }
-
-  // Get user achievements
-  async getUserAchievements(userId) {
-    return this.get(`/api/users/${userId}/achievements`);
-  }
-
-  // Get user badges
-  async getUserBadges(userId) {
-    return this.get(`/api/users/${userId}/badges`);
-  }
-
-  // =====================================================
-  // COMMUNITY ENDPOINTS
-  // =====================================================
-
-  // Get community posts
-  async getCommunityPosts() {
-    return this.get('/api/posts');
-  }
-
-  // Create community post
-  async createCommunityPost(postData) {
-    return this.post('/api/posts', postData);
-  }
-
-  // Get honor wall items
-  async getHonorWallItems() {
-    return this.get('/api/posts');
-  }
-
-  // Get promise tracker items
-  async getPromiseTrackerItems() {
-    return this.get('/api/promises');
-  }
-
-  // =====================================================
-  // UTILITY METHODS
-  // =====================================================
-
-  // Check if server is available
-  async checkServerHealth() {
-    try {
-      const response = await fetch(`${this.baseURL}/api/health`);
-      return response.ok;
-    } catch (error) {
-      console.error('Server health check failed:', error);
-      return false;
-    }
-  }
-
-  // Handle offline mode
-  async handleOfflineMode() {
-    // Return cached data or fallback data
-    return {
-      modules: [
-        {
-          id: 1,
-          title: 'Kenyan Government 101',
-          category: 'government',
-          description: 'Learn about the structure and functions of the Kenyan government.',
-          estimated_duration: 15,
-          difficulty: 'Beginner',
-          xp_reward: 50,
-          lesson_count: 5,
-          is_featured: true,
-          image: '🏛️',
-        },
-        {
-          id: 2,
-          title: 'Citizen Rights & Responsibilities',
-          category: 'rights',
-          description: 'Understand your rights as a Kenyan citizen and your civic responsibilities.',
-          estimated_duration: 20,
-          difficulty: 'Intermediate',
-          xp_reward: 75,
-          lesson_count: 7,
-          is_featured: false,
-          image: '⚖️',
-        }
-      ],
-      quizzes: [
-        {
-          id: 1,
-          title: 'Government Structure Quiz',
-          description: 'Test your knowledge of Kenya\'s government structure',
-          difficulty: 'Beginner',
-          xp_reward: 25,
-          timeLimit: 300,
-          passingScore: 80,
-          question_count: 3,
-          image: '🧠',
-        }
-      ],
-      challenges: [
-        {
-          id: 1,
-          title: 'Community Hero',
-          description: 'Complete 5 learning modules in one week',
-          duration: '7 days',
-          difficulty: 'Intermediate',
-          xp_reward: 100,
-          participants: 45,
-          deadline: '2024-01-15',
-          image: '🎯',
-        }
-      ],
-      badges: [
-        {
-          id: 1,
-          title: 'First Steps',
-          description: 'Complete your first learning module',
-          icon: '🌟',
-          xp_reward: 10,
-          is_earned: true,
-          earned_date: '2024-01-10',
-        }
-      ],
-      userStats: {
-        completed_modules: 2,
-        quizzes_completed: 1,
-        challenges_participated: 1,
-        total_xp: 150,
-        learning_streak: 5,
-      },
-      userProgress: {
-        modules: [
-          {
-            module_id: 1,
-            progress_percentage: 60,
-            completed_lessons: 3,
-            is_completed: false,
-          }
-        ]
-      },
-    };
-  }
-}
-
-// Create singleton instance
-const apiService = new ApiService();
-
-export default apiService;
+// Export all methods
+export default {
+  // Learning methods
+  getModules,
+  getModule,
+  getChallenges,
+  getBadges,
+  getUserStats,
+  getUserLearningStats,
+  getLessons,
+  getUserProgress,
+  
+  // Admin methods
+  adminLogin,
+  getAdminDashboard,
+  getAdminUsers,
+  getAdminContent,
+  
+  // Admin Content Management methods
+  getAdminContentModules,
+  getAdminContentLessons,
+  getAdminContentQuizzes,
+  getAdminContentChallenges,
+  getAdminContentBadges,
+  
+  // Publishing Workflow methods
+  submitForReview,
+  approveContent,
+  rejectContent,
+  publishContent,
+  getModerationQueue,
+  getModerationStats,
+  
+  // Content Creation methods
+  createContent,
+  getUserContent,
+  getContentFeed,
+  
+  // Reddit-style voting methods
+  voteContent,
+  upvoteContent,
+  downvoteContent,
+  removeVote,
+  
+  commentOnContent,
+  
+  // Auth methods
+  userLogin,
+  userRegister,
+  
+  // Generic HTTP methods
+  post,
+  get,
+  put,
+  delete: del,
+  
+  // Content Management methods
+  createModule,
+  updateModule,
+  deleteModule,
+  createLesson,
+  updateLesson,
+  deleteLesson,
+  createQuiz,
+  updateQuiz,
+  deleteQuiz,
+  createChallenge,
+  updateChallenge,
+  deleteChallenge,
+  createBadge,
+  updateBadge,
+  deleteBadge,
+  
+  // Raw axios instance for custom requests
+  axios: apiService,
+  setCurrentUser
+};

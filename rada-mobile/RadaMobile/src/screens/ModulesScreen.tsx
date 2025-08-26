@@ -1,131 +1,137 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
-  Platform,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const { width: screenWidth } = Dimensions.get('window');
+import { useAuth } from '../contexts/AuthContext';
+import apiService from '../services/api';
 
 const ModulesScreen = ({ navigation }) => {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // API Data States
+  const [modules, setModules] = useState([]);
+  const [featuredModule, setFeaturedModule] = useState(null);
+  const [weeklyChallenge, setWeeklyChallenge] = useState(null);
+  const [userStats, setUserStats] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [visibleModules, setVisibleModules] = useState(3);
 
-  const categories = [
-    { id: 'all', label: 'All', icon: '📚' },
-    { id: 'constitution', label: 'Constitution', icon: '🏛️' },
-    { id: 'human-rights', label: 'Human Rights', icon: '⚖️' },
-    { id: 'civic-participation', label: 'Civic Participation', icon: '🗳️' },
-    { id: 'devolution', label: 'Devolution', icon: '🏢' },
-    { id: 'anti-corruption', label: 'Anti-Corruption', icon: '🛡️' },
-  ];
+  // Load data from API
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-  const userStats = {
-    total_xp: 125,
-    completed_modules: 1,
-    passed_quizzes: 3,
-    completed_challenges: 2,
-    learning_streak: 5,
-    earned_badges: 2
+      // Load all data in parallel
+      const [modulesResponse, challengesResponse, statsResponse] = await Promise.all([
+        apiService.getModules(),
+        apiService.getChallenges(),
+        user ? apiService.getUserLearningStats(user.id) : Promise.resolve(null)
+      ]);
+
+      // Extract data from responses
+      const modulesData = modulesResponse.data || modulesResponse;
+      const challengesData = challengesResponse.data || challengesResponse;
+      const statsData = statsResponse?.data || statsResponse;
+
+      setModules(modulesData);
+
+      // Set featured module
+      const featured = modulesData.find(m => m.is_featured) || modulesData[0];
+      setFeaturedModule(featured);
+
+      // Set weekly challenge
+      const weekly = challengesData.find(c => c.category === 'weekly' && c.active) || challengesData[0];
+      setWeeklyChallenge(weekly);
+
+      // Set user stats
+      if (statsData) {
+        setUserStats(statsData);
+      }
+
+    } catch (err) {
+      console.error('Error loading Modules data:', err);
+      setError('Failed to load modules. Please check your connection.');
+      
+      // Fallback to offline data
+      const offlineData = await apiService.handleOfflineMode();
+      setModules(offlineData.modules);
+      setFeaturedModule(offlineData.modules[0]);
+      setWeeklyChallenge(offlineData.challenges[0]);
+      setUserStats(offlineData.userStats);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const sampleModules = [
-    {
-      id: 1,
-      title: 'Kenyan Constitution Basics',
-      description: 'Learn about the fundamental principles of Kenya\'s 2010 Constitution',
-      image: '🏛️',
-      estimated_duration: 30,
-      difficulty: 'Beginner',
-      xp_reward: 50,
-      lesson_count: 5,
-      category: 'constitution',
-      is_featured: true,
-      progress: 0
-    },
-    {
-      id: 2,
-      title: 'Civic Rights & Responsibilities',
-      description: 'Understand your rights and responsibilities as a Kenyan citizen',
-      image: '⚖️',
-      estimated_duration: 25,
-      difficulty: 'Beginner',
-      xp_reward: 40,
-      lesson_count: 4,
-      category: 'human-rights',
-      is_featured: false,
-      progress: 25
-    },
-    {
-      id: 3,
-      title: 'Electoral Process',
-      description: 'Master the electoral process and voting procedures',
-      image: '🗳️',
-      estimated_duration: 35,
-      difficulty: 'Intermediate',
-      xp_reward: 60,
-      lesson_count: 6,
-      category: 'civic-participation',
-      is_featured: false,
-      progress: 0
-    },
-    {
-      id: 4,
-      title: 'Devolution & County Government',
-      description: 'Understand Kenya\'s devolved system of government',
-      image: '🏢',
-      estimated_duration: 40,
-      difficulty: 'Intermediate',
-      xp_reward: 70,
-      lesson_count: 7,
-      category: 'devolution',
-      is_featured: false,
-      progress: 0
-    },
-    {
-      id: 5,
-      title: 'Anti-Corruption & Ethics',
-      description: 'Learn about transparency, accountability, and ethical governance',
-      image: '🛡️',
-      estimated_duration: 45,
-      difficulty: 'Advanced',
-      xp_reward: 80,
-      lesson_count: 8,
-      category: 'anti-corruption',
-      is_featured: false,
-      progress: 0
-    }
-  ];
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Filter modules by category
   const filteredModules = selectedCategory === 'all' 
-    ? sampleModules 
-    : sampleModules.filter(module => module.category === selectedCategory);
+    ? modules 
+    : modules.filter(module => module.category === selectedCategory);
+
+  // Get unique categories
+  const categories = ['all', ...new Set(modules.map(m => m.category).filter(Boolean))];
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6B6B" />
+        <Text style={styles.loadingText}>Loading Modules...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
+          style={styles.backButton} 
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Learning Modules</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView 
         style={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
+        {/* Error Message */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Featured Module */}
-        {sampleModules.find(m => m.is_featured) && (
+        {featuredModule && (
           <View style={styles.featuredSection}>
             <Text style={styles.featuredTitle}>🌟 Featured This Week</Text>
             <TouchableOpacity style={styles.featuredCard}>
@@ -134,14 +140,16 @@ const ModulesScreen = ({ navigation }) => {
                 style={styles.featuredGradient}
               >
                 <View style={styles.featuredContent}>
-                  <Text style={styles.featuredIcon}>🏛️</Text>
+                  <Text style={styles.featuredIcon}>{featuredModule.icon || '🏛️'}</Text>
                   <View style={styles.featuredInfo}>
-                    <Text style={styles.featuredModuleTitle}>Kenyan Constitution Basics</Text>
+                    <Text style={styles.featuredModuleTitle}>{featuredModule.title}</Text>
                     <Text style={styles.featuredDescription}>
-                      Master the fundamentals of Kenya's government structure
+                      {featuredModule.description}
                     </Text>
                     <View style={styles.featuredMeta}>
-                      <Text style={styles.featuredMetaText}>⭐ 50 XP • 30 min • Beginner</Text>
+                      <Text style={styles.featuredMetaText}>
+                        ⭐ {featuredModule.xp_reward} XP • {featuredModule.estimated_duration} min • {featuredModule.difficulty}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -151,119 +159,104 @@ const ModulesScreen = ({ navigation }) => {
         )}
 
         {/* Weekly Challenge */}
-        <View style={styles.weeklyChallengeSection}>
-          <Text style={styles.weeklyChallengeTitle}>🔥 Weekly Challenge</Text>
-          <TouchableOpacity style={styles.weeklyChallengeCard}>
-            <LinearGradient
-              colors={['#ff6b6b', '#ee5a24']}
-              style={styles.weeklyChallengeGradient}
-            >
-              <View style={styles.weeklyChallengeContent}>
-                <Text style={styles.weeklyChallengeIcon}>🎓</Text>
-                <View style={styles.weeklyChallengeInfo}>
-                  <Text style={styles.weeklyChallengeTitleText}>Learning Week Challenge</Text>
-                  <Text style={styles.weeklyChallengeDescription}>
-                    Complete 5 civic education modules this week
-                  </Text>
-                  <View style={styles.weeklyChallengeMeta}>
-                    <Text style={styles.weeklyChallengeMetaText}>⭐ 180 XP • 7 days • 45 participants</Text>
+        {weeklyChallenge && (
+          <View style={styles.weeklyChallengeSection}>
+            <Text style={styles.weeklyChallengeTitle}>🔥 Weekly Challenge</Text>
+            <TouchableOpacity style={styles.weeklyChallengeCard}>
+              <LinearGradient
+                colors={['#ff6b6b', '#ee5a24']}
+                style={styles.weeklyChallengeGradient}
+              >
+                <View style={styles.weeklyChallengeContent}>
+                  <Text style={styles.weeklyChallengeIcon}>🎓</Text>
+                  <View style={styles.weeklyChallengeInfo}>
+                    <Text style={styles.weeklyChallengeTitleText}>{weeklyChallenge.title}</Text>
+                    <Text style={styles.weeklyChallengeDescription}>
+                      {weeklyChallenge.description}
+                    </Text>
+                    <View style={styles.weeklyChallengeMeta}>
+                      <Text style={styles.weeklyChallengeMetaText}>
+                        ⭐ {weeklyChallenge.xp_reward} XP • {weeklyChallenge.duration || '7 days'} • {weeklyChallenge.participants || 0} participants
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.weeklyChallengeBadge}>
+                    <Text style={styles.weeklyChallengeBadgeText}>WEEKLY</Text>
                   </View>
                 </View>
-                <View style={styles.weeklyChallengeBadge}>
-                  <Text style={styles.weeklyChallengeBadgeText}>WEEKLY</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Category Filter */}
         <View style={styles.categorySection}>
-          <Text style={styles.categoryTitle}>Filter by Category:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+          <Text style={styles.categoryTitle}>Browse by Category</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryScroll}
+          >
             {categories.map((category) => (
               <TouchableOpacity
-                key={category.id}
+                key={category}
                 style={[
                   styles.categoryChip,
-                  selectedCategory === category.id && styles.categoryChipActive
+                  selectedCategory === category && styles.categoryChipActive
                 ]}
-                onPress={() => setSelectedCategory(category.id)}
+                onPress={() => setSelectedCategory(category)}
               >
-                <Text style={styles.categoryChipIcon}>{category.icon}</Text>
                 <Text style={[
                   styles.categoryChipText,
-                  selectedCategory === category.id && styles.categoryChipTextActive
+                  selectedCategory === category && styles.categoryChipTextActive
                 ]}>
-                  {category.label}
+                  {category === 'all' ? 'All' : category.charAt(0).toUpperCase() + category.slice(1)}
                 </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        <Text style={styles.sectionTitle}>📚 Learning Modules</Text>
-        {filteredModules.slice(0, visibleModules).map((module) => (
-          <TouchableOpacity key={module.id} style={styles.moduleCard}>
-            <View style={styles.moduleHeader}>
-              <View style={styles.moduleImage}>
-                <Text style={styles.moduleImageText}>{module.image}</Text>
-              </View>
-              <View style={styles.moduleInfo}>
-                <Text style={styles.moduleTitle}>{module.title}</Text>
-                <Text style={styles.moduleDescription}>{module.description}</Text>
-                <View style={styles.moduleMeta}>
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaIcon}>⏱️</Text>
-                    <Text style={styles.metaText}>{module.estimated_duration} min</Text>
-                  </View>
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaIcon}>📊</Text>
-                    <Text style={styles.metaText}>{module.difficulty}</Text>
-                  </View>
-                  <View style={styles.metaItem}>
-                    <Text style={styles.metaIcon}>⭐</Text>
-                    <Text style={styles.metaText}>+{module.xp_reward} XP</Text>
+        {/* Learning Modules */}
+        <View style={styles.modulesSection}>
+          <Text style={styles.modulesTitle}>All Learning Modules</Text>
+          
+          {filteredModules.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No modules found for this category</Text>
+            </View>
+          ) : (
+            filteredModules.map((module) => (
+              <TouchableOpacity 
+                key={module.id} 
+                style={styles.moduleCard}
+                onPress={() => navigation.navigate('ModuleDetailScreen', { moduleId: module.id, module: module })}
+              >
+                <View style={styles.moduleHeader}>
+                  <Text style={styles.moduleIcon}>{module.icon || '📚'}</Text>
+                  <View style={styles.moduleInfo}>
+                    <Text style={styles.moduleTitle}>{module.title}</Text>
+                    <Text style={styles.moduleDescription}>{module.description}</Text>
+                    <View style={styles.moduleMeta}>
+                      <Text style={styles.moduleMetaText}>
+                        ⭐ {module.xp_reward} XP • {module.estimated_duration} min • {module.difficulty}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </View>
-            
-            {/* Progress Bar */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>
-                  {module.progress > 0 ? `${module.progress}% completed` : 'Not started'}
-                </Text>
-                <Text style={styles.progressPercentage}>{module.progress}%</Text>
-              </View>
-              <View style={styles.progressBar}>
-                <View 
-                  style={[
-                    styles.progressFill, 
-                    { width: `${module.progress}%` }
-                  ]} 
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.moduleButton}>
-              <Text style={styles.moduleButtonText}>
-                {module.progress === 100 ? 'Completed ✓' : 'Start Learning'}
-              </Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        ))}
-        
-        {/* Load More Button */}
-        {visibleModules < filteredModules.length && (
-          <TouchableOpacity 
-            style={styles.loadMoreButton}
-            onPress={() => setVisibleModules(prev => Math.min(prev + 3, filteredModules.length))}
-          >
-            <Text style={styles.loadMoreButtonText}>Load More Modules</Text>
-          </TouchableOpacity>
-        )}
+                <View style={styles.moduleFooter}>
+                  <Text style={styles.moduleCategory}>{module.category}</Text>
+                  <TouchableOpacity 
+                    style={styles.moduleButton}
+                    onPress={() => navigation.navigate('ModuleDetailScreen', { moduleId: module.id, module: module })}
+                  >
+                    <Text style={styles.moduleButtonText}>Start Learning</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -279,7 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FF6B6B',
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingTop: 50, // Adjusted for iOS status bar
     paddingBottom: 15,
     paddingHorizontal: 20,
   },
@@ -297,58 +290,44 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  headerSpacer: {
-    width: 60,
-  },
   content: {
     flex: 1,
     padding: 20,
   },
-  progressSummary: {
-    backgroundColor: 'white',
-    borderRadius: 16,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f7',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+    fontSize: 16,
+  },
+  errorContainer: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 12,
     padding: 20,
     marginBottom: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  progressTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  progressGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  progressCard: {
-    width: screenWidth < 400 ? '48%' : '48%',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: screenWidth < 400 ? 12 : 16,
-    marginBottom: 12,
     alignItems: 'center',
   },
-  progressIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  progressNumber: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FF6B6B',
-    marginBottom: 4,
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: '#666',
+  errorText: {
+    color: '#856404',
+    fontSize: 14,
     textAlign: 'center',
+    marginBottom: 15,
+  },
+  retryButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
   },
   featuredSection: {
     marginBottom: 20,
@@ -502,16 +481,35 @@ const styles = StyleSheet.create({
   categoryChipTextActive: {
     color: 'white',
   },
-  sectionTitle: {
+  modulesSection: {
+    marginTop: 20,
+  },
+  modulesTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#333',
     marginBottom: 8,
   },
+  emptyState: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 12,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  emptyStateText: {
+    color: '#666',
+    fontSize: 14,
+  },
   moduleCard: {
     backgroundColor: 'white',
     borderRadius: 12,
-    padding: screenWidth < 400 ? 12 : 16,
+    padding: 16,
     marginBottom: 12,
     elevation: 2,
     shadowColor: '#000',
@@ -521,19 +519,12 @@ const styles = StyleSheet.create({
   },
   moduleHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  moduleImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+  moduleIcon: {
+    fontSize: 36,
     marginRight: 12,
-  },
-  moduleImageText: {
-    fontSize: 24,
   },
   moduleInfo: {
     flex: 1,
@@ -552,71 +543,28 @@ const styles = StyleSheet.create({
   moduleMeta: {
     flexDirection: 'row',
   },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  metaIcon: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  metaText: {
+  moduleMetaText: {
     fontSize: 12,
     color: '#666',
   },
-  progressContainer: {
-    marginBottom: 12,
-  },
-  progressHeader: {
+  moduleFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginTop: 12,
   },
-  progressLabel: {
+  moduleCategory: {
     fontSize: 12,
     color: '#666',
-  },
-  progressPercentage: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FF6B6B',
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#FF6B6B',
-    borderRadius: 3,
   },
   moduleButton: {
     backgroundColor: '#FF6B6B',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
     borderRadius: 8,
-    alignItems: 'center',
   },
   moduleButtonText: {
     color: 'white',
-    fontWeight: '600',
-  },
-  loadMoreButton: {
-    backgroundColor: '#f8f9fa',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  loadMoreButtonText: {
-    color: '#666',
     fontWeight: '600',
     fontSize: 14,
   },

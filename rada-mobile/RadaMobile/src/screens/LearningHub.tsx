@@ -6,22 +6,113 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
-  Modal,
-  ActivityIndicator,
   RefreshControl,
+  ActivityIndicator,
+  Alert,
   Platform,
-  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import apiService from '../services/api';
 
 const LearningHub = ({ navigation }) => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // API Data States
+  const [featuredModule, setFeaturedModule] = useState(null);
+  const [weeklyChallenge, setWeeklyChallenge] = useState(null);
+  const [themedChallenges, setThemedChallenges] = useState([]);
+  const [userStats, setUserStats] = useState(null);
+
+  // Load data from API
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Load all data in parallel
+      const [modulesResponse, challengesResponse, statsResponse] = await Promise.all([
+        apiService.getModules(),
+        apiService.getChallenges(),
+        user ? apiService.getUserLearningStats(user.id) : Promise.resolve(null)
+      ]);
+
+      // Extract data from responses
+      const modules = modulesResponse.data || modulesResponse;
+      const challenges = challengesResponse.data || challengesResponse;
+      const stats = statsResponse?.data || statsResponse;
+
+      // Set featured module (first featured module or first module)
+      const featured = modules.find(m => m.is_featured) || modules[0];
+      setFeaturedModule(featured);
+
+      // Set weekly challenge (first active challenge)
+      const weekly = challenges.find(c => c.category === 'weekly' && c.active) || challenges[0];
+      setWeeklyChallenge(weekly);
+
+      // Set themed challenges (other active challenges)
+      const themed = challenges.filter(c => c.category !== 'weekly' && c.active).slice(0, 2);
+      setThemedChallenges(themed);
+
+      // Set user stats
+      if (stats) {
+        setUserStats(stats);
+      }
+
+    } catch (err) {
+      console.error('Error loading Learning Hub data:', err);
+      setError('Failed to load content. Please check your connection.');
+      
+      // Fallback to offline data
+      const offlineData = await apiService.handleOfflineMode();
+      setFeaturedModule(offlineData.modules[0]);
+      setWeeklyChallenge(offlineData.challenges[0]);
+      setThemedChallenges(offlineData.challenges.slice(1, 3));
+      setUserStats(offlineData.userStats);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Handle navigation to different screens
+  const handleFeaturePress = (feature) => {
+    navigation.navigate(feature.screen);
+  };
+
+  const renderBentoCard = (feature) => {
+    return (
+      <TouchableOpacity
+        key={feature.key}
+        style={styles.bentoCard}
+        onPress={() => handleFeaturePress(feature)}
+      >
+        <LinearGradient
+          colors={[feature.color, feature.color + '80']}
+          style={styles.bentoContent}
+        >
+          <Text style={styles.bentoIcon}>{feature.icon}</Text>
+          <Text style={styles.bentoTitle}>{feature.label}</Text>
+          <Text style={styles.bentoDescription}>{feature.description}</Text>
+          <View style={styles.bentoArrow}>
+            <Text style={styles.arrowText}>→</Text>
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  };
 
   const features = [
     { 
@@ -62,39 +153,14 @@ const LearningHub = ({ navigation }) => {
     },
   ];
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    // Simulate data refresh
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
-
-  const handleFeaturePress = (feature) => {
-    navigation.navigate(feature.screen);
-  };
-
-  const renderBentoCard = (feature) => {
+  if (isLoading) {
     return (
-      <TouchableOpacity
-        key={feature.key}
-        style={styles.bentoCard}
-        onPress={() => handleFeaturePress(feature)}
-      >
-        <LinearGradient
-          colors={[feature.color, feature.color + '80']}
-          style={styles.bentoContent}
-        >
-          <Text style={styles.bentoIcon}>{feature.icon}</Text>
-          <Text style={styles.bentoTitle}>{feature.label}</Text>
-          <Text style={styles.bentoDescription}>{feature.description}</Text>
-          <View style={styles.bentoArrow}>
-            <Text style={styles.arrowText}>→</Text>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6B6B" />
+        <Text style={styles.loadingText}>Loading Learning Hub...</Text>
+      </View>
     );
-  };
+  }
 
   return (
     <View style={styles.container}>
@@ -123,103 +189,108 @@ const LearningHub = ({ navigation }) => {
             {features.map(renderBentoCard)}
           </View>
 
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Featured Content */}
-          <View style={styles.featuredSection}>
-            <Text style={styles.featuredTitle}>🌟 Featured This Week</Text>
-            <TouchableOpacity style={styles.featuredCard}>
-              <LinearGradient
-                colors={['#FF6B6B', '#4ECDC4']}
-                style={styles.featuredGradient}
-              >
-                <View style={styles.featuredContent}>
-                  <Text style={styles.featuredIcon}>🏛️</Text>
-                  <View style={styles.featuredInfo}>
-                    <Text style={styles.featuredModuleTitle}>Kenyan Constitution Basics</Text>
-                    <Text style={styles.featuredDescription}>
-                      Master the fundamentals of Kenya's government structure
-                    </Text>
-                    <View style={styles.featuredMeta}>
-                      <Text style={styles.featuredMetaText}>⭐ 50 XP • 30 min • Beginner</Text>
+          {featuredModule && (
+            <View style={styles.featuredSection}>
+              <Text style={styles.featuredTitle}>🌟 Featured This Week</Text>
+              <TouchableOpacity style={styles.featuredCard}>
+                <LinearGradient
+                  colors={['#FF6B6B', '#4ECDC4']}
+                  style={styles.featuredGradient}
+                >
+                  <View style={styles.featuredContent}>
+                    <Text style={styles.featuredIcon}>{featuredModule.icon || '🏛️'}</Text>
+                    <View style={styles.featuredInfo}>
+                      <Text style={styles.featuredModuleTitle}>{featuredModule.title}</Text>
+                      <Text style={styles.featuredDescription}>
+                        {featuredModule.description}
+                      </Text>
+                      <View style={styles.featuredMeta}>
+                        <Text style={styles.featuredMetaText}>
+                          ⭐ {featuredModule.xp_reward} XP • {featuredModule.estimated_duration} min • {featuredModule.difficulty}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Weekly Challenge */}
-          <View style={styles.weeklyChallengeSection}>
-            <Text style={styles.weeklyChallengeTitle}>🔥 Weekly Challenge</Text>
-            <TouchableOpacity style={styles.weeklyChallengeCard}>
-              <LinearGradient
-                colors={['#ff6b6b', '#ee5a24']}
-                style={styles.weeklyChallengeGradient}
-              >
-                <View style={styles.weeklyChallengeContent}>
-                  <Text style={styles.weeklyChallengeIcon}>🎓</Text>
-                  <View style={styles.weeklyChallengeInfo}>
-                    <Text style={styles.weeklyChallengeTitleText}>Learning Week Challenge</Text>
-                    <Text style={styles.weeklyChallengeDescription}>
-                      Complete 5 civic education modules this week
-                    </Text>
-                    <View style={styles.weeklyChallengeMeta}>
-                      <Text style={styles.weeklyChallengeMetaText}>⭐ 180 XP • 7 days • 45 participants</Text>
+          {weeklyChallenge && (
+            <View style={styles.weeklyChallengeSection}>
+              <Text style={styles.weeklyChallengeTitle}>🔥 Weekly Challenge</Text>
+              <TouchableOpacity style={styles.weeklyChallengeCard}>
+                <LinearGradient
+                  colors={['#ff6b6b', '#ee5a24']}
+                  style={styles.weeklyChallengeGradient}
+                >
+                  <View style={styles.weeklyChallengeContent}>
+                    <Text style={styles.weeklyChallengeIcon}>🎓</Text>
+                    <View style={styles.weeklyChallengeInfo}>
+                      <Text style={styles.weeklyChallengeTitleText}>{weeklyChallenge.title}</Text>
+                      <Text style={styles.weeklyChallengeDescription}>
+                        {weeklyChallenge.description}
+                      </Text>
+                      <View style={styles.weeklyChallengeMeta}>
+                        <Text style={styles.weeklyChallengeMetaText}>
+                          ⭐ {weeklyChallenge.xp_reward} XP • {weeklyChallenge.duration || '7 days'} • {weeklyChallenge.participants || 0} participants
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.weeklyChallengeBadge}>
+                      <Text style={styles.weeklyChallengeBadgeText}>WEEKLY</Text>
                     </View>
                   </View>
-                  <View style={styles.weeklyChallengeBadge}>
-                    <Text style={styles.weeklyChallengeBadgeText}>WEEKLY</Text>
-                  </View>
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* This Week's Themed Challenges */}
-          <View style={styles.themedChallengesSection}>
-            <Text style={styles.themedChallengesTitle}>🎯 This Week's Themed Challenges</Text>
-            
-            <TouchableOpacity style={[styles.themedChallengeCard, styles.themedChallengeCard1]}>
-              <View style={styles.themedChallengeHeader}>
-                <View style={styles.themedChallengeIcon}>
-                  <Text style={styles.themedChallengeIconText}>🕯️</Text>
-                </View>
-                <View style={styles.themedChallengeInfo}>
-                  <Text style={styles.themedChallengeTitle}>Memorial Monday</Text>
-                  <Text style={styles.themedChallengeDescription}>Light candles for 10 civic memory entries</Text>
-                  <View style={styles.themedChallengeMeta}>
-                    <Text style={styles.themedChallengeMetaText}>⭐ 50 XP • 1 week • 120 participants</Text>
+          {themedChallenges.length > 0 && (
+            <View style={styles.themedChallengesSection}>
+              <Text style={styles.themedChallengesTitle}>🎯 This Week's Themed Challenges</Text>
+              
+              {themedChallenges.map((challenge, index) => (
+                <TouchableOpacity key={challenge.id} style={[styles.themedChallengeCard, styles[`themedChallengeCard${index + 1}`]]}>
+                  <View style={styles.themedChallengeHeader}>
+                    <View style={styles.themedChallengeIcon}>
+                      <Text style={styles.themedChallengeIconText}>🎯</Text>
+                    </View>
+                    <View style={styles.themedChallengeInfo}>
+                      <Text style={styles.themedChallengeTitle}>{challenge.title}</Text>
+                      <Text style={styles.themedChallengeDescription}>{challenge.description}</Text>
+                      <View style={styles.themedChallengeMeta}>
+                        <Text style={styles.themedChallengeMetaText}>
+                          ⭐ {challenge.xp_reward} XP • {challenge.duration || '7 days'} • {challenge.participants || 0} participants
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                </View>
-              </View>
-              <View style={styles.themedChallengeFooter}>
-                <Text style={styles.themedChallengeDeadline}>Deadline: 2024-01-22</Text>
-                <TouchableOpacity style={styles.themedChallengeButton}>
-                  <Text style={styles.themedChallengeButtonText}>Join Challenge</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.themedChallengeCard, styles.themedChallengeCard2]}>
-              <View style={styles.themedChallengeHeader}>
-                <View style={styles.themedChallengeIcon}>
-                  <Text style={styles.themedChallengeIconText}>🔍</Text>
-                </View>
-                <View style={styles.themedChallengeInfo}>
-                  <Text style={styles.themedChallengeTitle}>Accountability Week</Text>
-                  <Text style={styles.themedChallengeDescription}>Submit evidence for 3 budget promises</Text>
-                  <View style={styles.themedChallengeMeta}>
-                    <Text style={styles.themedChallengeMetaText}>⭐ 150 XP • 7 days • 85 participants</Text>
+                  <View style={styles.themedChallengeFooter}>
+                    <Text style={styles.themedChallengeDeadline}>
+                      Deadline: {challenge.end_date || '2024-01-29'}
+                    </Text>
+                    <TouchableOpacity style={styles.themedChallengeButton}>
+                      <Text style={styles.themedChallengeButtonText}>Join Challenge</Text>
+                    </TouchableOpacity>
                   </View>
-                </View>
-              </View>
-              <View style={styles.themedChallengeFooter}>
-                <Text style={styles.themedChallengeDeadline}>Deadline: 2024-01-29</Text>
-                <TouchableOpacity style={styles.themedChallengeButton}>
-                  <Text style={styles.themedChallengeButtonText}>Join Challenge</Text>
                 </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -547,6 +618,45 @@ const styles = StyleSheet.create({
   arrowText: {
     fontSize: 24,
     color: 'white',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f7',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#666',
+  },
+  errorContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    marginTop: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  retryButton: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

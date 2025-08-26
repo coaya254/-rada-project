@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,71 +6,65 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
+import apiService from '../services/api';
 
 const QuizzesScreen = ({ navigation }) => {
-  const sampleQuizzes = [
-    {
-      id: 1,
-      title: 'Constitution Quiz',
-      description: 'Test your knowledge of the Kenyan Constitution',
-      question_count: 10,
-      time_limit: 300,
-      xp_reward: 25,
-      difficulty: 'Beginner',
-      completed: false,
-      best_score: 0,
-      attempts: 0
-    },
-    {
-      id: 2,
-      title: 'Civic Rights Quiz',
-      description: 'Challenge yourself on civic rights and responsibilities',
-      question_count: 15,
-      time_limit: 450,
-      xp_reward: 35,
-      difficulty: 'Intermediate',
-      completed: true,
-      best_score: 85,
-      attempts: 2
-    },
-    {
-      id: 3,
-      title: 'Electoral Process Quiz',
-      description: 'Master the electoral process and voting procedures',
-      question_count: 12,
-      time_limit: 360,
-      xp_reward: 30,
-      difficulty: 'Intermediate',
-      completed: false,
-      best_score: 0,
-      attempts: 0
-    },
-    {
-      id: 4,
-      title: 'Devolution Quiz',
-      description: 'Test your understanding of Kenya\'s devolved system',
-      question_count: 8,
-      time_limit: 240,
-      xp_reward: 20,
-      difficulty: 'Beginner',
-      completed: false,
-      best_score: 0,
-      attempts: 0
-    },
-    {
-      id: 5,
-      title: 'Anti-Corruption Quiz',
-      description: 'Learn about transparency and ethical governance',
-      question_count: 18,
-      time_limit: 540,
-      xp_reward: 40,
-      difficulty: 'Advanced',
-      completed: false,
-      best_score: 0,
-      attempts: 0
+  const [quizzes, setQuizzes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadQuizzes();
+  }, []);
+
+  const loadQuizzes = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.getAdminContentQuizzes();
+      const quizData = response.quizzes || [];
+      
+      // Transform quiz data to include progress info
+      const quizzesWithProgress = quizData.map(quiz => ({
+        ...quiz,
+        question_count: quiz.questions ? quiz.questions.length : 0,
+        completed: false, // TODO: Get from user progress
+        best_score: 0,    // TODO: Get from user progress
+        attempts: 0       // TODO: Get from user progress
+      }));
+      
+      setQuizzes(quizzesWithProgress);
+    } catch (error) {
+      console.error('Error loading quizzes:', error);
+      // Fallback to sample data if API fails
+      setQuizzes([
+        {
+          id: 1,
+          title: 'Constitution Quiz',
+          description: 'Test your knowledge of the Kenyan Constitution',
+          question_count: 10,
+          time_limit: 300,
+          xp_reward: 25,
+          difficulty: 'beginner',
+          completed: false,
+          best_score: 0,
+          attempts: 0
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  const handleStartQuiz = (quiz) => {
+    if (quiz.completed) {
+      Alert.alert('Quiz Completed', 'You have already completed this quiz!');
+      return;
+    }
+    
+    // Navigate to quiz taking screen
+    navigation.navigate('QuizTakingScreen', { quiz });
+  };
 
   return (
     <View style={styles.container}>
@@ -93,7 +87,7 @@ const QuizzesScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>🧠 Quick Quizzes</Text>
         <Text style={styles.sectionSubtitle}>Test your civic knowledge and earn XP</Text>
         
-        {sampleQuizzes.map((quiz) => (
+        {quizzes.map((quiz) => (
           <TouchableOpacity key={quiz.id} style={styles.quizCard}>
             <View style={styles.quizHeader}>
               <View style={styles.quizInfo}>
@@ -140,10 +134,13 @@ const QuizzesScreen = ({ navigation }) => {
               </View>
             )}
 
-            <TouchableOpacity style={[
-              styles.quizButton,
-              quiz.completed && styles.completedQuizButton
-            ]}>
+            <TouchableOpacity 
+              style={[
+                styles.quizButton,
+                quiz.completed && styles.completedQuizButton
+              ]}
+              onPress={() => handleStartQuiz(quiz)}
+            >
               <Text style={[
                 styles.quizButtonText,
                 quiz.completed && styles.completedQuizButtonText

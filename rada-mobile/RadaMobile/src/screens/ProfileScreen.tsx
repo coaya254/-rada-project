@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
+import AdminLoginScreen from './AdminLoginScreen';
+import AdminDashboard from './AdminDashboard';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +23,8 @@ const ProfileScreen = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [adminLoginVisible, setAdminLoginVisible] = useState(false);
+  const [adminDashboardVisible, setAdminDashboardVisible] = useState(false);
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: false,
@@ -51,6 +55,41 @@ const ProfileScreen = () => {
     { icon: '📄', label: 'Terms of Service', action: () => Alert.alert('Terms of Service', 'View our terms of service') },
     { icon: 'ℹ️', label: 'About Rada.ke', action: () => Alert.alert('About Rada.ke', 'Learn more about our mission and team') },
   ];
+
+  // Admin access button (hidden for regular users)
+  const adminAccessButton = (
+    <TouchableOpacity 
+      style={styles.adminButton}
+      onPress={() => setAdminLoginVisible(true)}
+    >
+      <LinearGradient
+        colors={['#FF6B6B', '#4ECDC4']}
+        style={styles.adminGradient}
+      >
+        <Text style={styles.adminEmoji}>👑</Text>
+        <Text style={styles.adminText}>Admin Access</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
+  // Handle admin login success
+  const handleAdminLoginSuccess = () => {
+    setAdminLoginVisible(false);
+    setAdminDashboardVisible(true);
+  };
+
+  // Check if user is admin and show admin dashboard
+  const checkAdminStatus = () => {
+    if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      setAdminDashboardVisible(true);
+      setAdminLoginVisible(false);
+    }
+  };
+
+  // Listen for user role changes
+  React.useEffect(() => {
+    checkAdminStatus();
+  }, [user?.role]);
 
   const handleSettingToggle = (key) => {
     setSettings(prev => ({
@@ -464,6 +503,11 @@ const ProfileScreen = () => {
 
               <View style={styles.menuDivider} />
 
+              {/* Admin Access */}
+              {adminAccessButton}
+
+              <View style={styles.menuDivider} />
+
               {/* Account Actions */}
               <View style={styles.menuSection}>
                 <Text style={styles.menuSectionTitle}>Account</Text>
@@ -491,6 +535,26 @@ const ProfileScreen = () => {
             </ScrollView>
           </View>
         </View>
+      </Modal>
+
+      {/* Admin Login Modal */}
+      <Modal
+        visible={adminLoginVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setAdminLoginVisible(false)}
+      >
+        <AdminLoginScreen onClose={() => setAdminLoginVisible(false)} onSuccess={handleAdminLoginSuccess} />
+      </Modal>
+
+      {/* Admin Dashboard Modal */}
+      <Modal
+        visible={adminDashboardVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setAdminDashboardVisible(false)}
+      >
+        <AdminDashboard onClose={() => setAdminDashboardVisible(false)} />
       </Modal>
     </SafeAreaView>
   );
@@ -986,6 +1050,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  // Admin Button Styles
+  adminButton: {
+    marginHorizontal: 15,
+    marginVertical: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  adminGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  adminEmoji: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  adminText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 

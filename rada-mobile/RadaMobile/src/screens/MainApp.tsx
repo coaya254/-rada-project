@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,19 +7,27 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../contexts/AuthContext';
-import HonorWall from './HonorWall';
-import PromiseTracker from './PromiseTracker';
+import CommunityScreen from './CommunityScreen';
+import PoliticalArchiveScreen from './PoliticalArchiveScreen';
+import PoliticianDetailScreen from './PoliticianDetailScreen';
+import ProfileScreen from './ProfileScreen';
+import { NavigationContainer } from '@react-navigation/native';
 import LearningHub from './LearningHub';
 import ModulesScreen from './ModulesScreen';
 import QuizzesScreen from './QuizzesScreen';
+import QuizTakingScreen from './QuizTakingScreen';
 import ChallengesScreen from './ChallengesScreen';
 import BadgesScreen from './BadgesScreen';
-import ProfileScreen from './ProfileScreen';
+import ModuleDetailScreen from './ModuleDetailScreen';
+import ContentCreatorModal from './ContentCreatorModal';
+import AdminLoginScreen from './AdminLoginScreen';
+import AdminDashboard from './AdminDashboard';
+import YouthHubScreen from './YouthHubScreen';
 
 const Stack = createStackNavigator();
 
@@ -28,21 +36,77 @@ const LearningStack = () => (
     <Stack.Screen name="LearningHubMain" component={LearningHub} />
     <Stack.Screen name="ModulesScreen" component={ModulesScreen} />
     <Stack.Screen name="QuizzesScreen" component={QuizzesScreen} />
+    <Stack.Screen name="QuizTakingScreen" component={QuizTakingScreen} />
     <Stack.Screen name="ChallengesScreen" component={ChallengesScreen} />
     <Stack.Screen name="BadgesScreen" component={BadgesScreen} />
+    <Stack.Screen name="ModuleDetailScreen" component={ModuleDetailScreen} />
+  </Stack.Navigator>
+);
+
+const PoliticalArchiveStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="PoliticalArchiveMain" component={PoliticalArchiveScreen} />
+    <Stack.Screen name="PoliticianDetail" component={PoliticianDetailScreen} />
+  </Stack.Navigator>
+);
+
+const AdminStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
+    <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
   </Stack.Navigator>
 );
 
 const MainApp = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
-  const [userXP, setUserXP] = useState(user?.xp_points || 0);
-  const [dayStreak, setDayStreak] = useState(user?.streak || 0);
+  const [showSpeedDial, setShowSpeedDial] = useState(false);
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [selectedContentType, setSelectedContentType] = useState('story');
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(50));
+
+  const speedDialItems = [
+    { icon: '✍️', label: 'Story', type: 'story', color: '#FF6B6B' },
+    { icon: '📝', label: 'Poem', type: 'poem', color: '#4ECDC4' },
+    { icon: '📊', label: 'Evidence', type: 'evidence', color: '#2196F3' },
+    { icon: '🎯', label: 'Report', type: 'report', color: '#FF9800' },
+  ];
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const toggleSpeedDial = () => {
+    setShowSpeedDial(!showSpeedDial);
+  };
+
+  const handleContentTypeSelect = (type: string) => {
+    setSelectedContentType(type);
+    setShowContentModal(true);
+    setShowSpeedDial(false);
+  };
+
+  const closeContentModal = () => {
+    setShowContentModal(false);
+  };
 
   const tabs = [
     { id: 'home', icon: '🏠', label: 'Home' },
-    { id: 'honor', icon: '🏛️', label: 'Honor' },
-    { id: 'track', icon: '📊', label: 'Track' },
+    { id: 'youth', icon: '🧑‍🎓', label: 'Youth' },
+    { id: 'community', icon: '🌟', label: 'Community' },
+    { id: 'politics', icon: '🏛️', label: 'Politics' },
     { id: 'learn', icon: '📚', label: 'Learn' },
     { id: 'profile', icon: '👤', label: 'Profile' },
   ];
@@ -69,12 +133,12 @@ const MainApp = () => {
         <View style={styles.quickStats}>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>⭐</Text>
-            <Text style={styles.statValue}>{userXP.toLocaleString()}</Text>
+            <Text style={styles.statValue}>{user?.xp_points || 0}</Text>
             <Text style={styles.statLabel}>XP</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>🔥</Text>
-            <Text style={styles.statValue}>{dayStreak}</Text>
+            <Text style={styles.statValue}>{user?.streak || 0}</Text>
             <Text style={styles.statLabel}>Streak</Text>
           </View>
           <View style={styles.statCard}>
@@ -239,10 +303,16 @@ const MainApp = () => {
     switch (activeTab) {
       case 'home':
         return renderHomeContent();
-      case 'honor':
-        return <HonorWall />;
-      case 'track':
-        return <PromiseTracker />;
+      case 'youth':
+        return <YouthHubScreen />;
+      case 'community':
+        return <CommunityScreen />;
+      case 'politics':
+        return (
+          <NavigationContainer>
+            <PoliticalArchiveStack />
+          </NavigationContainer>
+        );
       case 'learn':
         return (
           <NavigationContainer>
@@ -263,10 +333,51 @@ const MainApp = () => {
       {/* Main Content with Scrollable Header */}
       {renderTabContent()}
 
-      {/* Floating Action Button */}
-      <TouchableOpacity style={styles.floatingAction}>
-        <Text style={styles.floatingActionIcon}>✏️</Text>
-      </TouchableOpacity>
+      {/* Speed Dial - Only show on Community tab */}
+      {activeTab === 'community' && showSpeedDial && (
+        <Animated.View 
+          style={[
+            styles.speedDial,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }
+          ]}
+        >
+          {speedDialItems.map((item, index) => (
+            <Animated.View
+              key={item.type}
+              style={[
+                styles.speedDialItem,
+                {
+                  transform: [{ translateY: slideAnim }],
+                  opacity: fadeAnim,
+                }
+              ]}
+            >
+              <Text style={styles.speedDialLabel}>{item.label}</Text>
+              <TouchableOpacity
+                style={[styles.speedDialButton, { backgroundColor: item.color }]}
+                onPress={() => handleContentTypeSelect(item.type)}
+              >
+                <Text style={styles.speedDialButtonText}>{item.icon}</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+        </Animated.View>
+      )}
+
+      {/* Floating Action Button - Only show on Community tab */}
+      {activeTab === 'community' && (
+        <TouchableOpacity 
+          style={[styles.floatingAction, showSpeedDial && styles.floatingActionActive]} 
+          onPress={toggleSpeedDial}
+        >
+          <Text style={styles.floatingActionIcon}>
+            {showSpeedDial ? '✕' : '✏️'}
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
@@ -285,6 +396,14 @@ const MainApp = () => {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Content Creator Modal */}
+      <ContentCreatorModal
+        isVisible={showContentModal}
+        onClose={closeContentModal}
+        contentType={selectedContentType}
+        user={user}
+      />
     </SafeAreaView>
   );
 };
@@ -709,14 +828,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
+  floatingActionActive: {
+    backgroundColor: '#FF6B6B',
+    transform: [{ rotate: '45deg' }],
+  },
   floatingActionIcon: {
     fontSize: 24,
   },
   bottomNav: {
     flexDirection: 'row',
     backgroundColor: 'white',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     elevation: 8,
@@ -728,27 +851,66 @@ const styles = StyleSheet.create({
   navItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   navItemActive: {
     // Active state styling
   },
   navIcon: {
-    fontSize: 20,
-    marginBottom: 4,
+    fontSize: 18,
+    marginBottom: 2,
     opacity: 0.6,
   },
   navIconActive: {
     opacity: 1,
   },
   navLabel: {
-    fontSize: 10,
+    fontSize: 8,
     color: '#666',
     fontWeight: '500',
   },
   navLabelActive: {
     color: '#FFD700',
     fontWeight: '600',
+  },
+  speedDial: {
+    position: 'absolute',
+    bottom: 170,
+    right: 20,
+    alignItems: 'flex-end',
+  },
+  speedDialItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  speedDialLabel: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    color: 'white',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    fontSize: 12,
+    fontWeight: '600',
+    marginRight: 12,
+    maxWidth: 80,
+    textAlign: 'center',
+  },
+  speedDialButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  speedDialButtonText: {
+    fontSize: 20,
+    color: 'white',
   },
 });
 export default MainApp;
