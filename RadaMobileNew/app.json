@@ -1,0 +1,122 @@
+{
+  "expo": {
+    "name": "Rada - Legal Learning Platform",
+    "slug": "rada-legal-learning",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "description": "Master legal knowledge through interactive lessons, quizzes, and social learning. Built for digital natives with gamification, offline sync, and AI-powered insights.",
+    "keywords": ["legal", "education", "learning", "law", "civics", "constitution", "quiz", "social learning"],
+    "privacy": "public",
+    "platforms": ["ios", "android", "web"],
+    "githubUrl": "https://github.com/your-username/rada-mobile",
+    "primaryColor": "#667eea",
+    "backgroundColor": "#f8fafc",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#667eea"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rada.legallearning",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to scan documents and take photos for learning materials.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to save and share learning content.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone for voice notes and audio learning features.",
+        "NSLocationWhenInUseUsageDescription": "This app uses location to provide location-based learning content and study groups.",
+        "UIBackgroundModes": ["background-fetch", "background-processing"],
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "associatedDomains": ["applinks:rada.legal"],
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#667eea"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.rada.legallearning",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "rada.legal"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id-here"
+    },
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#667eea"
+    },
+    "scheme": "rada",
+    "plugins": [
+      "expo-notifications",
+      "expo-camera",
+      "expo-media-library",
+      "expo-location",
+      "expo-file-system",
+      "expo-sharing",
+      "expo-av",
+      "expo-web-browser",
+      "expo-linking",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-device",
+      "expo-application",
+      "expo-constants",
+      "expo-status-bar",
+      "expo-splash-screen",
+      "expo-font",
+      "expo-linear-gradient",
+      "expo-haptics",
+      "expo-document-picker",
+      "expo-image-picker",
+      "expo-updates"
+    ]
+  }
+}
