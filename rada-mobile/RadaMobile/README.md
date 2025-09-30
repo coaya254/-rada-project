@@ -1,8 +1,8 @@
 # Rada.ke Mobile App
 
-A comprehensive React Native mobile application for civic engagement and government accountability in Kenya. This app empowers citizens to track government promises, share evidence, learn about civic rights, and build community recognition.
+A comprehensive React Native mobile application for civic engagement and government accountability in Kenya. This app empowers citizens to track government promises, share evidence, learn about civic rights, and build community recognition.io
 
-## 🚀 Features
+## 🚀 Featuresp
 
 ### 🏠 **Home Dashboard**
 - **Featured Content**: Top stories and trending civic actions

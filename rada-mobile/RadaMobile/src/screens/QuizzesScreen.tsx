@@ -36,21 +36,8 @@ const QuizzesScreen = ({ navigation }) => {
       setQuizzes(quizzesWithProgress);
     } catch (error) {
       console.error('Error loading quizzes:', error);
-      // Fallback to sample data if API fails
-      setQuizzes([
-        {
-          id: 1,
-          title: 'Constitution Quiz',
-          description: 'Test your knowledge of the Kenyan Constitution',
-          question_count: 10,
-          time_limit: 300,
-          xp_reward: 25,
-          difficulty: 'beginner',
-          completed: false,
-          best_score: 0,
-          attempts: 0
-        }
-      ]);
+      // No fallback data - use real API data only
+      console.error('❌ QuizzesScreen - API failed, no fallback data');
     } finally {
       setIsLoading(false);
     }

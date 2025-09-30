@@ -1,17 +1,40 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.100.41:5001';
+const API_BASE_URL = 'http://localhost:5001'; // Using localhost for development
 
-const apiService = axios.create({
+// Enhanced API configuration with better error handling
+const API_CONFIG = {
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000, // Increased timeout for mobile
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
+  validateStatus: function (status) {
+    return status >= 200 && status < 500; // Don't reject if status is not 2xx
+  }
+};
+
+const apiService = axios.create(API_CONFIG);
+
+// Content API methods
+const getPosts = () => apiService.get('/api/content/feed');
+const createPost = (postData) => apiService.post('/api/content/posts', postData);
+const likePost = (postId, isLiked) => apiService.post(`/api/content/posts/${postId}/like`, { isLiked });
+const commentOnPost = (postId, comment) => apiService.post(`/api/content/posts/${postId}/comments`, { comment });
+const bookmarkPost = (postId, isBookmarked) => apiService.post(`/api/content/posts/${postId}/bookmark`, { isBookmarked });
+const sharePost = (postId) => apiService.post(`/api/content/posts/${postId}/share`);
+
+// Comment interaction methods
+const likeComment = (commentId, isLiked) => apiService.post(`/api/comments/${commentId}/like`, { isLiked });
+const replyToComment = (postId, comment, parentCommentId) => apiService.post(`/api/content/posts/${postId}/comments`, { 
+  comment: comment, 
+  parent_comment_id: parentCommentId 
 });
 
 // Global variable to store current user data
 let currentUser = null;
+let authToken = null;
 
 // Function to set current user data for the interceptor
 const setCurrentUser = (user) => {
@@ -20,21 +43,41 @@ const setCurrentUser = (user) => {
   console.log('🔍 currentUser updated to:', currentUser);
 };
 
+// Function to set auth token
+const setToken = (token) => {
+  console.log('🔍 setToken called with:', token ? 'Token provided' : 'No token');
+  authToken = token;
+  if (token) {
+    apiService.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete apiService.defaults.headers.common['Authorization'];
+  }
+};
+
 // Request interceptor to add auth headers
 apiService.interceptors.request.use(
   (config) => {
     console.log('🔍 API Request Interceptor - Current User:', currentUser);
+    console.log('🔍 API Request Interceptor - Auth Token:', authToken ? 'Present' : 'Not present');
     console.log('🔍 API Request Interceptor - Base URL:', config.baseURL);
     console.log('🔍 API Request Interceptor - URL:', config.url);
     console.log('🔍 API Request Interceptor - Full URL:', `${config.baseURL}${config.url}`);
     
-    // Add authentication headers if user data is available
-    if (currentUser && currentUser.uuid && currentUser.role) {
+    // Add JWT token if available
+    if (authToken) {
+      config.headers['Authorization'] = `Bearer ${authToken}`;
+      console.log('🔍 API Request Interceptor - JWT token added');
+    }
+    
+    // Add user headers if user data is available
+    if (currentUser && currentUser.uuid) {
       config.headers['x-user-uuid'] = currentUser.uuid;
-      config.headers['x-user-role'] = currentUser.role;
-      console.log('🔍 API Request Interceptor - Headers added:', {
+      if (currentUser.role) {
+        config.headers['x-user-role'] = currentUser.role;
+      }
+      console.log('🔍 API Request Interceptor - User headers added:', {
         'x-user-uuid': currentUser.uuid,
-        'x-user-role': currentUser.role
+        'x-user-role': currentUser.role || 'user'
       });
     } else {
       console.log('🔍 API Request Interceptor - No user data available for headers');
@@ -48,13 +91,38 @@ apiService.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Enhanced response interceptor for better error handling
 apiService.interceptors.response.use(
   (response) => {
+    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
     return response.data;
   },
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error('❌ API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      message: error.response?.data?.error || error.message,
+      data: error.response?.data
+    });
+    
+    // Enhanced error handling for different scenarios
+    if (error.response?.status === 401) {
+      // Unauthorized - clear auth data
+      console.log('🔐 Unauthorized access - clearing auth data');
+      setToken(null);
+      setCurrentUser(null);
+    } else if (error.response?.status === 403) {
+      // Forbidden - insufficient permissions
+      console.log('🚫 Forbidden - insufficient permissions');
+    } else if (error.response?.status >= 500) {
+      // Server error
+      console.log('🔥 Server error - backend issue');
+    } else if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+      // Network error
+      console.log('🌐 Network error - check connection');
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -66,14 +134,86 @@ const getChallenges = () => apiService.get('/api/learning/challenges');
 const getBadges = () => apiService.get('/api/learning/badges');
 const getUserStats = (userId) => apiService.get(`/api/learning/stats/${userId}`);
 const getUserLearningStats = () => apiService.get('/api/learning/user-stats');
-const getLessons = (moduleId) => apiService.get(`/api/learning/lessons/${moduleId}`);
+const getLessons = (moduleId) => apiService.get(`/api/learning/modules/${moduleId}/lessons`);
+const getLesson = (lessonId) => apiService.get(`/api/learning/lessons/${lessonId}`);
+
+const updateLessonProgress = (progressData) => apiService.post('/api/learning/progress', progressData);
 const getUserProgress = (userId) => apiService.get(`/api/learning/user-progress/${userId}`);
 
-// Admin API methods
-const adminLogin = (email, password) => apiService.post('/api/admin/login', { email, password });
-const getAdminDashboard = () => apiService.get('/api/admin/dashboard');
+// Profile API methods
+const getUserProfile = (uuid) => apiService.get(`/api/users/${uuid}/profile`);
+const getUserActivity = (uuid, limit = 10) => apiService.get(`/api/users/${uuid}/activity?limit=${limit}`);
+const getUserSavedItems = (uuid) => apiService.get(`/api/users/${uuid}/saved`);
+const updateUserProfile = (uuid, profileData) => apiService.put(`/api/users/${uuid}/profile`, profileData);
+
+// Enhanced Admin API methods
+const adminLogin = (email, password) => apiService.post('/api/auth/login', { email, password });
+const adminLogout = () => apiService.post('/api/auth/logout');
+const getAdminDashboard = () => apiService.get('/api/admin/dashboard/overview');
 const getAdminUsers = () => apiService.get('/api/admin/users');
 const getAdminContent = () => apiService.get('/api/admin/content');
+
+// Enhanced Admin Features
+const getModerationQueue = (status = 'pending', priority = null, page = 1, limit = 20) => {
+  const params = { status, page, limit };
+  if (priority) params.priority = priority;
+  return apiService.get('/api/moderation/queue', { params });
+};
+
+const approveContent = (contentId, reviewNotes = '') => 
+  apiService.put(`/api/moderation/approve/${contentId}`, { reviewNotes });
+
+const rejectContent = (contentId, reviewNotes = '', reason = '') => 
+  apiService.put(`/api/moderation/reject/${contentId}`, { reviewNotes, reason });
+
+const escalateContent = (contentId, reason = '') => 
+  apiService.post(`/api/moderation/escalate/${contentId}`, { reason });
+
+const getModerationStats = () => apiService.get('/api/moderation/stats');
+
+// Trust Score Management
+const getTrustLeaderboard = () => apiService.get('/api/trust/leaderboard');
+const updateTrustScore = (userUuid, eventType, trustChange, reason) => 
+  apiService.post('/api/trust/event', { userUuid, eventType, trustChange, reason });
+
+// User Management
+const getUserProfileStats = (uuid) => apiService.get(`/api/users/stats/${uuid}`);
+const syncUser = (userData) => apiService.post('/api/users/sync', { user });
+const getUsers = (page = 1, limit = 20, role = null) => {
+  const params = { page, limit };
+  if (role) params.role = role;
+  return apiService.get('/api/admin/users', { params });
+};
+
+// Content Management
+const getContentFeed = (page = 1, limit = 20, category = null, location = null) => {
+  const params = { page, limit };
+  if (category) params.category = category;
+  if (location) params.location = location;
+  return apiService.get('/api/posts', { params });
+};
+
+const flagContent = (contentId, reason) => apiService.post(`/api/posts/${contentId}/flag`, { reason });
+
+// Learning System
+const getLearningModules = () => apiService.get('/api/learning/modules');
+const getLearningLessons = (moduleId) => apiService.get(`/api/learning/modules/${moduleId}/lessons`);
+const getLearningQuizzes = () => apiService.get('/api/learning/quizzes');
+const getLearningChallenges = () => apiService.get('/api/learning/challenges');
+const getLearningBadges = () => apiService.get('/api/learning/badges');
+
+// Analytics
+const getPlatformAnalytics = () => apiService.get('/api/analytics/platform');
+const getUserAnalytics = (uuid) => apiService.get(`/api/analytics/user/${uuid}`);
+
+// Polls System
+const getActivePolls = () => apiService.get('/api/polls/active');
+const votePoll = (pollId, voteOption, county) => 
+  apiService.post(`/api/polls/${pollId}/vote`, { vote_option: voteOption, county });
+
+// Memory Archive
+const getMemoryArchive = (limit = 10) => apiService.get(`/api/memory?limit=${limit}`);
+const lightCandle = (memoryId) => apiService.post(`/api/memory/${memoryId}/candle`);
 
 // Admin Content Management API methods
 const getAdminContentModules = () => apiService.get('/api/admin/content/modules');
@@ -84,14 +224,7 @@ const getAdminContentBadges = () => apiService.get('/api/admin/content/badges');
 
 // Publishing Workflow API methods
 const submitForReview = (type, id, reviewNotes) => apiService.post(`/api/admin/content/${type}/${id}/submit-for-review`, { review_notes: reviewNotes });
-const approveContent = (type, id, reviewNotes) => apiService.post(`/api/admin/content/${type}/${id}/approve`, { review_notes: reviewNotes });
-const rejectContent = (type, id, reviewNotes) => apiService.post(`/api/admin/content/${type}/${id}/reject`, { review_notes: reviewNotes });
 const publishContent = (type, id) => apiService.post(`/api/admin/content/${type}/${id}/publish`);
-const getModerationQueue = (status = 'review', type = null) => {
-  const params = type ? { status, type } : { status };
-  return apiService.get('/api/admin/moderation/queue', { params });
-};
-const getModerationStats = () => apiService.get('/api/admin/moderation/stats');
 
 // Content Creation API methods
 const createContent = (formData) => {
@@ -124,13 +257,6 @@ const getUserContent = (userId, page = 1, limit = 10, status = null) => {
   return apiService.get(`/api/content/user/${userId}`, { params });
 };
 
-const getContentFeed = (page = 1, limit = 20, category = null, location = null) => {
-  const params = { page, limit };
-  if (category) params.category = category;
-  if (location) params.location = location;
-  return apiService.get('/api/content/feed', { params });
-};
-
 // Reddit-style voting system
 const voteContent = (contentId, userId, voteType) => apiService.post(`/api/content/${contentId}/vote`, { userId, voteType });
 const upvoteContent = (contentId, userId) => voteContent(contentId, userId, 'upvote');
@@ -147,8 +273,9 @@ const put = (url, data) => apiService.put(url, data);
 const del = (url) => apiService.delete(url);
 
 // Auth API methods
-const userLogin = (credentials) => apiService.post('/api/auth/login', credentials);
-const userRegister = (userData) => apiService.post('/api/auth/register', userData);
+const userLogin = (credentials) => apiService.post('/api/users/login', credentials);
+const userRegister = (userData) => apiService.post('/api/users/create', userData);
+const checkUsername = (username) => apiService.post('/api/users/check-username', { username });
 
 // Content Management API methods
 const createModule = (moduleData) => apiService.post('/api/admin/modules', moduleData);
@@ -181,13 +308,61 @@ export default {
   getUserStats,
   getUserLearningStats,
   getLessons,
+  getLesson,
+  updateLessonProgress,
   getUserProgress,
   
-  // Admin methods
+  // Enhanced Learning methods
+  getLearningModules,
+  getLearningLessons,
+  getLearningQuizzes,
+  getLearningChallenges,
+  getLearningBadges,
+  
+  // Profile methods
+  getUserProfile,
+  getUserActivity,
+  getUserSavedItems,
+  updateUserProfile,
+  
+  // Enhanced Admin methods
   adminLogin,
+  adminLogout,
   getAdminDashboard,
   getAdminUsers,
   getAdminContent,
+  
+  // Enhanced Admin Features
+  getModerationQueue,
+  approveContent,
+  rejectContent,
+  escalateContent,
+  getModerationStats,
+  
+  // Trust Score Management
+  getTrustLeaderboard,
+  updateTrustScore,
+  
+  // User Management
+  getUsers,
+  syncUser,
+  getUserProfileStats,
+  
+  // Content Management
+  getContentFeed,
+  flagContent,
+  
+  // Analytics
+  getPlatformAnalytics,
+  getUserAnalytics,
+  
+  // Polls System
+  getActivePolls,
+  votePoll,
+  
+  // Memory Archive
+  getMemoryArchive,
+  lightCandle,
   
   // Admin Content Management methods
   getAdminContentModules,
@@ -198,16 +373,11 @@ export default {
   
   // Publishing Workflow methods
   submitForReview,
-  approveContent,
-  rejectContent,
   publishContent,
-  getModerationQueue,
-  getModerationStats,
   
   // Content Creation methods
   createContent,
   getUserContent,
-  getContentFeed,
   
   // Reddit-style voting methods
   voteContent,
@@ -220,6 +390,7 @@ export default {
   // Auth methods
   userLogin,
   userRegister,
+  checkUsername,
   
   // Generic HTTP methods
   post,
@@ -244,7 +415,19 @@ export default {
   updateBadge,
   deleteBadge,
   
+  // Content methods
+  getPosts,
+  likePost,
+  commentOnPost,
+  bookmarkPost,
+  sharePost,
+  
+  // Comment interaction methods
+  likeComment,
+  replyToComment,
+  
   // Raw axios instance for custom requests
   axios: apiService,
-  setCurrentUser
+  setCurrentUser,
+  setToken
 };

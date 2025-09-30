@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
-  ScrollView,
+  SafeAreaView,
   StatusBar,
   Animated,
+  Dimensions,
   TextInput,
-  KeyboardAvoidingView,
-  Platform
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useUser } from '../contexts/UserContext';
+import { useAnonMode } from '../contexts/AnonModeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,57 +21,91 @@ interface SetupStep {
   id: number;
   title: string;
   subtitle: string;
-  type: 'intro' | 'emoji' | 'nickname' | 'complete';
+  type: 'intro' | 'profile' | 'privacy' | 'complete';
   gradient: string[];
 }
 
 const setupSteps: SetupStep[] = [
   {
     id: 1,
-    title: 'Anonymous Mode',
-    subtitle: 'Set up your anonymous profile to participate safely in the community.',
+    title: 'Create Your Profile',
+    subtitle: 'Set up your anonymous identity',
     type: 'intro',
-    gradient: ['#E1F5FE', '#B3E5FC']
+    gradient: ['#E3F2FD', '#BBDEFB']
   },
   {
     id: 2,
-    title: 'Choose Your Emoji',
-    subtitle: 'Pick an emoji that represents your anonymous identity.',
-    type: 'emoji',
-    gradient: ['#FFF3E0', '#FFE0B2']
+    title: 'Profile Details',
+    subtitle: 'Customize your anonymous profile',
+    type: 'profile',
+    gradient: ['#F3E5F5', '#E1BEE7']
   },
   {
     id: 3,
-    title: 'Your Nickname',
-    subtitle: 'Create a nickname for your anonymous profile.',
-    type: 'nickname',
-    gradient: ['#F3E5F5', '#E1BEE7']
+    title: 'Privacy Settings',
+    subtitle: 'Choose what you want to share',
+    type: 'privacy',
+    gradient: ['#E8F5E8', '#C8E6C9']
   },
   {
     id: 4,
     title: 'Setup Complete!',
-    subtitle: 'Your anonymous profile is ready. Welcome to the community!',
+    subtitle: 'Your anonymous profile is ready',
     type: 'complete',
-    gradient: ['#E8F5E8', '#C8E6C9']
+    gradient: ['#FFF3E0', '#FFE0B2']
   }
 ];
 
 const popularEmojis = [
   '😊', '🤔', '🎭', '🦊', '🐱', '🦁', '🐯', '🐨', '🐼', '🐸',
   '🦋', '🌸', '🌺', '🌻', '🌹', '🌷', '🍀', '⭐', '🌟', '💫',
-  '🔥', '💧', '⚡', '🌈', '🎨', '🎭', '🎪', '🎯', '🎲', '🎮'
+  '🎪', '🎯', '🎲', '🎮', '🎨', '🎵', '🎸', '🎺', '🎻', '🎹'
+];
+
+const counties = [
+  'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika', 'Malindi',
+  'Kitale', 'Garissa', 'Kakamega', 'Nyeri', 'Meru', 'Machakos', 'Kitui',
+  'Embu', 'Isiolo', 'Marsabit', 'Lamu', 'Tana River', 'Kilifi', 'Kwale',
+  'Taita Taveta', 'Makueni', 'Kajiado', 'Narok', 'Bomet', 'Kericho',
+  'Nandi', 'Uasin Gishu', 'Trans Nzoia', 'West Pokot', 'Samburu',
+  'Turkana', 'Wajir', 'Mandera', 'Baringo', 'Laikipia', 'Nakuru',
+  'Nyandarua', 'Murang\'a', 'Kiambu', 'Kirinyaga', 'Nyamira',
+  'Kisii', 'Migori', 'Homa Bay', 'Siaya', 'Busia', 'Vihiga',
+  'Bungoma', 'Elgeyo Marakwet'
+];
+
+
+const SECURITY_QUESTIONS = [
+  "What was the name of your first pet?",
+  "What city were you born in?",
+  "What was your mother's maiden name?",
+  "What was the name of your first school?",
+  "What was your childhood nickname?",
+  "What is your favorite movie?",
+  "What was the make of your first car?",
+  "What is your favorite food?",
 ];
 
 const AnonModeSetup: React.FC = () => {
-  const { completeAnonModeSetup } = useUser();
+  const { updateProfile, completeSetup } = useAnonMode();
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedEmoji, setSelectedEmoji] = useState('');
+  const [selectedEmoji, setSelectedEmoji] = useState('😊');
   const [nickname, setNickname] = useState('');
+  const [county, setCounty] = useState('');
+  const [bio, setBio] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [privacySettings, setPrivacySettings] = useState({
+    showLocation: false,
+    allowDataCollection: false,
+    anonymousPosting: true,
+  });
   const [slideAnim] = useState(new Animated.Value(0));
   const [fadeAnim] = useState(new Animated.Value(1));
-  const [scaleAnim] = useState(new Animated.Value(1));
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < setupSteps.length - 1) {
       Animated.parallel([
         Animated.timing(slideAnim, {
@@ -101,7 +135,40 @@ const AnonModeSetup: React.FC = () => {
         ]).start();
       });
     } else {
-      completeAnonModeSetup(selectedEmoji, nickname);
+      // Validate required fields
+      if (!password || !confirmPassword || !securityQuestion || !securityAnswer) {
+        Alert.alert('Missing Information', 'Please fill in all required fields (password, security question, and answer).');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        Alert.alert('Password Mismatch', 'Passwords do not match. Please try again.');
+        return;
+      }
+
+      if (password.length < 8) {
+        Alert.alert('Weak Password', 'Password must be at least 8 characters long.');
+        return;
+      }
+
+      // Save profile data and complete setup
+      const profileData = {
+        nickname: nickname || 'Anonymous',
+        emoji: selectedEmoji,
+        county: county || 'Nairobi',
+        password: password,
+        securityQuestion: securityQuestion,
+        securityAnswer: securityAnswer,
+        privacySettings: privacySettings,
+      };
+      
+      try {
+        await updateProfile(profileData);
+        await completeSetup();
+      } catch (error) {
+        console.error('❌ Setup failed:', error);
+        Alert.alert('Setup Failed', 'There was an error completing your setup. Please try again.');
+      }
     }
   };
 
@@ -137,238 +204,415 @@ const AnonModeSetup: React.FC = () => {
     }
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    setSelectedEmoji(emoji);
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 1.2,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      })
-    ]).start();
-  };
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 0: return true; // Intro step
-      case 1: return selectedEmoji !== ''; // Emoji step
-      case 2: return nickname.trim() !== ''; // Nickname step
-      case 3: return true; // Complete step
-      default: return false;
-    }
-  };
 
   const currentStepData = setupSteps[currentStep];
 
-  const renderStepContent = () => {
-    switch (currentStepData.type) {
-      case 'intro':
-        return (
-          <View style={styles.introContent}>
-            <View style={styles.anonIconContainer}>
-              <Text style={styles.anonIcon}>🕵️</Text>
+  const renderIntroStep = () => (
+    <View style={styles.stepContent}>
+      <View style={styles.iconContainer}>
+        <Text style={styles.icon}>🔒</Text>
             </View>
+      <Text style={styles.title}>Create Your Anonymous Profile</Text>
+      <Text style={styles.subtitle}>
+        Set up your anonymous identity to participate safely in the community.
+      </Text>
+      
             <View style={styles.featuresContainer}>
               <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🔒</Text>
-                <View style={styles.featureTextContainer}>
-                  <Text style={styles.featureTitle}>Privacy First</Text>
-                  <Text style={styles.featureText}>Your identity stays protected</Text>
-                </View>
+          <Text style={styles.featureIcon}>🛡️</Text>
+          <Text style={styles.featureText}>Your identity is protected</Text>
               </View>
               <View style={styles.featureItem}>
                 <Text style={styles.featureIcon}>🎭</Text>
-                <View style={styles.featureTextContainer}>
-                  <Text style={styles.featureTitle}>Express Freely</Text>
-                  <Text style={styles.featureText}>Share thoughts without fear</Text>
-                </View>
+          <Text style={styles.featureText}>Choose your anonymous persona</Text>
               </View>
               <View style={styles.featureItem}>
-                <Text style={styles.featureIcon}>🤝</Text>
-                <View style={styles.featureTextContainer}>
-                  <Text style={styles.featureTitle}>Community Safe</Text>
-                  <Text style={styles.featureText}>Respectful anonymous interactions</Text>
-                </View>
+          <Text style={styles.featureIcon}>⚙️</Text>
+          <Text style={styles.featureText}>Control your privacy settings</Text>
               </View>
             </View>
           </View>
         );
 
-      case 'emoji':
-        return (
-          <View style={styles.emojiContent}>
-            <View style={styles.selectedEmojiContainer}>
-              <Animated.View style={[styles.selectedEmoji, { transform: [{ scale: scaleAnim }] }]}>
-                <Text style={styles.selectedEmojiText}>
-                  {selectedEmoji || '😊'}
-                </Text>
-              </Animated.View>
-            </View>
-            <Text style={styles.emojiGridTitle}>Choose your emoji:</Text>
-            <ScrollView 
-              style={styles.emojiGridContainer}
-              showsVerticalScrollIndicator={false}
-            >
+  const renderProfileStep = () => (
+    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+      <Text style={styles.title}>Profile Details</Text>
+      <Text style={styles.subtitle}>Customize your anonymous profile</Text>
+
+      {/* Emoji Selection */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Choose Your Avatar</Text>
               <View style={styles.emojiGrid}>
                 {popularEmojis.map((emoji, index) => (
                   <TouchableOpacity
                     key={index}
                     style={[
-                      styles.emojiCard,
-                      selectedEmoji === emoji && styles.emojiCardSelected
+                styles.emojiItem,
+                selectedEmoji === emoji && styles.selectedEmojiItem
                     ]}
-                    onPress={() => handleEmojiSelect(emoji)}
+              onPress={() => setSelectedEmoji(emoji)}
                   >
-                    <Text style={styles.emojiCardText}>{emoji}</Text>
+              <Text style={styles.emojiText}>{emoji}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
-            </ScrollView>
           </View>
-        );
 
-      case 'nickname':
-        return (
-          <View style={styles.nicknameContent}>
-            <View style={styles.nicknamePreview}>
-              <Text style={styles.nicknamePreviewEmoji}>{selectedEmoji}</Text>
-              <Text style={styles.nicknamePreviewText}>
-                {nickname || 'Your Nickname'}
-              </Text>
-            </View>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Enter your nickname:</Text>
+      {/* Nickname */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Nickname (Optional)</Text>
               <TextInput
-                style={styles.textInput}
+          style={styles.input}
                 value={nickname}
                 onChangeText={setNickname}
-                placeholder="e.g., CivicHero, ChangeMaker"
+          placeholder="Enter a nickname"
                 placeholderTextColor="#999"
                 maxLength={20}
-                autoFocus
               />
+        <Text style={styles.inputHint}>
+          Leave empty to stay completely anonymous
+        </Text>
             </View>
-          </View>
-        );
 
-      case 'complete':
-        return (
-          <View style={styles.completeContent}>
-            <View style={styles.completeIconContainer}>
-              <Text style={styles.completeIcon}>🎉</Text>
+      {/* County */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>County (Optional)</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.countyScroll}>
+          {counties.map((countyName, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.countyItem,
+                county === countyName && styles.selectedCountyItem
+              ]}
+              onPress={() => setCounty(countyName)}
+            >
+              <Text style={[
+                styles.countyText,
+                county === countyName && styles.selectedCountyText
+              ]}>
+                {countyName}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+          </View>
+
+
+      {/* Bio */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Bio (Optional)</Text>
+        <TextInput
+          style={[styles.input, styles.bioInput]}
+          value={bio}
+          onChangeText={setBio}
+          placeholder="Tell us about yourself..."
+          placeholderTextColor="#999"
+          multiline
+          maxLength={100}
+        />
+        <Text style={styles.inputHint}>
+          {bio.length}/100 characters
+        </Text>
+      </View>
+
+      {/* Password */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Password *</Text>
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Create a strong password"
+          placeholderTextColor="#999"
+          secureTextEntry
+          maxLength={50}
+        />
+        <Text style={styles.inputHint}>
+          Must be at least 8 characters with uppercase, lowercase, numbers, and special characters
+        </Text>
+      </View>
+
+      {/* Confirm Password */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Confirm Password *</Text>
+        <TextInput
+          style={styles.input}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="Confirm your password"
+          placeholderTextColor="#999"
+          secureTextEntry
+          maxLength={50}
+        />
+        {password && confirmPassword && password !== confirmPassword && (
+          <Text style={styles.errorText}>Passwords do not match</Text>
+        )}
+      </View>
+
+      {/* Security Question */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Security Question *</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.questionScroll}>
+          {SECURITY_QUESTIONS.map((question, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.questionItem,
+                securityQuestion === question && styles.selectedQuestionItem
+              ]}
+              onPress={() => setSecurityQuestion(question)}
+            >
+              <Text style={[
+                styles.questionText,
+                securityQuestion === question && styles.selectedQuestionText
+              ]}>
+                {question}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Security Answer */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Security Answer *</Text>
+        <TextInput
+          style={styles.input}
+          value={securityAnswer}
+          onChangeText={setSecurityAnswer}
+          placeholder="Your answer to the security question"
+          placeholderTextColor="#999"
+          maxLength={100}
+        />
+        <Text style={styles.inputHint}>
+          This will be used to reset your password if forgotten
+        </Text>
+      </View>
+    </ScrollView>
+  );
+
+  const renderPrivacyStep = () => (
+    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+      <Text style={styles.title}>Privacy Settings</Text>
+      <Text style={styles.subtitle}>Choose what you want to share</Text>
+
+      <View style={styles.privacyContainer}>
+        <View style={styles.privacyItem}>
+          <View style={styles.privacyInfo}>
+            <Text style={styles.privacyTitle}>👤 Anonymous Posting</Text>
+            <Text style={styles.privacyDescription}>
+              Post content without revealing your identity
+            </Text>
             </View>
-            <View style={styles.profilePreview}>
-              <Text style={styles.profileEmoji}>{selectedEmoji}</Text>
-              <Text style={styles.profileName}>{nickname}</Text>
-            </View>
-            <Text style={styles.completeMessage}>
-              You're all set! Your anonymous profile is ready to explore the community.
+          <TouchableOpacity
+            style={[
+              styles.toggle,
+              privacySettings.anonymousPosting && styles.toggleActive
+            ]}
+            onPress={() => setPrivacySettings(prev => ({
+              ...prev,
+              anonymousPosting: !prev.anonymousPosting
+            }))}
+          >
+            <View style={[
+              styles.toggleThumb,
+              privacySettings.anonymousPosting && styles.toggleThumbActive
+            ]} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.privacyItem}>
+          <View style={styles.privacyInfo}>
+            <Text style={styles.privacyTitle}>📍 Show Location</Text>
+            <Text style={styles.privacyDescription}>
+              Allow your county to be visible to others
             </Text>
           </View>
+          <TouchableOpacity
+            style={[
+              styles.toggle,
+              privacySettings.showLocation && styles.toggleActive
+            ]}
+            onPress={() => setPrivacySettings(prev => ({
+              ...prev,
+              showLocation: !prev.showLocation
+            }))}
+          >
+            <View style={[
+              styles.toggleThumb,
+              privacySettings.showLocation && styles.toggleThumbActive
+            ]} />
+          </TouchableOpacity>
+        </View>
+
+
+        <View style={styles.privacyItem}>
+          <View style={styles.privacyInfo}>
+            <Text style={styles.privacyTitle}>📊 Data Collection</Text>
+            <Text style={styles.privacyDescription}>
+              Allow anonymous usage data to improve the app
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.toggle,
+              privacySettings.allowDataCollection && styles.toggleActive
+            ]}
+            onPress={() => setPrivacySettings(prev => ({
+              ...prev,
+              allowDataCollection: !prev.allowDataCollection
+            }))}
+          >
+            <View style={[
+              styles.toggleThumb,
+              privacySettings.allowDataCollection && styles.toggleThumbActive
+            ]} />
+          </TouchableOpacity>
+            </View>
+            </View>
+
+      <View style={styles.privacyNotice}>
+        <Text style={styles.privacyNoticeTitle}>🔒 Privacy Notice</Text>
+        <Text style={styles.privacyNoticeText}>
+          All your data is stored locally on your device first. You can change these settings anytime in your profile.
+            </Text>
+      </View>
+    </ScrollView>
+  );
+
+  const renderCompleteStep = () => (
+    <View style={styles.stepContent}>
+      <View style={styles.iconContainer}>
+        <Text style={styles.icon}>🎉</Text>
+      </View>
+      <Text style={styles.title}>Setup Complete!</Text>
+      <Text style={styles.subtitle}>
+        Your anonymous profile is ready. Welcome to the community!
+      </Text>
+
+            <View style={styles.profilePreview}>
+        <View style={styles.previewAvatar}>
+          <Text style={styles.previewEmoji}>{selectedEmoji}</Text>
+            </View>
+        <Text style={styles.previewName}>
+          {nickname || 'Anonymous User'}
+            </Text>
+        {county && (
+          <Text style={styles.previewLocation}>📍 {county}</Text>
+        )}
+        {bio && (
+          <Text style={styles.previewBio}>{bio}</Text>
+        )}
+      </View>
+
+      <View style={styles.completionFeatures}>
+        <View style={styles.completionFeature}>
+          <Text style={styles.completionIcon}>🛡️</Text>
+          <Text style={styles.completionText}>Your privacy is protected</Text>
+        </View>
+        <View style={styles.completionFeature}>
+          <Text style={styles.completionIcon}>🎭</Text>
+          <Text style={styles.completionText}>Anonymous identity created</Text>
+        </View>
+        <View style={styles.completionFeature}>
+          <Text style={styles.completionIcon}>⚙️</Text>
+          <Text style={styles.completionText}>Privacy settings configured</Text>
+        </View>
+      </View>
+          </View>
         );
 
+  const renderStepContent = () => {
+    switch (currentStepData.type) {
+      case 'intro':
+        return renderIntroStep();
+      case 'profile':
+        return renderProfileStep();
+      case 'privacy':
+        return renderPrivacyStep();
+      case 'complete':
+        return renderCompleteStep();
       default:
         return null;
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1976D2" />
       
       <LinearGradient
         colors={currentStepData.gradient as [string, string]}
         style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
       >
-        {/* Status Bar */}
-        <View style={styles.statusBar}>
-          <Text style={styles.statusTime}>9:41</Text>
-          <View style={styles.statusIcons}>
-            <Text style={styles.statusIcon}>📶</Text>
-            <Text style={styles.statusIcon}>📶</Text>
-            <Text style={styles.statusIcon}>🔋</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { width: `${((currentStep + 1) / setupSteps.length) * 100}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.progressText}>
+              {currentStep + 1} of {setupSteps.length}
+            </Text>
           </View>
         </View>
 
-        {/* Back Button */}
-        {currentStep > 0 && (
-          <TouchableOpacity style={styles.backButton} onPress={prevStep}>
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-        )}
-
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        {/* Content */}
           <Animated.View 
             style={[
               styles.content,
               {
                 transform: [{ translateX: slideAnim }],
-                opacity: fadeAnim
-              }
-            ]}
-          >
-            {/* Title */}
-            <Text style={styles.title}>{currentStepData.title}</Text>
-            
-            {/* Subtitle */}
-            <Text style={styles.subtitle}>{currentStepData.subtitle}</Text>
-
-            {/* Step Content */}
+              opacity: fadeAnim,
+            }
+          ]}
+        >
             {renderStepContent()}
           </Animated.View>
-        </ScrollView>
 
-        {/* Progress Dots */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressDots}>
+        {/* Navigation */}
+        <View style={styles.navigation}>
+          <View style={styles.navigationButtons}>
+            {currentStep > 0 && (
+              <TouchableOpacity onPress={prevStep} style={styles.prevButton}>
+                <Text style={styles.prevButtonText}>← Back</Text>
+              </TouchableOpacity>
+            )}
+            
+            <TouchableOpacity onPress={nextStep} style={styles.nextButton}>
+              <LinearGradient
+                colors={['#FF6B6B', '#4ECDC4'] as const}
+                style={styles.nextButtonGradient}
+              >
+                <Text style={styles.nextButtonText}>
+                  {currentStep === setupSteps.length - 1 ? 'Complete Setup' : 'Next →'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Dots Indicator */}
+          <View style={styles.dotsContainer}>
             {setupSteps.map((_, index) => (
               <View
                 key={index}
                 style={[
-                  styles.progressDot,
-                  index === currentStep && styles.progressDotActive
+                  styles.dot,
+                  index === currentStep && styles.activeDot
                 ]}
               />
             ))}
           </View>
         </View>
-
-        {/* Action Button */}
-        <View style={styles.actionContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.primaryButton,
-              !canProceed() && styles.primaryButtonDisabled
-            ]} 
-            onPress={nextStep}
-            disabled={!canProceed()}
-          >
-            <Text style={[
-              styles.primaryButtonText,
-              !canProceed() && styles.primaryButtonTextDisabled
-            ]}>
-              {currentStep === setupSteps.length - 1 ? 'Complete Setup' : 'Next'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Home Indicator */}
-        <View style={styles.homeIndicator} />
       </LinearGradient>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -379,299 +623,353 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  header: {
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 10,
   },
-  statusTime: {
-    color: '#333',
-    fontSize: 16,
-    fontWeight: '700',
+  progressContainer: {
+    flex: 1,
   },
-  statusIcons: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  statusIcon: {
-    fontSize: 14,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  progressBar: {
+    height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
+    borderRadius: 2,
+    marginBottom: 8,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: '#333',
-    fontWeight: '600',
+  progressFill: {
+    height: '100%',
+    backgroundColor: 'white',
+    borderRadius: 2,
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
+  progressText: {
+    fontSize: 12,
+    color: 'white',
+    fontWeight: '500',
   },
   content: {
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 10,
-    lineHeight: 34,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 24,
+    flex: 1,
     paddingHorizontal: 20,
   },
-  // Intro Step Styles
-  introContent: {
-    alignItems: 'center',
-    width: '100%',
+  stepContent: {
+    flex: 1,
+    paddingVertical: 20,
   },
-  anonIconContainer: {
+  iconContainer: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    marginBottom: 20,
+    alignSelf: 'center',
   },
-  anonIcon: {
+  icon: {
     fontSize: 50,
   },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
   featuresContainer: {
-    width: '100%',
-    maxWidth: 300,
+    marginTop: 20,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
   },
   featureIcon: {
-    fontSize: 24,
+    fontSize: 20,
     marginRight: 15,
   },
-  featureTextContainer: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 2,
-  },
   featureText: {
+    flex: 1,
     fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
+    color: 'white',
+    fontWeight: '500',
   },
-  // Emoji Step Styles
-  emojiContent: {
-    alignItems: 'center',
-    width: '100%',
+  section: {
+    marginBottom: 25,
   },
-  selectedEmojiContainer: {
-    marginBottom: 20,
-  },
-  selectedEmoji: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  selectedEmojiText: {
-    fontSize: 40,
-  },
-  emojiGridTitle: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: 'white',
     marginBottom: 15,
-  },
-  emojiGridContainer: {
-    maxHeight: 300,
-    width: '100%',
   },
   emojiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
+    justifyContent: 'space-between',
   },
-  emojiCard: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  emojiItem: {
+    width: (width - 80) / 6,
+    height: (width - 80) / 6,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 5,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  emojiCardSelected: {
-    borderColor: '#FFD700',
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-  },
-  emojiCardText: {
-    fontSize: 24,
-  },
-  // Nickname Step Styles
-  nicknameContent: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  nicknamePreview: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  nicknamePreviewEmoji: {
-    fontSize: 60,
     marginBottom: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  nicknamePreviewText: {
+  selectedEmojiItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    transform: [{ scale: 1.1 }],
+  },
+  emojiText: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
   },
-  inputContainer: {
-    width: '100%',
-    maxWidth: 300,
-  },
-  inputLabel: {
+  input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 15,
     fontSize: 16,
-    fontWeight: '600',
     color: '#333',
+    marginBottom: 8,
+  },
+  bioInput: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  inputHint: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 10,
-    textAlign: 'center',
   },
-  textInput: {
+  countyScroll: {
+    marginBottom: 10,
+  },
+  countyItem: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 10,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  selectedCountyItem: {
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
-  // Complete Step Styles
-  completeContent: {
+  countyText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  selectedCountyText: {
+    fontWeight: '600',
+  },
+  privacyContainer: {
+    marginTop: 20,
+  },
+  privacyItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
   },
-  completeIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  privacyInfo: {
+    flex: 1,
+    marginRight: 15,
+  },
+  privacyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 4,
+  },
+  privacyDescription: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  toggle: {
+    width: 50,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 30,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    paddingHorizontal: 2,
   },
-  completeIcon: {
-    fontSize: 50,
+  toggleActive: {
+    backgroundColor: '#4CAF50',
+  },
+  toggleThumb: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'white',
+  },
+  toggleThumbActive: {
+    alignSelf: 'flex-end',
+  },
+  privacyNotice: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 15,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  privacyNoticeTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 8,
+  },
+  privacyNoticeText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: 16,
   },
   profilePreview: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 20,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 20,
+    marginVertical: 20,
   },
-  profileEmoji: {
-    fontSize: 60,
+  previewAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  previewEmoji: {
+    fontSize: 40,
+  },
+  previewName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 5,
+  },
+  previewLocation: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 10,
   },
-  profileName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
-  },
-  completeMessage: {
-    fontSize: 16,
-    color: '#555',
+  previewBio: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    lineHeight: 20,
   },
-  // Common Styles
-  progressContainer: {
+  completionFeatures: {
+    marginTop: 20,
+  },
+  completionFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  completionIcon: {
+    fontSize: 20,
+    marginRight: 15,
+  },
+  completionText: {
+    flex: 1,
+    fontSize: 14,
+    color: 'white',
+    fontWeight: '500',
+  },
+  navigation: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  navigationButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  progressDots: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  progressDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-  },
-  progressDotActive: {
-    backgroundColor: '#333',
-    transform: [{ scale: 1.2 }],
-  },
-  actionContainer: {
+  prevButton: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  primaryButton: {
-    backgroundColor: '#FFD700',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 25,
-    alignItems: 'center',
-    elevation: 8,
   },
-  primaryButtonDisabled: {
-    backgroundColor: 'rgba(255, 215, 0, 0.5)',
-    elevation: 2,
-  },
-  primaryButtonText: {
-    color: '#333',
+  prevButtonText: {
+    color: 'white',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  primaryButtonTextDisabled: {
-    color: '#999',
+  nextButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
   },
-  homeIndicator: {
-    width: 100,
-    height: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 10,
+  nextButtonGradient: {
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+  },
+  nextButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    backgroundColor: 'white',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  questionScroll: {
+    marginTop: 8,
+  },
+  questionItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginRight: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  selectedQuestionItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  questionText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+  },
+  selectedQuestionText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 

@@ -8,13 +8,15 @@ import {
   SafeAreaView,
   StatusBar,
   Animated,
-} from 'react-native';
+  Alert,
+  Modal} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useAuth } from '../contexts/AuthContext';
+import { useAnonMode } from '../contexts/AnonModeContext';
+import { useInactivityTimer } from '../hooks/useInactivityTimer';
 import CommunityScreen from './CommunityScreen';
 import PoliticalArchiveScreen from './PoliticalArchiveScreen';
-import PoliticianDetailScreen from './PoliticianDetailScreen';
+import PoliticianDetailScreen from './PoliticianDetailScreenNew';
 import ProfileScreen from './ProfileScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import LearningHub from './LearningHub';
@@ -24,10 +26,26 @@ import QuizTakingScreen from './QuizTakingScreen';
 import ChallengesScreen from './ChallengesScreen';
 import BadgesScreen from './BadgesScreen';
 import ModuleDetailScreen from './ModuleDetailScreen';
+import LearnHomeScreen from './LearnHomeScreen';
+import CourseDetailScreen from './CourseDetailScreen';
+import LessonScreen from './LessonScreen';
+import QuizScreen from './QuizScreen';
+import CompletionScreen from './CompletionScreen';
 import ContentCreatorModal from './ContentCreatorModal';
-import AdminLoginScreen from './AdminLoginScreen';
+// import AdminLoginScreen from './AdminLoginScreen';
 import AdminDashboard from './AdminDashboard';
+import EnhancedAdminDashboard from './EnhancedAdminDashboard';
+// import PoliticalAdminDashboard from './admin/PoliticalAdminDashboard';
+import MainAdminDashboard from './admin/MainAdminDashboard';
+import ModerationQueueScreen from './ModerationQueueScreen';
 import YouthHubScreen from './YouthHubScreen';
+import CreatePostScreen from './CreatePostScreen';
+import PoliticalAnalyticsScreen from './PoliticalAnalyticsScreen';
+import PoliticianComparisonScreen from './PoliticianComparisonScreen';
+import FavoritesScreen from './FavoritesScreen';
+import VotingRecordsScreen from './VotingRecordsScreen';
+import EnhancedCommitmentDashboard from './EnhancedCommitmentDashboard';
+import NewsAggregationScreen from './NewsAggregationScreen';
 
 const Stack = createStackNavigator();
 
@@ -39,7 +57,38 @@ const LearningStack = () => (
     <Stack.Screen name="QuizTakingScreen" component={QuizTakingScreen} />
     <Stack.Screen name="ChallengesScreen" component={ChallengesScreen} />
     <Stack.Screen name="BadgesScreen" component={BadgesScreen} />
-    <Stack.Screen name="ModuleDetailScreen" component={ModuleDetailScreen} />
+    <Stack.Screen 
+      name="ModuleDetailScreen" 
+      component={({ route, navigation }: any) => (
+        <ModuleDetailScreen route={route} navigation={navigation} />
+      )} 
+    />
+    {/* New Learn Flow Screens */}
+    <Stack.Screen name="LearnHome" component={LearnHomeScreen} />
+    <Stack.Screen 
+      name="CourseDetail" 
+      component={({ route, navigation }: any) => (
+        <CourseDetailScreen route={route} navigation={navigation} />
+      )} 
+    />
+    <Stack.Screen 
+      name="Lesson" 
+      component={({ route, navigation }: any) => (
+        <LessonScreen route={route} navigation={navigation} />
+      )} 
+    />
+    <Stack.Screen 
+      name="Quiz" 
+      component={({ route, navigation }: any) => (
+        <QuizScreen route={route} navigation={navigation} />
+      )} 
+    />
+    <Stack.Screen 
+      name="Completion" 
+      component={({ route, navigation }: any) => (
+        <CompletionScreen route={route} navigation={navigation} />
+      )} 
+    />
   </Stack.Navigator>
 );
 
@@ -47,45 +96,73 @@ const PoliticalArchiveStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="PoliticalArchiveMain" component={PoliticalArchiveScreen} />
     <Stack.Screen name="PoliticianDetail" component={PoliticianDetailScreen} />
+    <Stack.Screen name="PoliticalAnalytics" component={PoliticalAnalyticsScreen} />
+    <Stack.Screen name="PoliticianComparison" component={PoliticianComparisonScreen} />
+    <Stack.Screen name="Favorites" component={FavoritesScreen} />
+    <Stack.Screen name="VotingRecords" component={VotingRecordsScreen} />
+    <Stack.Screen name="EnhancedCommitments" component={EnhancedCommitmentDashboard} />
+    <Stack.Screen name="NewsAggregation" component={NewsAggregationScreen} />
+  </Stack.Navigator>
+);
+
+const CommunityStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="CommunityMain" component={CommunityScreen} />
+    <Stack.Screen name="CreatePost" component={CreatePostScreen} />
   </Stack.Navigator>
 );
 
 const AdminStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
-    <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+    <Stack.Screen name="AdminDashboard" component={MainAdminDashboard} />
   </Stack.Navigator>
 );
 
 const MainApp = () => {
-  const { user } = useAuth();
+  const { user, clearAllData } = useAnonMode();
   const [activeTab, setActiveTab] = useState('home');
   const [showSpeedDial, setShowSpeedDial] = useState(false);
   const [showContentModal, setShowContentModal] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState('story');
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+  const [showModerationQueue, setShowModerationQueue] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
+
+  // Auto logout after 30 minutes of inactivity
+  const { resetTimer } = useInactivityTimer({
+    timeout: 30 * 60 * 1000, // 30 minutes
+    onTimeout: () => {
+      Alert.alert(
+        'Session Expired',
+        'You have been logged out due to inactivity. Please log in again.',
+        [
+          {
+            text: 'OK',
+            onPress: () => clearAllData()
+          }
+        ]
+      );
+    },
+    enabled: !!user
+  });
 
   const speedDialItems = [
     { icon: '✍️', label: 'Story', type: 'story', color: '#FF6B6B' },
     { icon: '📝', label: 'Poem', type: 'poem', color: '#4ECDC4' },
     { icon: '📊', label: 'Evidence', type: 'evidence', color: '#2196F3' },
-    { icon: '🎯', label: 'Report', type: 'report', color: '#FF9800' },
-  ];
+    { icon: '🎯', label: 'Report', type: 'report', color: '#FF9800' }];
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
-        useNativeDriver: true,
-      }),
+        useNativeDriver: false}),
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
+        useNativeDriver: false})]).start();
   }, []);
 
   const toggleSpeedDial = () => {
@@ -108,8 +185,13 @@ const MainApp = () => {
     { id: 'community', icon: '🌟', label: 'Community' },
     { id: 'politics', icon: '🏛️', label: 'Politics' },
     { id: 'learn', icon: '📚', label: 'Learn' },
-    { id: 'profile', icon: '👤', label: 'Profile' },
-  ];
+    { id: 'profile', icon: '👤', label: 'Profile' }];
+
+  // Add admin tab if user has admin privileges (or for testing - always show)
+  const isAdmin = (user as any)?.role === 'admin' || (user as any)?.role === 'moderator' || (user as any)?.role === 'educator' || true; // Always show for testing
+  if (isAdmin) {
+    tabs.push({ id: 'admin', icon: '⚙️', label: 'Admin' });
+  }
 
   const renderHomeContent = () => (
     <ScrollView style={styles.mainContent} showsVerticalScrollIndicator={false}>
@@ -133,7 +215,7 @@ const MainApp = () => {
         <View style={styles.quickStats}>
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>⭐</Text>
-            <Text style={styles.statValue}>{user?.xp_points || 0}</Text>
+            <Text style={styles.statValue}>{user?.xp || 0}</Text>
             <Text style={styles.statLabel}>XP</Text>
           </View>
           <View style={styles.statCard}>
@@ -187,8 +269,7 @@ const MainApp = () => {
             { icon: '🏆', title: 'Amina Juma', subtitle: 'Education activist', stats: '⭐ 4.8 Rating' },
             { icon: '👥', title: 'Green Warriors', subtitle: 'Nairobi • 2.3K Members', stats: '🔥 Trending' },
             { icon: '😊', title: 'Hopeful', subtitle: '72% yesterday', stats: '📈 +12% since last week' },
-            { icon: '🎯', title: 'Healthcare Reform', subtitle: '45% progress', stats: '👥 4.2K tracking' },
-          ].map((item, index) => (
+            { icon: '🎯', title: 'Healthcare Reform', subtitle: '45% progress', stats: '👥 4.2K tracking' }].map((item, index) => (
             <TouchableOpacity key={index} style={styles.featuredItem}>
               <Text style={styles.featuredItemIcon}>{item.icon}</Text>
               <Text style={styles.featuredItemTitle}>{item.title}</Text>
@@ -244,9 +325,7 @@ const MainApp = () => {
           {[
             { icon: '📚', title: 'Read Article', subtitle: 'You read "The Future of Democracy"', date: 'Today' },
             { icon: '🎯', title: 'Completed Quiz', subtitle: 'You scored 85% in "Understanding Politics"', date: 'Yesterday' },
-            { icon: '📊', title: 'Tracked Promise', subtitle: 'You submitted evidence for "Education Reform"', date: '2 days ago' },
-            { icon: '🏆', title: 'Earned Badge', subtitle: 'You earned "Civic Hero" badge', date: '3 days ago' },
-          ].map((activity, index) => (
+            { icon: '🏆', title: 'Earned Badge', subtitle: 'You earned "Civic Hero" badge', date: '3 days ago' }].map((activity, index) => (
             <TouchableOpacity key={index} style={styles.recentActivityItem}>
               <View style={styles.activityIcon}>
                 <Text style={styles.activityIconText}>{activity.icon}</Text>
@@ -268,7 +347,7 @@ const MainApp = () => {
           <Text style={styles.challengeXp}>+50 XP Bonus</Text>
         </View>
         <Text style={styles.challengeDescription}>
-          Submit evidence for 3 government promises this week
+          Complete 3 learning modules this week
         </Text>
         <View style={styles.challengeProgress}>
           <View style={styles.challengeProgressFill} />
@@ -286,8 +365,7 @@ const MainApp = () => {
           {[
             { name: 'Sarah K.', message: 'For standing up for education rights', xp: '+25' },
             { name: 'David M.', message: 'Community clean-up organizer', xp: '+30' },
-            { name: 'Fatima A.', message: 'Youth mentorship program', xp: '+20' },
-          ].map((honor, index) => (
+            { name: 'Fatima A.', message: 'Youth mentorship program', xp: '+20' }].map((honor, index) => (
             <View key={index} style={styles.honorItem}>
               <Text style={styles.honorName}>{honor.name}</Text>
               <Text style={styles.honorMessage}>{honor.message}</Text>
@@ -299,6 +377,48 @@ const MainApp = () => {
     </ScrollView>
   );
 
+  const renderAdminContent = () => (
+    <View style={styles.adminContainer}>
+      <View style={styles.adminHeader}>
+        <Text style={styles.adminTitle}>⚙️ Admin Panel</Text>
+        <Text style={styles.adminSubtitle}>Manage your platform</Text>
+      </View>
+      
+      <View style={styles.adminActions}>
+        <TouchableOpacity 
+          style={styles.adminActionCard}
+          onPress={() => setShowAdminDashboard(true)}
+        >
+          <Text style={styles.adminActionIcon}>📊</Text>
+          <Text style={styles.adminActionTitle}>Dashboard</Text>
+          <Text style={styles.adminActionDesc}>View platform statistics</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.adminActionCard}
+          onPress={() => setShowModerationQueue(true)}
+        >
+          <Text style={styles.adminActionIcon}>🛡️</Text>
+          <Text style={styles.adminActionTitle}>Moderation</Text>
+          <Text style={styles.adminActionDesc}>Review content</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.adminActionCard}>
+          <Text style={styles.adminActionIcon}>👥</Text>
+          <Text style={styles.adminActionTitle}>Users</Text>
+          <Text style={styles.adminActionDesc}>Manage users</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.adminActionCard}>
+          <Text style={styles.adminActionIcon}>📈</Text>
+          <Text style={styles.adminActionTitle}>Analytics</Text>
+          <Text style={styles.adminActionDesc}>View insights</Text>
+        </TouchableOpacity>
+        
+      </View>
+    </View>
+  );
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'home':
@@ -306,21 +426,15 @@ const MainApp = () => {
       case 'youth':
         return <YouthHubScreen />;
       case 'community':
-        return <CommunityScreen />;
+        return <CommunityStack />;
       case 'politics':
-        return (
-          <NavigationContainer>
-            <PoliticalArchiveStack />
-          </NavigationContainer>
-        );
+        return <PoliticalArchiveStack />;
       case 'learn':
-        return (
-          <NavigationContainer>
-            <LearningStack />
-          </NavigationContainer>
-        );
+        return <LearningStack />;
       case 'profile':
         return <ProfileScreen />;
+      case 'admin':
+        return renderAdminContent();
       default:
         return renderHomeContent();
     }
@@ -335,24 +449,20 @@ const MainApp = () => {
 
       {/* Speed Dial - Only show on Community tab */}
       {activeTab === 'community' && showSpeedDial && (
-        <Animated.View 
+        <View 
           style={[
             styles.speedDial,
             {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
+              opacity: 1}
           ]}
         >
           {speedDialItems.map((item, index) => (
-            <Animated.View
+            <View
               key={item.type}
               style={[
                 styles.speedDialItem,
                 {
-                  transform: [{ translateY: slideAnim }],
-                  opacity: fadeAnim,
-                }
+                  opacity: 1}
               ]}
             >
               <Text style={styles.speedDialLabel}>{item.label}</Text>
@@ -362,9 +472,9 @@ const MainApp = () => {
               >
                 <Text style={styles.speedDialButtonText}>{item.icon}</Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           ))}
-        </Animated.View>
+        </View>
       )}
 
       {/* Floating Action Button - Only show on Community tab */}
@@ -385,7 +495,10 @@ const MainApp = () => {
           <TouchableOpacity
             key={tab.id}
             style={[styles.navItem, activeTab === tab.id && styles.navItemActive]}
-            onPress={() => setActiveTab(tab.id)}
+            onPress={() => {
+              setActiveTab(tab.id);
+              resetTimer(); // Reset inactivity timer on user interaction
+            }}
           >
             <Text style={[styles.navIcon, activeTab === tab.id && styles.navIconActive]}>
               {tab.icon}
@@ -404,6 +517,28 @@ const MainApp = () => {
         contentType={selectedContentType}
         user={user}
       />
+
+      {/* Main Admin Dashboard Modal */}
+      {showAdminDashboard && (
+        <Modal
+          visible={showAdminDashboard}
+          animationType="slide"
+          onRequestClose={() => setShowAdminDashboard(false)}
+        >
+          <MainAdminDashboard onClose={() => setShowAdminDashboard(false)} />
+        </Modal>
+      )}
+
+      {/* Moderation Queue Modal */}
+      {showModerationQueue && (
+        <Modal
+          visible={showModerationQueue}
+          animationType="slide"
+          onRequestClose={() => setShowModerationQueue(false)}
+        >
+          <ModerationQueueScreen onClose={() => setShowModerationQueue(false)} />
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -411,8 +546,7 @@ const MainApp = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f7',
-  },
+    backgroundColor: '#f5f5f7'},
   headerSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -424,25 +558,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 16,
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)'},
   logo: {
     fontSize: 22,
     fontWeight: '800',
-    color: 'white',
-  },
+    color: 'white'},
   notifications: {
     position: 'relative',
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 20,
-    padding: 8,
-  },
+    padding: 8},
   notificationIcon: {
-    fontSize: 18,
-  },
+    fontSize: 18},
   notificationBadge: {
     position: 'absolute',
     top: -4,
@@ -452,35 +579,28 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
+    alignItems: 'center'},
   notificationBadgeText: {
     color: 'white',
     fontSize: 10,
-    fontWeight: 'bold',
-  },
+    fontWeight: 'bold'},
   mainContent: {
     flex: 1,
-    paddingHorizontal: 20,
-  },
+    paddingHorizontal: 20},
   welcomeSection: {
-    marginBottom: 25,
-  },
+    marginBottom: 25},
   welcomeTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: '#333',
-    marginBottom: 8,
-  },
+    marginBottom: 8},
   welcomeSubtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 20,
-  },
+    marginBottom: 20},
   quickStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+    justifyContent: 'space-between'},
   statCard: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -489,66 +609,49 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+    boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)'},
   statIcon: {
     fontSize: 20,
-    marginBottom: 8,
-  },
+    marginBottom: 8},
   statValue: {
     fontSize: 18,
     fontWeight: '700',
     color: '#333',
-    marginBottom: 4,
-  },
+    marginBottom: 4},
   statLabel: {
     fontSize: 12,
     color: '#666',
-    fontWeight: '500',
-  },
+    fontWeight: '500'},
   featuredSection: {
-    marginBottom: 25,
-  },
+    marginBottom: 25},
   sectionTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
-  },
+    marginBottom: 15},
   sectionTitleIcon: {
     fontSize: 16,
-    marginRight: 8,
-  },
+    marginRight: 8},
   sectionTitleText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#333',
-  },
+    color: '#333'},
   featuredMain: {
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 20,
     marginBottom: 15,
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)'},
   featuredImage: {
     height: 120,
     backgroundColor: '#f0f0f0',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-  },
+    marginBottom: 12},
   featuredImageText: {
     fontSize: 16,
-    color: '#666',
-  },
+    color: '#666'},
   featuredBadge: {
     position: 'absolute',
     top: 12,
@@ -558,88 +661,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
-  },
+    borderRadius: 12},
   featuredBadgeIcon: {
     fontSize: 12,
-    marginRight: 4,
-  },
+    marginRight: 4},
   featuredBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#333',
-  },
+    color: '#333'},
   featuredName: {
     fontSize: 18,
     fontWeight: '700',
     color: '#333',
-    marginBottom: 8,
-  },
+    marginBottom: 8},
   featuredDesc: {
     fontSize: 14,
     color: '#666',
     lineHeight: 20,
-    marginBottom: 12,
-  },
+    marginBottom: 12},
   featuredStats: {
     flexDirection: 'row',
-    gap: 20,
-  },
+    gap: 20},
   featuredStat: {
     flexDirection: 'row',
-    alignItems: 'center',
-  },
+    alignItems: 'center'},
   featuredStatIcon: {
     fontSize: 14,
-    marginRight: 4,
-  },
+    marginRight: 4},
   featuredStatText: {
     fontSize: 12,
-    color: '#666',
-  },
+    color: '#666'},
   featuredGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-  },
+    gap: 10},
   featuredItem: {
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 15,
     width: '48%',
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+    boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)'},
   featuredItemIcon: {
     fontSize: 24,
-    marginBottom: 8,
-  },
+    marginBottom: 8},
   featuredItemTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
-  },
+    marginBottom: 4},
   featuredItemSubtitle: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 8,
-  },
+    marginBottom: 8},
   featuredItemStats: {
     fontSize: 11,
-    color: '#999',
-  },
+    color: '#999'},
   quickActionsSection: {
-    marginBottom: 25,
-  },
+    marginBottom: 25},
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
+    justifyContent: 'space-between'},
   quickActionCard: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -647,11 +730,7 @@ const styles = StyleSheet.create({
     width: '48%',
     alignItems: 'center',
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+    boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)'},
   quickActionIcon: {
     width: 40,
     height: 40,
@@ -659,29 +738,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
-  },
+    marginBottom: 8},
   quickActionIconText: {
-    fontSize: 20,
-  },
+    fontSize: 20},
   quickActionTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
     marginBottom: 4,
-    textAlign: 'center',
-  },
+    textAlign: 'center'},
   quickActionSubtitle: {
     fontSize: 11,
     color: '#666',
-    textAlign: 'center',
-  },
+    textAlign: 'center'},
   recentActivitySection: {
-    marginBottom: 25,
-  },
+    marginBottom: 25},
   recentActivityGrid: {
-    gap: 10,
-  },
+    gap: 10},
   recentActivityItem: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -689,11 +762,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+    boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)'},
   activityIcon: {
     width: 40,
     height: 40,
@@ -701,51 +770,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
-  },
+    marginRight: 10},
   activityIconText: {
-    fontSize: 20,
-  },
+    fontSize: 20},
   activityContent: {
-    flex: 1,
-  },
+    flex: 1},
   activityTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 2,
-  },
+    marginBottom: 2},
   activitySubtitle: {
     fontSize: 11,
-    color: '#666',
-  },
+    color: '#666'},
   activityDate: {
     fontSize: 10,
     color: '#999',
-    marginLeft: 10,
-  },
+    marginLeft: 10},
   challengeCard: {
     backgroundColor: 'white',
     borderRadius: 16,
     padding: 20,
     marginBottom: 25,
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)'},
   challengeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-  },
+    marginBottom: 12},
   challengeTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#333',
-  },
+    color: '#333'},
   challengeXp: {
     fontSize: 12,
     fontWeight: 'bold',
@@ -753,65 +810,50 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 215, 0, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
-  },
+    borderRadius: 8},
   challengeDescription: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 15,
-  },
+    marginBottom: 15},
   challengeProgress: {
     height: 6,
     backgroundColor: '#f0f0f0',
     borderRadius: 3,
-    marginBottom: 12,
-  },
+    marginBottom: 12},
   challengeProgressFill: {
     height: '100%',
     width: '66%',
     backgroundColor: '#4CAF50',
-    borderRadius: 3,
-  },
+    borderRadius: 3},
   challengeStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+    justifyContent: 'space-between'},
   challengeStatText: {
     fontSize: 12,
-    color: '#666',
-  },
+    color: '#666'},
   honorSection: {
-    marginBottom: 100,
-  },
+    marginBottom: 100},
   honorGrid: {
-    gap: 10,
-  },
+    gap: 10},
   honorItem: {
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 15,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+    boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.1)'},
   honorName: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
-  },
+    marginBottom: 4},
   honorMessage: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 8,
-  },
+    marginBottom: 8},
   honorXp: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#4CAF50',
-  },
+    color: '#4CAF50'},
   floatingAction: {
     position: 'absolute',
     bottom: 100,
@@ -823,18 +865,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)'},
   floatingActionActive: {
     backgroundColor: '#FF6B6B',
-    transform: [{ rotate: '45deg' }],
-  },
+    transform: [{ rotate: '45deg' }]},
   floatingActionIcon: {
-    fontSize: 24,
-  },
+    fontSize: 24},
   bottomNav: {
     flexDirection: 'row',
     backgroundColor: 'white',
@@ -843,47 +879,36 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+    boxShadow: '0px -2px 4px rgba(0, 0, 0, 0.1)'},
   navItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 6,
-  },
+    paddingVertical: 6},
   navItemActive: {
     // Active state styling
   },
   navIcon: {
     fontSize: 18,
     marginBottom: 2,
-    opacity: 0.6,
-  },
+    opacity: 0.6},
   navIconActive: {
-    opacity: 1,
-  },
+    opacity: 1},
   navLabel: {
     fontSize: 8,
     color: '#666',
-    fontWeight: '500',
-  },
+    fontWeight: '500'},
   navLabelActive: {
     color: '#FFD700',
-    fontWeight: '600',
-  },
+    fontWeight: '600'},
   speedDial: {
     position: 'absolute',
     bottom: 170,
     right: 20,
-    alignItems: 'flex-end',
-  },
+    alignItems: 'flex-end'},
   speedDialItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
-  },
+    marginBottom: 15},
   speedDialLabel: {
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     color: 'white',
@@ -894,8 +919,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 12,
     maxWidth: 80,
-    textAlign: 'center',
-  },
+    textAlign: 'center'},
   speedDialButton: {
     width: 48,
     height: 48,
@@ -903,15 +927,50 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.25)'},
   speedDialButtonText: {
     fontSize: 20,
-    color: 'white',
-  },
-});
+    color: 'white'},
+  // Admin styles
+  adminContainer: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f5f5f7'},
+  adminHeader: {
+    marginBottom: 24},
+  adminTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8},
+  adminSubtitle: {
+    fontSize: 16,
+    color: '#666'},
+  adminActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between'},
+  adminActionCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    width: '48%',
+    alignItems: 'center',
+    marginBottom: 16,
+    elevation: 4,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)'},
+  adminActionIcon: {
+    fontSize: 32,
+    marginBottom: 12},
+  adminActionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+    textAlign: 'center'},
+  adminActionDesc: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center'}});
 export default MainApp;
 

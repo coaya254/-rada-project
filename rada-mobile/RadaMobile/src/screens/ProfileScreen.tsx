@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,25 +11,54 @@ import {
   Dimensions,
   Switch,
   Alert,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../contexts/AuthContext';
-import AdminLoginScreen from './AdminLoginScreen';
+import { useAnonMode } from '../contexts/AnonModeContext';
+// import AdminLoginScreen from './AdminLoginScreen';
 import AdminDashboard from './AdminDashboard';
+import MainAdminDashboard from './admin/MainAdminDashboard';
+import ProfileCustomizationModal from '../components/ProfileCustomizationModal';
+import PrivacyControlsModal from '../components/PrivacyControlsModal';
+import apiService from '../services/api';
+import { theme } from '../styles/theme';
+import { Card, Button, StatusBadge, TabNavigation } from '../components/ui';
 
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = () => {
-  const { user } = useAuth();
+  const { 
+    user, 
+    updateProfile, 
+    getDisplayName, 
+    getDisplayPicture, 
+    isAnonymousMode,
+    clearAllData 
+  } = useAnonMode();
+  
+  // Debug logging for user data
+  console.log('🔍 ProfileScreen: Current user from context:', {
+    hasUser: !!user,
+    uuid: user?.uuid?.substring(0, 8) + '...',
+    nickname: user?.nickname,
+    isAnonymous: user?.isAnonymous,
+    hasPassword: !!user?.password
+  });
   const [activeTab, setActiveTab] = useState('overview');
   const [menuVisible, setMenuVisible] = useState(false);
   const [adminLoginVisible, setAdminLoginVisible] = useState(false);
   const [adminDashboardVisible, setAdminDashboardVisible] = useState(false);
+  const [profileCustomizationVisible, setProfileCustomizationVisible] = useState(false);
+  const [privacyControlsVisible, setPrivacyControlsVisible] = useState(false);
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: false,
     anonymousMode: false,
   });
+  const [profileData, setProfileData] = useState(null);
+  const [activityData, setActivityData] = useState([]);
+  const [savedItems, setSavedItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const tabs = [
     { key: 'overview', label: 'Overview', icon: '🏠' },
@@ -39,7 +68,49 @@ const ProfileScreen = () => {
     { key: 'stats', label: 'Stats', icon: '📊' },
   ];
 
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!user?.uuid) return;
+      
+      try {
+        setLoading(true);
+        console.log('🔍 ProfileScreen: Fetching profile data for user:', {
+          uuid: user.uuid,
+          nickname: user.nickname,
+          hasPassword: !!user.password
+        });
+        
+        const [profileResponse, activityResponse, savedResponse] = await Promise.all([
+          apiService.getUserProfile(user.uuid),
+          apiService.getUserActivity(user.uuid, 10),
+          apiService.getUserSavedItems(user.uuid)
+        ]);
+        
+        console.log('🔍 ProfileScreen: API responses:', {
+          profile: profileResponse,
+          activity: activityResponse?.length || 0,
+          saved: savedResponse?.length || 0
+        });
+        
+        setProfileData(profileResponse);
+        setActivityData(activityResponse);
+        setSavedItems(savedResponse);
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+        // Fallback to user data from context
+        console.log('🔍 ProfileScreen: Using fallback user data:', user);
+        setProfileData(user);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, [user?.uuid]);
+
   const menuItems = [
+    { icon: '🔒', label: 'Privacy Controls', action: () => { setMenuVisible(false); setPrivacyControlsVisible(true); } },
     { icon: '📊', label: 'Activity History', action: () => Alert.alert('Activity History', 'View your complete activity timeline') },
     { icon: '📚', label: 'Saved Items', action: () => Alert.alert('Saved Items', 'View your bookmarked content') },
     { icon: '🏆', label: 'Achievements', action: () => Alert.alert('Achievements', 'View all your earned badges and milestones') },
@@ -98,6 +169,44 @@ const ProfileScreen = () => {
     }));
   };
 
+  const handleProfileSave = async (profileData) => {
+    try {
+      console.log('🔍 ProfileScreen: handleProfileSave called with:', profileData);
+      console.log('🔍 ProfileScreen: Current user before update:', {
+        uuid: user?.uuid,
+        nickname: user?.nickname,
+        hasPassword: !!user?.password
+      });
+      
+      await updateProfile(profileData);
+      console.log('🔍 ProfileScreen: Profile update completed successfully');
+      Alert.alert('Profile Updated', 'Your profile has been updated successfully!');
+    } catch (error) {
+      console.error('❌ ProfileScreen: Failed to update profile:', error);
+      console.error('❌ ProfileScreen: Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    }
+  };
+
+  const getCurrentProfileData = () => {
+    if (!user) return {
+      nickname: '',
+      profilePicture: null,
+      county: '',
+      bio: ''
+    };
+
+    return {
+      nickname: user.nickname || '',
+      profilePicture: user.profilePicture || null,
+      county: user.county || '',
+      bio: user.bio || ''
+    };
+  };
+
   const handleDangerAction = (action, title) => {
     Alert.alert(
       'Confirm Action',
@@ -137,17 +246,51 @@ const ProfileScreen = () => {
 
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatar}>{user?.emoji || '👤'}</Text>
+            {getDisplayPicture() ? (
+              getDisplayPicture().startsWith('data:') || 
+              getDisplayPicture().startsWith('file:') || 
+              getDisplayPicture().startsWith('http') ? (
+                <Image source={{ uri: getDisplayPicture() }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatar}>{getDisplayPicture()}</Text>
+              )
+            ) : (
+              <Text style={styles.avatar}>👤</Text>
+            )}
             <View style={styles.trustBadge}>
               <Text style={styles.trustBadgeText}>⭐</Text>
             </View>
             <View style={styles.onlineIndicator} />
+            {/* AnonMode™ Indicator */}
+            <View style={styles.anonModeIndicator}>
+              <Text style={styles.anonModeText}>🔒</Text>
+            </View>
           </View>
           
           <View style={styles.profileInfoContainer}>
-            <Text style={styles.profileName}>{user?.nickname || 'User'}</Text>
-            <Text style={styles.profileLocation}>📍 {user?.county || 'Nairobi'} • Level {user?.level || 1} • #{user?.rank || 156} • Trust: {(user?.trustScore || 3.2).toFixed(1)} 🏅 {user?.badges || 8} Badges Earned</Text>
-            <Text style={styles.bio}>{user?.bio || 'Passionate about civic engagement and community development. Building a better future through active participation and informed decision-making.'}</Text>
+            <View style={styles.profileNameRow}>
+              <Text style={styles.profileName}>
+                {profileData?.nickname || user?.nickname || getDisplayName()}
+              </Text>
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => setProfileCustomizationVisible(true)}
+              >
+                <Text style={styles.editButtonText}>✏️</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.profileLocation}>
+              📍 {profileData?.county || user?.county || 'Location not set'} • Level {profileData?.level || user?.level || 1} • XP: {profileData?.xp || user?.xp || 0} • Trust: {Number(profileData?.trust_score || user?.trustScore || 0).toFixed(1)} 🏅 {Array.isArray(profileData?.badges || user?.badges) ? (profileData?.badges || user?.badges).length : 0} Badges
+            </Text>
+            <Text style={styles.bio}>
+              {profileData?.bio || user?.bio || 'Welcome to Rada.ke! Customize your profile to connect with your community.'}
+            </Text>
+            {/* AnonMode™ Status */}
+            <View style={styles.anonModeStatus}>
+              <Text style={styles.anonModeStatusText}>
+                🔒 AnonMode™ Active - Your privacy is protected
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -175,19 +318,19 @@ const ProfileScreen = () => {
               <Text style={styles.cardTitle}>📊 Stats Overview</Text>
               <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{user?.xp_points || 1250}</Text>
+                  <Text style={styles.statValue}>{profileData?.xp || user?.xp || 0}</Text>
                   <Text style={styles.statLabel}>Total XP</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{(user?.trustScore || 3.2).toFixed(1)}</Text>
+                  <Text style={styles.statValue}>{Number(profileData?.trust_score || user?.trustScore || 0).toFixed(1)}</Text>
                   <Text style={styles.statLabel}>Trust Score</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{user?.badges || 8}</Text>
+                  <Text style={styles.statValue}>{Array.isArray(profileData?.badges || user?.badges) ? (profileData?.badges || user?.badges).length : 0}</Text>
                   <Text style={styles.statLabel}>Badges</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{user?.level || 8}</Text>
+                  <Text style={styles.statValue}>{profileData?.level || user?.level || 1}</Text>
                   <Text style={styles.statLabel}>Level</Text>
                 </View>
               </View>
@@ -195,32 +338,26 @@ const ProfileScreen = () => {
 
             <View style={styles.card}>
               <Text style={styles.cardTitle}>🎯 Recent Activity</Text>
+              {loading ? (
+                <Text style={styles.loadingText}>Loading activity...</Text>
+              ) : activityData?.length > 0 ? (
               <View style={styles.activityList}>
-                <View style={styles.activityItem}>
-                  <Text style={styles.activityIcon}>📚</Text>
+                  {activityData.map((activity) => (
+                    <View key={activity.id} style={styles.activityItem}>
+                      <Text style={styles.activityIcon}>{activity.icon}</Text>
                   <View style={styles.activityContent}>
-                    <Text style={styles.activityText}>Completed "Civic Rights" module</Text>
-                    <Text style={styles.activityTime}>2 hours ago</Text>
+                        <Text style={styles.activityText}>{activity.title}</Text>
+                        <Text style={styles.activityTime}>
+                          {new Date(activity.timestamp).toLocaleDateString()}
+                        </Text>
                   </View>
-                  <Text style={styles.activityXp}>+25 XP</Text>
+                      <Text style={styles.activityXp}>+{activity.xp} XP</Text>
                 </View>
-                <View style={styles.activityItem}>
-                  <Text style={styles.activityIcon}>🏆</Text>
-                  <View style={styles.activityContent}>
-                    <Text style={styles.activityText}>Earned "Trust Builder" badge</Text>
-                    <Text style={styles.activityTime}>1 day ago</Text>
+                  ))}
                   </View>
-                  <Text style={styles.activityXp}>+50 XP</Text>
-                </View>
-                <View style={styles.activityItem}>
-                  <Text style={styles.activityIcon}>📊</Text>
-                  <View style={styles.activityContent}>
-                    <Text style={styles.activityText}>Submitted promise evidence</Text>
-                    <Text style={styles.activityTime}>3 days ago</Text>
-                  </View>
-                  <Text style={styles.activityXp}>+15 XP</Text>
-                </View>
-              </View>
+              ) : (
+                <Text style={styles.emptyText}>No recent activity</Text>
+              )}
             </View>
           </View>
         )}
@@ -230,40 +367,43 @@ const ProfileScreen = () => {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>🏆 Trust Score Details</Text>
               <View style={styles.trustScoreCard}>
-                <Text style={styles.trustScoreValue}>{(user?.trustScore || 3.2).toFixed(1)}</Text>
+                <Text style={styles.trustScoreValue}>{Number(profileData?.trust_score || user?.trustScore || 0).toFixed(1)}</Text>
                 <Text style={styles.trustScoreLabel}>Current Trust Score</Text>
                 <View style={styles.trustProgressBar}>
-                  <View style={[styles.trustProgressFill, { width: `${((user?.trustScore || 3.2) / 5) * 100}%` }]} />
+                  <View style={[styles.trustProgressFill, { width: `${(Number(profileData?.trust_score || user?.trustScore || 0) / 5) * 100}%` }]} />
                 </View>
-                <Text style={styles.trustLevelInfo}>{trustLevel.label}</Text>
+                <Text style={styles.trustLevelInfo}>
+                  {(() => {
+                    const score = profileData?.trust_score || user?.trustScore || 0;
+                    if (score >= 4.5) return 'Excellent Trust';
+                    if (score >= 3.5) return 'Good Trust';
+                    if (score >= 2.5) return 'Fair Trust';
+                    if (score >= 1.5) return 'Low Trust';
+                    return 'Building Trust';
+                  })()}
+                </Text>
               </View>
             </View>
 
             <View style={styles.card}>
               <Text style={styles.cardTitle}>📈 Trust Events History</Text>
+              {loading ? (
+                <Text style={styles.loadingText}>Loading trust events...</Text>
+              ) : activityData?.length > 0 ? (
               <View style={styles.trustEventsList}>
-                <View style={styles.trustEventItem}>
+                  {activityData.slice(0, 5).map((activity) => (
+                    <View key={activity.id} style={styles.trustEventItem}>
                   <View style={styles.trustEventContent}>
-                    <Text style={styles.trustEventTitle}>Module Completion</Text>
-                    <Text style={styles.trustEventDescription}>Completed civic education module</Text>
+                        <Text style={styles.trustEventTitle}>{activity.title}</Text>
+                        <Text style={styles.trustEventDescription}>{activity.description}</Text>
                   </View>
-                  <Text style={styles.trustEventScore}>+0.1</Text>
+                      <Text style={styles.trustEventScore}>+{Math.floor(activity.xp / 10)}</Text>
                 </View>
-                <View style={styles.trustEventItem}>
-                  <View style={styles.trustEventContent}>
-                    <Text style={styles.trustEventTitle}>Evidence Submission</Text>
-                    <Text style={styles.trustEventDescription}>Submitted verified promise evidence</Text>
+                  ))}
                   </View>
-                  <Text style={styles.trustEventScore}>+0.2</Text>
-                </View>
-                <View style={styles.trustEventItem}>
-                  <View style={styles.trustEventContent}>
-                    <Text style={styles.trustEventTitle}>Community Recognition</Text>
-                    <Text style={styles.trustEventDescription}>Received community honor</Text>
-                  </View>
-                  <Text style={styles.trustEventScore}>+0.3</Text>
-                </View>
-              </View>
+              ) : (
+                <Text style={styles.emptyText}>No trust events yet. Start engaging to build your trust score!</Text>
+              )}
             </View>
           </View>
         )}
@@ -275,38 +415,28 @@ const ProfileScreen = () => {
               <Text style={styles.savedDescription}>
                 Items you've bookmarked for later reading and reference.
               </Text>
+              {loading ? (
+                <Text style={styles.loadingText}>Loading saved items...</Text>
+              ) : savedItems?.length > 0 ? (
               <View style={styles.savedList}>
-                <View style={styles.savedItem}>
-                  <View style={styles.savedItemContent}>
-                    <Text style={styles.savedItemType}>📄 Article</Text>
-                    <Text style={styles.savedItemTitle}>Understanding Civic Rights</Text>
-                    <Text style={styles.savedItemDate}>Saved 2 days ago</Text>
+                  {savedItems.map((item) => (
+                    <View key={item.id} style={styles.savedItem}>
+                    <View style={styles.savedItemContent}>
+                        <Text style={styles.savedItemType}>{item.icon} {item.type}</Text>
+                        <Text style={styles.savedItemTitle}>{item.title}</Text>
+                        <Text style={styles.savedItemDate}>
+                          Saved {new Date(item.savedAt).toLocaleDateString()}
+                        </Text>
+                    </View>
+                    <TouchableOpacity style={styles.savedItemAction}>
+                      <Text style={styles.savedItemActionText}>View</Text>
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity style={styles.savedItemAction}>
-                    <Text style={styles.savedItemActionText}>View</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.savedItem}>
-                  <View style={styles.savedItemContent}>
-                    <Text style={styles.savedItemType}>🎯 Promise</Text>
-                    <Text style={styles.savedItemTitle}>Infrastructure Development Plan</Text>
-                    <Text style={styles.savedItemDate}>Saved 5 days ago</Text>
-                  </View>
-                  <TouchableOpacity style={styles.savedItemAction}>
-                    <Text style={styles.savedItemActionText}>View</Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.savedItem}>
-                  <View style={styles.savedItemContent}>
-                    <Text style={styles.savedItemType}>📚 Module</Text>
-                    <Text style={styles.savedItemTitle}>Government Structure Basics</Text>
-                    <Text style={styles.savedItemDate}>Saved 1 week ago</Text>
-                  </View>
-                  <TouchableOpacity style={styles.savedItemAction}>
-                    <Text style={styles.savedItemActionText}>View</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+                  ))}
+                    </View>
+              ) : (
+                <Text style={styles.emptyText}>No saved items yet</Text>
+              )}
             </View>
           </View>
         )}
@@ -316,25 +446,22 @@ const ProfileScreen = () => {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>🏅 Your Badges</Text>
               <Text style={styles.badgesDescription}>
-                You've earned {user?.badges || 8} badges through your civic engagement activities.
+                You've earned {Array.isArray(profileData?.badges || user?.badges) ? (profileData?.badges || user?.badges).length : 0} badges through your civic engagement activities.
               </Text>
+              {loading ? (
+                <Text style={styles.loadingText}>Loading badges...</Text>
+              ) : Array.isArray(profileData?.badges || user?.badges) && (profileData?.badges || user?.badges).length > 0 ? (
               <View style={styles.badgesGrid}>
-                {[
-                  { icon: '🏆', name: 'Trust Builder', earned: true },
-                  { icon: '⭐', name: 'Civic Champion', earned: true },
-                  { icon: '🎯', name: 'Evidence Master', earned: true },
-                  { icon: '🔥', name: 'Streak Keeper', earned: true },
-                  { icon: '💡', name: 'Knowledge Seeker', earned: true },
-                  { icon: '🌟', name: 'Community Hero', earned: true },
-                  { icon: '🏛️', name: 'Policy Expert', earned: false },
-                  { icon: '📚', name: 'Learning Legend', earned: false },
-                ].map((badge, index) => (
-                  <View key={index} style={[styles.badgeItem, !badge.earned && styles.badgeItemLocked]}>
-                    <Text style={[styles.badgeIcon, !badge.earned && styles.badgeIconLocked]}>{badge.icon}</Text>
-                    <Text style={[styles.badgeName, !badge.earned && styles.badgeNameLocked]}>{badge.name}</Text>
+                  {(profileData?.badges || user?.badges).map((badge, index) => (
+                    <View key={index} style={styles.badgeItem}>
+                      <Text style={styles.badgeIcon}>{badge.icon || '🏆'}</Text>
+                      <Text style={styles.badgeName}>{badge.name || 'Badge'}</Text>
                   </View>
                 ))}
               </View>
+              ) : (
+                <Text style={styles.emptyText}>No badges earned yet. Keep engaging to earn your first badge!</Text>
+              )}
             </View>
           </View>
         )}
@@ -346,32 +473,32 @@ const ProfileScreen = () => {
               <View style={styles.statsSection}>
                 <Text style={styles.statsSectionTitle}>Learning Progress</Text>
                 <View style={styles.statRow}>
-                  <Text style={styles.statRowLabel}>Modules Completed</Text>
-                  <Text style={styles.statRowValue}>12 / 25</Text>
+                  <Text style={styles.statRowLabel}>Total XP</Text>
+                  <Text style={styles.statRowValue}>{profileData?.xp || user?.xp || 0}</Text>
                 </View>
                 <View style={styles.statRow}>
-                  <Text style={styles.statRowLabel}>Quiz Success Rate</Text>
-                  <Text style={styles.statRowValue}>87%</Text>
+                  <Text style={styles.statRowLabel}>Current Level</Text>
+                  <Text style={styles.statRowValue}>{profileData?.level || user?.level || 1}</Text>
                 </View>
                 <View style={styles.statRow}>
                   <Text style={styles.statRowLabel}>Learning Streak</Text>
-                  <Text style={styles.statRowValue}>{user?.streak || 7} days</Text>
+                  <Text style={styles.statRowValue}>{profileData?.streak || user?.streak || 0} days</Text>
                 </View>
               </View>
 
               <View style={styles.statsSection}>
                 <Text style={styles.statsSectionTitle}>Community Engagement</Text>
                 <View style={styles.statRow}>
-                  <Text style={styles.statRowLabel}>Promise Tracking</Text>
-                  <Text style={styles.statRowValue}>23 tracked</Text>
+                  <Text style={styles.statRowLabel}>Trust Score</Text>
+                  <Text style={styles.statRowValue}>{Number(profileData?.trust_score || user?.trustScore || 0).toFixed(1)}/5.0</Text>
                 </View>
                 <View style={styles.statRow}>
-                  <Text style={styles.statRowLabel}>Evidence Submitted</Text>
-                  <Text style={styles.statRowValue}>8 submissions</Text>
+                  <Text style={styles.statRowLabel}>Badges Earned</Text>
+                  <Text style={styles.statRowValue}>{Array.isArray(profileData?.badges || user?.badges) ? (profileData?.badges || user?.badges).length : 0}</Text>
                 </View>
                 <View style={styles.statRow}>
-                  <Text style={styles.statRowLabel}>Community Rank</Text>
-                  <Text style={styles.statRowValue}>#{user?.rank || 156}</Text>
+                  <Text style={styles.statRowLabel}>Activity Items</Text>
+                  <Text style={styles.statRowValue}>{activityData?.length || 0}</Text>
                 </View>
               </View>
 
@@ -379,7 +506,7 @@ const ProfileScreen = () => {
                 <Text style={styles.statsSectionTitle}>Trust Building</Text>
                 <View style={styles.statRow}>
                   <Text style={styles.statRowLabel}>Current Trust Score</Text>
-                  <Text style={styles.statRowValue}>{(user?.trustScore || 3.2).toFixed(1)} / 5.0</Text>
+                  <Text style={styles.statRowValue}>{Number(user?.trustScore || 3.2).toFixed(1)} / 5.0</Text>
                 </View>
                 <View style={styles.statRow}>
                   <Text style={styles.statRowLabel}>Trust Events</Text>
@@ -527,7 +654,15 @@ const ProfileScreen = () => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.dangerButton}
-                  onPress={() => handleDangerAction(() => Alert.alert('Logged Out'), 'log out')}
+                  onPress={() => handleDangerAction(async () => {
+                    try {
+                      await clearAllData();
+                      console.log('🔒 AnonMode™: User logged out successfully');
+                    } catch (error) {
+                      console.error('❌ Logout failed:', error);
+                      Alert.alert('Logout Failed', 'Could not log out. Please try again.');
+                    }
+                  }, 'log out')}
                 >
                   <Text style={styles.dangerButtonText}>🚪 Log Out</Text>
                 </TouchableOpacity>
@@ -544,7 +679,7 @@ const ProfileScreen = () => {
         animationType="slide"
         onRequestClose={() => setAdminLoginVisible(false)}
       >
-        <AdminLoginScreen onClose={() => setAdminLoginVisible(false)} onSuccess={handleAdminLoginSuccess} />
+        <MainAdminDashboard onClose={() => setAdminLoginVisible(false)} />
       </Modal>
 
       {/* Admin Dashboard Modal */}
@@ -556,6 +691,20 @@ const ProfileScreen = () => {
       >
         <AdminDashboard onClose={() => setAdminDashboardVisible(false)} />
       </Modal>
+
+      {/* Profile Customization Modal */}
+      <ProfileCustomizationModal
+        visible={profileCustomizationVisible}
+        onClose={() => setProfileCustomizationVisible(false)}
+        onSave={handleProfileSave}
+        currentProfile={getCurrentProfileData()}
+      />
+
+      {/* Privacy Controls Modal */}
+      <PrivacyControlsModal
+        visible={privacyControlsVisible}
+        onClose={() => setPrivacyControlsVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -563,12 +712,10 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f7',
+    backgroundColor: theme.colors.background.primary, // Clean white background like politician screens
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    ...theme.components.header, // Use theme header with teal background
   },
   headerTop: {
     flexDirection: 'row',
@@ -577,9 +724,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: 'white',
+    fontSize: theme.typography.sizes.xl,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.white,
   },
   menuButton: {
     fontSize: 24,
@@ -603,6 +750,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     textAlign: 'center',
     lineHeight: 60,
+  },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   trustBadge: {
     position: 'absolute',
@@ -631,14 +783,49 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'white',
   },
+  anonModeIndicator: {
+    position: 'absolute',
+    top: -5,
+    left: -5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  anonModeText: {
+    fontSize: 10,
+  },
   profileInfoContainer: {
     flex: 1,
+  },
+  profileNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   profileName: {
     fontSize: 20,
     fontWeight: '700',
     color: 'white',
-    marginBottom: 8,
+    flex: 1,
+  },
+  editButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  editButtonText: {
+    fontSize: 14,
+    color: 'white',
   },
   profileLocation: {
     fontSize: 12,
@@ -650,6 +837,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     lineHeight: 20,
+    marginBottom: 8,
+  },
+  anonModeStatus: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
+  },
+  anonModeStatusText: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
   headerTabContainer: {
     marginTop: 10,
@@ -961,6 +1161,18 @@ const styles = StyleSheet.create({
   savedList: {
     marginTop: 10,
   },
+  savedSection: {
+    marginBottom: 20,
+  },
+  savedSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: '#FF6B6B',
+  },
   savedItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1073,6 +1285,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '700',
+  },
+  loadingText: {
+    textAlign: 'center',
+    color: '#666',
+    marginVertical: 20,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#666',
+    fontStyle: 'italic',
+    marginVertical: 20,
   },
 });
 

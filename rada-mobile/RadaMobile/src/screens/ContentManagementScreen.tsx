@@ -67,11 +67,11 @@ const ContentManagementScreen = ({ onClose }) => {
       console.log('ContentManagementScreen - Loading content data...');
       
       const [modulesData, lessonsData, quizzesData, challengesData, badgesData] = await Promise.all([
-        apiService.getAdminContentModules(),
-        apiService.getAdminContentLessons(),
-        apiService.getAdminContentQuizzes(),
-        apiService.getAdminContentChallenges(),
-        apiService.getAdminContentBadges()
+        apiService.getModules(), // Show what users see
+        apiService.getLessons(), // Show what users see
+        apiService.getQuizzes(), // Show what users see
+        apiService.getChallenges(), // Show what users see
+        apiService.getBadges() // Show what users see
       ]);
 
       console.log('ContentManagementScreen - API responses:', {
@@ -83,11 +83,11 @@ const ContentManagementScreen = ({ onClose }) => {
       });
 
       setContent({
-        modules: modulesData?.modules || [],
-        lessons: lessonsData?.lessons || [],
-        quizzes: quizzesData?.quizzes || [],
-        challenges: challengesData?.challenges || [],
-        badges: badgesData?.badges || []
+        modules: modulesData?.data || modulesData || [],
+        lessons: lessonsData?.data || lessonsData || [],
+        quizzes: quizzesData?.data || quizzesData || [],
+        challenges: challengesData?.data || challengesData || [],
+        badges: badgesData?.data || badgesData || []
       });
     } catch (error) {
       console.error('Failed to load content:', error);

@@ -1,0 +1,1670 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Dimensions,
+  StatusBar,
+  Animated,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import LinearGradient from 'react-native-linear-gradient';
+
+const { width, height } = Dimensions.get('window');
+
+const PoliticianProfile = () => {
+  const [activeView, setActiveView] = useState('dashboard');
+  const [isFollowed, setIsFollowed] = useState(false);
+  const [expandedCommitment, setExpandedCommitment] = useState(null);
+
+  // Your original data
+  const quickStats = {
+    totalVotes: 15,
+    attendance: '95%',
+    partyLoyalty: '80%',
+    controversial: 3
+  };
+
+  const commitments = [
+    {
+      id: 1,
+      title: 'Create jobs and economic opportunities',
+      status: 'IN PROGRESS',
+      progress: 65,
+      date: '2022-06-15',
+      relatedActions: ['Employment Program Launch'],
+      sources: ['Campaign manifesto', 'BBC interview']
+    },
+    {
+      id: 2,
+      title: 'Improve infrastructure and development',
+      status: 'IN PROGRESS', 
+      progress: 78,
+      date: '2022-09-13',
+      relatedActions: ['Infrastructure Bill signed'],
+      sources: ['Official inauguration speech']
+    }
+  ];
+
+  const recentNews = [
+    {
+      title: 'Announces New Policy Initiative',
+      date: '2024-08-20',
+      category: 'BBC AFRICA',
+      preview: 'Comprehensive new policy program targeting key development areas.'
+    },
+    {
+      title: 'Addresses National Assembly',
+      date: '2024-07-15', 
+      category: 'REUTERS',
+      preview: 'Major speech outlining government agenda and priorities.'
+    }
+  ];
+
+  // Enhanced bento card for React Native
+  const BentoCard = ({ title, subtitle, iconName, colors, stats, onPress, size = "normal" }) => (
+    <TouchableOpacity 
+      style={[
+        styles.bentoCard, 
+        size === "large" && styles.bentoCardLarge,
+        size === "tall" && styles.bentoCardTall
+      ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <LinearGradient
+        colors={colors}
+        style={styles.bentoGradient}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 1}}
+      >
+        <View style={styles.bentoContent}>
+          <View style={styles.bentoHeader}>
+            <View style={styles.bentoIconContainer}>
+              <Icon name={iconName} size={28} color="#FFFFFF" />
+            </View>
+            {stats && (
+              <View style={styles.bentoStatsContainer}>
+                <Text style={styles.bentoStatsMain}>{stats.main}</Text>
+                <Text style={styles.bentoStatsSub}>{stats.sub}</Text>
+              </View>
+            )}
+          </View>
+          
+          <View style={styles.bentoTextContainer}>
+            <Text style={styles.bentoTitle}>{title}</Text>
+            <Text style={styles.bentoSubtitle}>{subtitle}</Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
+  const Dashboard = () => (
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.headerButton}>
+            <Icon name="chevron-left" size={24} color="#374151" />
+          </TouchableOpacity>
+          <View style={styles.headerRightButtons}>
+            <TouchableOpacity style={styles.headerButton}>
+              <Icon name="share" size={20} color="#374151" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.headerButton, isFollowed && styles.followedButton]}
+              onPress={() => setIsFollowed(!isFollowed)}
+            >
+              <Icon 
+                name={isFollowed ? "favorite" : "favorite-border"} 
+                size={20} 
+                color={isFollowed ? "#FFFFFF" : "#374151"} 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      {/* Profile Section with Background */}
+      <View style={styles.profileSection}>
+        <LinearGradient
+          colors={['#2563EB', '#1D4ED8', '#1E40AF']}
+          style={styles.profileBackground}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+        >
+          <View style={styles.profileContent}>
+            <View style={styles.profileImageContainer}>
+              <View style={styles.profileImage}>
+                <Text style={styles.profileImageText}>AK</Text>
+              </View>
+              <View style={styles.activeIndicator}>
+                <Icon name="check-circle" size={12} color="#FFFFFF" />
+              </View>
+            </View>
+            
+            <Text style={styles.profileName}>Amason Kingi</Text>
+            <View style={styles.profileTitle}>
+              <Icon name="star" size={16} color="#FFFFFF" />
+              <Text style={styles.profileTitleText}>Speaker of the Senate</Text>
+            </View>
+            
+            <View style={styles.profileDetails}>
+              <View style={styles.profileDetailItem}>
+                <Icon name="location-on" size={14} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.profileDetailText}>Kilifi North</Text>
+              </View>
+              <View style={styles.profileDetailItem}>
+                <Icon name="school" size={14} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.profileDetailText}>University of Nairobi</Text>
+              </View>
+            </View>
+            
+            {/* Stats Bar */}
+            <View style={styles.statsBar}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>17</Text>
+                <Text style={styles.statLabel}>YEARS</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>95%</Text>
+                <Text style={styles.statLabel}>ATTENDANCE</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>3</Text>
+                <Text style={styles.statLabel}>OFFICES</Text>
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
+
+      {/* Bento Grid */}
+      <View style={styles.bentoSection}>
+        <Text style={styles.sectionTitle}>Research Dashboard</Text>
+        
+        <View style={styles.bentoGrid}>
+          <BentoCard
+            title="Performance"
+            subtitle="Voting record & attendance tracking"
+            iconName="bar-chart"
+            colors={['#10B981', '#059669']}
+            stats={{ main: quickStats.attendance, sub: "attendance" }}
+            onPress={() => setActiveView('voting')}
+            size="large"
+          />
+          
+          <BentoCard
+            title="Promises"
+            subtitle="Track campaign commitments"
+            iconName="track-changes"
+            colors={['#EF4444', '#DC2626']}
+            stats={{ main: "2", sub: "active" }}
+            onPress={() => setActiveView('promises')}
+          />
+          
+          <BentoCard
+            title="Recent"
+            subtitle="Latest news & activities"
+            iconName="flash-on"
+            colors={['#8B5CF6', '#7C3AED']}
+            stats={{ main: "5", sub: "this week" }}
+            onPress={() => setActiveView('timeline')}
+          />
+          
+          <BentoCard
+            title="Career"
+            subtitle="17-year political journey"
+            iconName="business-center"
+            colors={['#F59E0B', '#D97706']}
+            stats={{ main: "3", sub: "roles" }}
+            onPress={() => setActiveView('career')}
+          />
+          
+          <BentoCard
+            title="Documents"
+            subtitle="Policy papers & speeches"
+            iconName="description"
+            colors={['#3B82F6', '#2563EB']}
+            stats={{ main: "12", sub: "documents" }}
+            onPress={() => setActiveView('documents')}
+          />
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionSection}>
+          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
+            <Text style={styles.primaryButtonText}>Compare with Other Politicians</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.tipCard}>
+            <View style={styles.tipIconContainer}>
+              <Icon name="info" size={20} color="#3B82F6" />
+            </View>
+            <View style={styles.tipContent}>
+              <Text style={styles.tipTitle}>Make Informed Decisions</Text>
+              <Text style={styles.tipText}>
+                Cross-reference campaign promises with actual voting records. Check multiple sources and compare with other politicians to form your own opinion.
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  const VotingView = () => (
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.subHeader}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => setActiveView('dashboard')}
+        >
+          <Icon name="chevron-left" size={24} color="#374151" />
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.subHeaderTitle}>Voting Record</Text>
+          <Text style={styles.subHeaderSubtitle}>Performance & attendance data</Text>
+        </View>
+      </View>
+
+      <View style={styles.contentSection}>
+        <View style={styles.statsGrid}>
+          {[
+            { value: quickStats.attendance, label: 'Attendance', color: '#10B981', change: '+2% improvement', context: 'vs previous term' },
+            { value: quickStats.partyLoyalty, label: 'Party Loyalty', color: '#8B5CF6', change: '-5% change', context: 'more independent' },
+            { value: quickStats.totalVotes, label: 'Total Votes', color: '#3B82F6', change: '100% participation', context: 'Current term' },
+            { value: quickStats.controversial, label: 'Controversial', color: '#F59E0B', change: '20% of total', context: 'Difficult votes' }
+          ].map((stat, index) => (
+            <View key={index} style={styles.statCard}>
+              <Text style={[styles.statCardValue, { color: stat.color }]}>{stat.value}</Text>
+              <Text style={styles.statCardLabel}>{stat.label}</Text>
+              <Text style={styles.statCardChange}>{stat.change}</Text>
+              <Text style={styles.statCardContext}>{stat.context}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.votingBreakdown}>
+          <Text style={styles.cardTitle}>Recent Voting Pattern</Text>
+          {[
+            { label: 'Government Bills', percentage: 80, color: '#10B981' },
+            { label: 'Opposition Bills', percentage: 25, color: '#EF4444' },
+            { label: 'Cross-party Bills', percentage: 95, color: '#3B82F6' }
+          ].map((item, index) => (
+            <View key={index} style={styles.votingItem}>
+              <Text style={styles.votingLabel}>{item.label}</Text>
+              <View style={styles.votingRight}>
+                <View style={styles.progressBarContainer}>
+                  <View style={[styles.progressBar, { width: `${item.percentage}%`, backgroundColor: item.color }]} />
+                </View>
+                <Text style={styles.votingPercentage}>{item.percentage}%</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity style={styles.actionCard} activeOpacity={0.8}>
+          <View>
+            <Text style={styles.actionCardTitle}>View Complete Voting History</Text>
+            <Text style={styles.actionCardSubtitle}>Detailed breakdown by bill, date & topic</Text>
+          </View>
+          <Icon name="open-in-new" size={24} color="#3B82F6" />
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+
+  const PromisesView = () => (
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.subHeader}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => setActiveView('dashboard')}
+        >
+          <Icon name="chevron-left" size={24} color="#374151" />
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.subHeaderTitle}>Promise Tracker</Text>
+          <Text style={styles.subHeaderSubtitle}>Campaign commitments vs reality</Text>
+        </View>
+      </View>
+
+      <View style={styles.contentSection}>
+        <LinearGradient
+          colors={['#EF4444', '#DC2626']}
+          style={styles.promiseHeader}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+        >
+          <View style={styles.promiseHeaderIcon}>
+            <Icon name="track-changes" size={28} color="#FFFFFF" />
+          </View>
+          <View>
+            <Text style={styles.promiseHeaderTitle}>Accountability Dashboard</Text>
+            <Text style={styles.promiseHeaderSubtitle}>Track promises from campaign to delivery</Text>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.promisesList}>
+          {commitments.map(commitment => (
+            <View key={commitment.id} style={styles.promiseCard}>
+              <View style={styles.promiseCardHeader}>
+                <Text style={styles.promiseTitle}>{commitment.title}</Text>
+                <View style={styles.promiseStatus}>
+                  <Text style={styles.promiseStatusText}>{commitment.status}</Text>
+                </View>
+              </View>
+              
+              <View style={styles.progressSection}>
+                <View style={styles.progressHeader}>
+                  <Text style={styles.progressLabel}>Progress</Text>
+                  <Text style={styles.progressValue}>{commitment.progress}%</Text>
+                </View>
+                <View style={styles.progressContainer}>
+                  <View style={[styles.progressFill, { width: `${commitment.progress}%` }]} />
+                </View>
+              </View>
+
+              <View style={styles.promiseFooter}>
+                <Text style={styles.promiseDate}>Made: {commitment.date}</Text>
+                <TouchableOpacity 
+                  style={styles.detailsButton}
+                  onPress={() => setExpandedCommitment(
+                    expandedCommitment === commitment.id ? null : commitment.id
+                  )}
+                >
+                  <Text style={styles.detailsButtonText}>
+                    {expandedCommitment === commitment.id ? 'Hide' : 'Details'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {expandedCommitment === commitment.id && (
+                <View style={styles.expandedDetails}>
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailSectionTitle}>SOURCES</Text>
+                    <Text style={styles.detailSectionText}>
+                      {commitment.sources.join(', ')}
+                    </Text>
+                  </View>
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailSectionTitle}>RECENT ACTIONS</Text>
+                    <Text style={styles.detailSectionText}>
+                      {commitment.relatedActions?.join(', ')}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  // Render based on active view
+  const renderView = () => {
+    switch(activeView) {
+      case 'voting': return <VotingView />;
+      case 'promises': return <PromisesView />;
+      case 'timeline': return <Dashboard />; // Simplified for now
+      case 'career': return <Dashboard />; // Simplified for now
+      case 'documents': return <Dashboard />; // Simplified for now
+      default: return <Dashboard />;
+    }
+  };
+
+  return (
+    <View style={styles.app}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      {renderView()}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  app: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  container: {
+    flex: 1,
+  },
+  
+  // Header Styles
+  header: {
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerRightButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  followedButton: {
+    backgroundColor: '#EF4444',
+  },
+
+  // Profile Section Styles
+  profileSection: {
+    marginHorizontal: 24,
+    marginBottom: 24,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  profileBackground: {
+    padding: 24,
+  },
+  profileContent: {
+    alignItems: 'center',
+  },
+  profileImageContainer: {
+    position: 'relative',
+    marginBottom: 24,
+  },
+  profileImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  profileImageText: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  profileName: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  profileTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  profileTitleText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  profileDetails: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24,
+    marginBottom: 24,
+  },
+  profileDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  profileDetailText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+  },
+  statsBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    marginHorizontal: 32,
+  },
+
+  // Bento Section Styles
+  bentoSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#111827',
+    marginBottom: 24,
+  },
+  bentoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 32,
+  },
+  bentoCard: {
+    width: (width - 64) / 2,
+    height: 144,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  bentoCardLarge: {
+    width: width - 48,
+    height: 160,
+  },
+  bentoCardTall: {
+    height: 320,
+  },
+  bentoGradient: {
+    flex: 1,
+    padding: 20,
+  },
+  bentoContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  bentoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  bentoIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bentoStatsContainer: {
+    alignItems: 'flex-end',
+  },
+  bentoStatsMain: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    lineHeight: 32,
+  },
+  bentoStatsSub: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 4,
+  },
+  bentoTextContainer: {
+    marginTop: 12,
+  },
+  bentoTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    lineHeight: 24,
+    marginBottom: 4,
+  },
+  bentoSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+    lineHeight: 18,
+  },
+
+  // Action Section Styles
+  actionSection: {
+    gap: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  primaryButtonText: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  tipCard: {
+    backgroundColor: '#DBEAFE',
+    borderRadius: 16,
+    padding: 24,
+    flexDirection: 'row',
+    gap: 16,
+  },
+  tipIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: '#3B82F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipContent: {
+    flex: 1,
+  },
+  tipTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#1E3A8A',
+    marginBottom: 8,
+  },
+  tipText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1D4ED8',
+    lineHeight: 22,
+  },
+
+  // Sub Header Styles
+  subHeader: {
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subHeaderTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#111827',
+  },
+  subHeaderSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 4,
+  },
+
+  // Content Section Styles
+  contentSection: {
+    padding: 24,
+    gap: 24,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  statCard: {
+    width: (width - 64) / 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  statCardValue: {
+    fontSize: 32,
+    fontWeight: '900',
+    marginBottom: 8,
+  },
+  statCardLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  statCardChange: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#10B981',
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginBottom: 8,
+  },
+  statCardContext: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+
+  // Voting Breakdown Styles
+  votingBreakdown: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  votingItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  votingLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    flex: 1,
+  },
+  votingRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  progressBarContainer: {
+    width: 96,
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  votingPercentage: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#111827',
+    minWidth: 40,
+    textAlign: 'right',
+  },
+
+  // Action Card Styles
+  actionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  actionCardTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#3B82F6',
+    marginBottom: 4,
+  },
+  actionCardSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#60A5FA',
+  },
+
+  // Promise Styles
+  promiseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 24,
+    borderRadius: 24,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  promiseHeaderIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  promiseHeaderTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  promiseHeaderSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+  },
+  promisesList: {
+    gap: 24,
+  },
+  promiseCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  promiseCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  promiseTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#111827',
+    flex: 1,
+    marginRight: 16,
+    lineHeight: 24,
+  },
+  promiseStatus: {
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  promiseStatusText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#1D4ED8',
+  },
+  progressSection: {
+    marginBottom: 16,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  progressLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  progressValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#111827',
+  },
+  progressContainer: {
+    height: 16,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    borderRadius: 8,
+    position: 'relative',
+  },
+  promiseFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  promiseDate: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  detailsButton: {
+    backgroundColor: '#DBEAFE',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  detailsButtonText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#1D4ED8',
+  },
+  expandedDetails: {
+    marginTop: 24,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    gap: 16,
+  },
+  detailSection: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 16,
+  },
+  detailSectionTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#374151',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  detailSectionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+    lineHeight: 20,
+  },
+});
+
+export default PoliticianProfile;
+
+// ========== REDESIGNED MODALS TO MATCH YOUR SOPHISTICATED DESIGN ==========
+
+// 1. NEWS MODAL - Redesigned
+const renderNewsModal = () => (
+    <Modal
+      visible={showNewsModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowNewsModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modernModalContent}>
+          {/* Modern Header */}
+          <View style={styles.modernModalHeader}>
+            <View>
+              <Text style={styles.modernModalTitle}>Article Preview</Text>
+              <Text style={styles.modernModalSubtitle}>Latest news coverage</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.modernCloseButton}
+              onPress={() => setShowNewsModal(false)}
+            >
+              <Icon name="close" size={24} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+          
+          {selectedNewsItem && (
+            <ScrollView style={styles.modernModalBody} showsVerticalScrollIndicator={false}>
+              {/* Source Badge */}
+              <View style={styles.modernSourceBadge}>
+                <Text style={styles.modernSourceBadgeText}>
+                  {selectedNewsItem.source}
+                </Text>
+                <View style={styles.breakingDot} />
+                <Text style={styles.breakingText}>BREAKING</Text>
+              </View>
+              
+              {/* Headline */}
+              <Text style={styles.modernHeadline}>{selectedNewsItem.headline}</Text>
+              
+              {/* Meta info */}
+              <View style={styles.modernMetaRow}>
+                <View style={styles.modernMetaItem}>
+                  <Icon name="schedule" size={16} color="#6B7280" />
+                  <Text style={styles.modernMetaText}>{selectedNewsItem.source_publication_date}</Text>
+                </View>
+              </View>
+              
+              {/* Content */}
+              <View style={styles.modernContentSection}>
+                <Text style={styles.modernSummary}>
+                  {selectedNewsItem.summary}
+                  {'\n\n'}
+                  This is a brief preview of the article. For the complete story and full context, 
+                  please visit the original source using the links below.
+                </Text>
+              </View>
+              
+              {/* Actions */}
+              <View style={styles.modernActionsSection}>
+                <TouchableOpacity 
+                  style={styles.modernPrimaryButton}
+                  onPress={() => handleReadMore(selectedNewsItem.link)}
+                >
+                  <Icon name="article" size={20} color="#FFFFFF" />
+                  <Text style={styles.modernPrimaryButtonText}>Read Full Article</Text>
+                </TouchableOpacity>
+                
+                <View style={styles.modernOtherSources}>
+                  <Text style={styles.modernSectionLabel}>Other Sources</Text>
+                  <View style={styles.modernSourcesGrid}>
+                    <TouchableOpacity style={[styles.modernSourceButton, { backgroundColor: '#10B981' }]}>
+                      <Text style={styles.modernSourceButtonText}>KBC</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.modernSourceButton, { backgroundColor: '#3B82F6' }]}>
+                      <Text style={styles.modernSourceButtonText}>NTV</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.modernSourceButton, { backgroundColor: '#8B5CF6' }]}>
+                      <Text style={styles.modernSourceButtonText}>Standard</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+  
+  // 2. DOCUMENT MODAL - Redesigned
+  const renderDocumentModal = () => (
+    <Modal
+      visible={showDocumentModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowDocumentModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modernModalContent}>
+          {/* Modern Header */}
+          <View style={styles.modernModalHeader}>
+            <View>
+              <Text style={styles.modernModalTitle}>Document Details</Text>
+              <Text style={styles.modernModalSubtitle}>Official government document</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.modernCloseButton}
+              onPress={() => setShowDocumentModal(false)}
+            >
+              <Icon name="close" size={24} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+          
+          {selectedDocument && (
+            <ScrollView style={styles.modernModalBody} showsVerticalScrollIndicator={false}>
+              {/* Document Type Badge */}
+              <View style={[styles.modernTypeBadge, { backgroundColor: '#3B82F620' }]}>
+                <Icon name="description" size={16} color="#3B82F6" />
+                <Text style={[styles.modernTypeBadgeText, { color: '#3B82F6' }]}>
+                  {selectedDocument.type.toUpperCase()}
+                </Text>
+              </View>
+              
+              {/* Title */}
+              <Text style={styles.modernHeadline}>{selectedDocument.title}</Text>
+              
+              {/* Meta info */}
+              <View style={styles.modernMetaGrid}>
+                <View style={styles.modernMetaCard}>
+                  <Icon name="event" size={20} color="#6B7280" />
+                  <Text style={styles.modernMetaCardLabel}>Date</Text>
+                  <Text style={styles.modernMetaCardValue}>{selectedDocument.date}</Text>
+                </View>
+                <View style={styles.modernMetaCard}>
+                  <Icon name="business" size={20} color="#6B7280" />
+                  <Text style={styles.modernMetaCardLabel}>Source</Text>
+                  <Text style={styles.modernMetaCardValue}>{selectedDocument.source}</Text>
+                </View>
+              </View>
+              
+              {/* Content */}
+              <View style={styles.modernContentSection}>
+                <Text style={styles.modernSectionLabel}>Summary</Text>
+                <Text style={styles.modernSummary}>{selectedDocument.summary}</Text>
+              </View>
+              
+              {/* Key Quotes */}
+              {selectedDocument.key_quotes && (
+                <View style={styles.modernContentSection}>
+                  <Text style={styles.modernSectionLabel}>Key Quotes</Text>
+                  <View style={styles.modernQuotesContainer}>
+                    {selectedDocument.key_quotes.map((quote, index) => (
+                      <View key={index} style={styles.modernQuoteCard}>
+                        <Icon name="format-quote" size={20} color="#8B5CF6" />
+                        <Text style={styles.modernQuoteText}>"{quote}"</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+              
+              {/* Actions */}
+              <View style={styles.modernActionsSection}>
+                <TouchableOpacity style={styles.modernPrimaryButton}>
+                  <Icon name="visibility" size={20} color="#FFFFFF" />
+                  <Text style={styles.modernPrimaryButtonText}>View Full Document</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+  
+  // 3. COMMITMENT MODAL - Redesigned
+  const renderCommitmentModal = () => (
+    <Modal
+      visible={showCommitmentModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowCommitmentModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modernModalContent}>
+          {/* Modern Header */}
+          <LinearGradient
+            colors={['#EF4444', '#DC2626']}
+            style={styles.modernModalHeaderGradient}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 0}}
+          >
+            <View>
+              <Text style={styles.modernModalTitleWhite}>Promise Tracker</Text>
+              <Text style={styles.modernModalSubtitleWhite}>Campaign commitment details</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.modernCloseButtonWhite}
+              onPress={() => setShowCommitmentModal(false)}
+            >
+              <Icon name="close" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </LinearGradient>
+          
+          {selectedCommitment && (
+            <ScrollView style={styles.modernModalBody} showsVerticalScrollIndicator={false}>
+              {/* Status Badge */}
+              <View style={[styles.modernStatusBadge, { 
+                backgroundColor: getStatusColor(selectedCommitment.status) + '20'
+              }]}>
+                <View style={[styles.modernStatusDot, { 
+                  backgroundColor: getStatusColor(selectedCommitment.status) 
+                }]} />
+                <Text style={[styles.modernStatusText, { 
+                  color: getStatusColor(selectedCommitment.status) 
+                }]}>
+                  {selectedCommitment.status.replace('_', ' ').toUpperCase()}
+                </Text>
+              </View>
+              
+              {/* Promise */}
+              <Text style={styles.modernHeadline}>{selectedCommitment.promise}</Text>
+              
+              {/* Meta Grid */}
+              <View style={styles.modernMetaGrid}>
+                <View style={styles.modernMetaCard}>
+                  <Icon name="event" size={20} color="#6B7280" />
+                  <Text style={styles.modernMetaCardLabel}>Made</Text>
+                  <Text style={styles.modernMetaCardValue}>{selectedCommitment.date_made}</Text>
+                </View>
+                <View style={styles.modernMetaCard}>
+                  <Icon name="location-on" size={20} color="#6B7280" />
+                  <Text style={styles.modernMetaCardLabel}>Context</Text>
+                  <Text style={styles.modernMetaCardValue}>{selectedCommitment.context}</Text>
+                </View>
+              </View>
+              
+              {/* Status Description */}
+              <View style={styles.modernContentSection}>
+                <Text style={styles.modernSectionLabel}>Status Update</Text>
+                <Text style={styles.modernSummary}>
+                  This commitment was made during {selectedCommitment.context} and is currently 
+                  {selectedCommitment.status === 'completed' ? ' completed' : 
+                   selectedCommitment.status === 'in_progress' ? ' in progress' :
+                   selectedCommitment.status === 'pending' ? ' pending' : ' broken'}.
+                </Text>
+              </View>
+              
+              {/* Related Actions */}
+              {selectedCommitment.related_actions && (
+                <View style={styles.modernContentSection}>
+                  <Text style={styles.modernSectionLabel}>Related Actions</Text>
+                  <View style={styles.modernActionsContainer}>
+                    {selectedCommitment.related_actions.map((action, index) => (
+                      <View key={index} style={styles.modernActionCard}>
+                        <View style={styles.modernActionHeader}>
+                          <Icon name="check-circle" size={20} color="#10B981" />
+                          <Text style={styles.modernActionTitle}>{action.action}</Text>
+                        </View>
+                        <Text style={styles.modernActionDate}>{action.date}</Text>
+                        <Text style={styles.modernActionConnection}>{action.connection}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+              
+              {/* Sources */}
+              <View style={styles.modernContentSection}>
+                <Text style={styles.modernSectionLabel}>Sources</Text>
+                <View style={styles.modernSourcesContainer}>
+                  {selectedCommitment.sources.map((source, index) => (
+                    <View key={index} style={styles.modernSourceItem}>
+                      <Icon name="link" size={16} color="#8B5CF6" />
+                      <Text style={styles.modernSourceItemText}>{source}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+  
+  // ========== MODERN MODAL STYLES ==========
+  const modernModalStyles = {
+    // Base Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    modernModalContent: {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 24,
+      width: '100%',
+      maxHeight: '85%',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.25,
+      shadowRadius: 25,
+      elevation: 25,
+    },
+    
+    // Header Styles
+    modernModalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 24,
+      borderBottomWidth: 1,
+      borderBottomColor: '#F3F4F6',
+    },
+    modernModalHeaderGradient: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 24,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+    },
+    modernModalTitle: {
+      fontSize: 24,
+      fontWeight: '900',
+      color: '#111827',
+      marginBottom: 4,
+    },
+    modernModalTitleWhite: {
+      fontSize: 24,
+      fontWeight: '900',
+      color: '#FFFFFF',
+      marginBottom: 4,
+    },
+    modernModalSubtitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#6B7280',
+    },
+    modernModalSubtitleWhite: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: 'rgba(255,255,255,0.9)',
+    },
+    modernCloseButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: '#F3F4F6',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modernCloseButtonWhite: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    
+    // Body Styles
+    modernModalBody: {
+      padding: 24,
+    },
+    
+    // Badge Styles
+    modernSourceBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#F3E8FF',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      marginBottom: 16,
+      alignSelf: 'flex-start',
+    },
+    modernSourceBadgeText: {
+      fontSize: 12,
+      fontWeight: '900',
+      color: '#8B5CF6',
+      marginRight: 12,
+    },
+    breakingDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#EF4444',
+      marginRight: 6,
+    },
+    breakingText: {
+      fontSize: 10,
+      fontWeight: '900',
+      color: '#EF4444',
+    },
+    modernTypeBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      marginBottom: 16,
+      alignSelf: 'flex-start',
+      gap: 8,
+    },
+    modernTypeBadgeText: {
+      fontSize: 12,
+      fontWeight: '900',
+    },
+    modernStatusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 16,
+      marginBottom: 16,
+      gap: 12,
+    },
+    modernStatusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    modernStatusText: {
+      fontSize: 14,
+      fontWeight: '900',
+    },
+    
+    // Content Styles
+    modernHeadline: {
+      fontSize: 22,
+      fontWeight: '900',
+      color: '#111827',
+      lineHeight: 28,
+      marginBottom: 20,
+    },
+    modernMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    modernMetaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    modernMetaText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#6B7280',
+    },
+    modernMetaGrid: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 20,
+    },
+    modernMetaCard: {
+      flex: 1,
+      backgroundColor: '#F9FAFB',
+      borderRadius: 16,
+      padding: 16,
+      alignItems: 'center',
+    },
+    modernMetaCardLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#6B7280',
+      marginTop: 8,
+    },
+    modernMetaCardValue: {
+      fontSize: 14,
+      fontWeight: '900',
+      color: '#111827',
+      marginTop: 4,
+      textAlign: 'center',
+    },
+    
+    // Section Styles
+    modernContentSection: {
+      marginBottom: 24,
+    },
+    modernSectionLabel: {
+      fontSize: 16,
+      fontWeight: '900',
+      color: '#111827',
+      marginBottom: 12,
+    },
+    modernSummary: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#374151',
+      lineHeight: 24,
+    },
+    
+    // Quotes Styles
+    modernQuotesContainer: {
+      gap: 12,
+    },
+    modernQuoteCard: {
+      flexDirection: 'row',
+      backgroundColor: '#F8FAFC',
+      borderRadius: 16,
+      padding: 16,
+      borderLeftWidth: 4,
+      borderLeftColor: '#8B5CF6',
+      gap: 12,
+    },
+    modernQuoteText: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '500',
+      color: '#374151',
+      fontStyle: 'italic',
+      lineHeight: 22,
+    },
+    
+    // Actions Styles
+    modernActionsContainer: {
+      gap: 12,
+    },
+    modernActionCard: {
+      backgroundColor: '#F0FDF4',
+      borderRadius: 16,
+      padding: 16,
+      borderLeftWidth: 4,
+      borderLeftColor: '#10B981',
+    },
+    modernActionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 8,
+    },
+    modernActionTitle: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#111827',
+    },
+    modernActionDate: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#059669',
+      marginBottom: 4,
+    },
+    modernActionConnection: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: '#6B7280',
+    },
+    
+    // Sources Styles
+    modernSourcesContainer: {
+      gap: 8,
+    },
+    modernSourceItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 8,
+    },
+    modernSourceItemText: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#374151',
+    },
+    
+    // Button Styles
+    modernActionsSection: {
+      gap: 20,
+    },
+    modernPrimaryButton: {
+      backgroundColor: '#111827',
+      borderRadius: 16,
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    modernPrimaryButtonText: {
+      fontSize: 16,
+      fontWeight: '900',
+      color: '#FFFFFF',
+    },
+    modernOtherSources: {
+      gap: 12,
+    },
+    modernSourcesGrid: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    modernSourceButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      flex: 1,
+      alignItems: 'center',
+    },
+    modernSourceButtonText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+  };
+  
+  // Helper function for status colors
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'completed': return '#10B981';
+      case 'in_progress': return '#3B82F6';
+      case 'pending': return '#F59E0B';
+      case 'broken': return '#EF4444';
+      default: return '#6B7280';
+    }
+  };

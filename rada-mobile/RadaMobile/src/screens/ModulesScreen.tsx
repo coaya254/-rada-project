@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,25 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAnonMode } from '../contexts/AnonModeContext';
+import apiService from '../services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const ModulesScreen = ({ navigation }) => {
+  const { user } = useAnonMode();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [visibleModules, setVisibleModules] = useState(3);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [modules, setModules] = useState([]);
+  const [userStats, setUserStats] = useState(null);
+  const [hasLoadedInitially, setHasLoadedInitially] = useState(false);
 
   const categories = [
     { id: 'all', label: 'All', icon: '📚' },
@@ -25,12 +36,73 @@ const ModulesScreen = ({ navigation }) => {
     { id: 'anti-corruption', label: 'Anti-Corruption', icon: '🛡️' },
   ];
 
-  const userStats = {
-    total_xp: 125,
+  // Load data from API - simplified version
+  const loadData = async () => {
+    if (hasLoadedInitially) return; // Prevent multiple loads
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      console.log('ModulesScreen - Loading data for user:', user?.uuid);
+
+      const [modulesResponse, statsResponse] = await Promise.all([
+        apiService.getModules(),
+        user ? apiService.getUserStats(user.uuid) : Promise.resolve({ data: null })
+      ]);
+
+      // Process modules data
+      let modulesData = [];
+      if (Array.isArray(modulesResponse)) {
+        modulesData = modulesResponse;
+      } else if (modulesResponse?.data && Array.isArray(modulesResponse.data)) {
+        modulesData = modulesResponse.data;
+      } else if (modulesResponse?.modules && Array.isArray(modulesResponse.modules)) {
+        modulesData = modulesResponse.modules;
+      }
+
+      console.log('ModulesScreen - Processed modules:', modulesData);
+      setModules(modulesData);
+
+      // Process user stats
+      let stats = null;
+      if (statsResponse?.data) {
+        stats = statsResponse.data;
+      } else if (statsResponse && typeof statsResponse === 'object') {
+        stats = statsResponse;
+      }
+
+      console.log('ModulesScreen - Processed stats:', stats);
+      setUserStats(stats);
+      setHasLoadedInitially(true);
+
+    } catch (err) {
+      console.error('Error loading Modules data:', err);
+      setError('Failed to load modules. Please check your connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setHasLoadedInitially(false); // Allow reload
+    await loadData();
+    setRefreshing(false);
+  };
+
+  // Single useEffect for initial load
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Fallback user stats if API fails
+  const fallbackStats = {
+    total_xp: user?.xp || 125,
     completed_modules: 1,
     passed_quizzes: 3,
     completed_challenges: 2,
-    learning_streak: 5,
+    learning_streak: user?.streak || 5,
     earned_badges: 2
   };
 
@@ -103,8 +175,28 @@ const ModulesScreen = ({ navigation }) => {
   ];
 
   const filteredModules = selectedCategory === 'all' 
-    ? sampleModules 
-    : sampleModules.filter(module => module.category === selectedCategory);
+    ? modules 
+    : modules.filter(module => module.category === selectedCategory);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6B6B" />
+        <Text style={styles.loadingText}>Loading Modules...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -123,25 +215,39 @@ const ModulesScreen = ({ navigation }) => {
       <ScrollView 
         style={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* Featured Module */}
-        {sampleModules.find(m => m.is_featured) && (
+        {modules.find(m => m.is_featured) && (
           <View style={styles.featuredSection}>
             <Text style={styles.featuredTitle}>🌟 Featured This Week</Text>
-            <TouchableOpacity style={styles.featuredCard}>
+            <TouchableOpacity 
+              style={styles.featuredCard}
+              onPress={() => navigation.navigate('ModuleDetailScreen', { 
+                module: modules.find(m => m.is_featured) 
+              })}
+            >
               <LinearGradient
                 colors={['#FF6B6B', '#4ECDC4']}
                 style={styles.featuredGradient}
               >
                 <View style={styles.featuredContent}>
-                  <Text style={styles.featuredIcon}>🏛️</Text>
+                  <Text style={styles.featuredIcon}>
+                    {modules.find(m => m.is_featured)?.icon || '🏛️'}
+                  </Text>
                   <View style={styles.featuredInfo}>
-                    <Text style={styles.featuredModuleTitle}>Kenyan Constitution Basics</Text>
+                    <Text style={styles.featuredModuleTitle}>
+                      {modules.find(m => m.is_featured)?.title || 'Featured Module'}
+                    </Text>
                     <Text style={styles.featuredDescription}>
-                      Master the fundamentals of Kenya's government structure
+                      {modules.find(m => m.is_featured)?.description || 'Learn something new today!'}
                     </Text>
                     <View style={styles.featuredMeta}>
-                      <Text style={styles.featuredMetaText}>⭐ 50 XP • 30 min • Beginner</Text>
+                      <Text style={styles.featuredMetaText}>
+                        ⭐ {modules.find(m => m.is_featured)?.xp_reward || 50} XP • {modules.find(m => m.is_featured)?.estimated_duration || 30} min • {modules.find(m => m.is_featured)?.difficulty || 'Beginner'}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -247,7 +353,10 @@ const ModulesScreen = ({ navigation }) => {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.moduleButton}>
+            <TouchableOpacity 
+              style={styles.moduleButton}
+              onPress={() => navigation.navigate('ModuleDetailScreen', { module })}
+            >
               <Text style={styles.moduleButtonText}>
                 {module.progress === 100 ? 'Completed ✓' : 'Start Learning'}
               </Text>
@@ -272,30 +381,40 @@ const ModulesScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f7',
+    backgroundColor: '#f8fafc',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FF6B6B',
+    backgroundColor: 'white',
     paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 15,
+    paddingBottom: 20,
     paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   backButtonText: {
-    color: 'white',
+    color: '#475569',
     fontSize: 16,
     fontWeight: '600',
   },
   headerTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '700',
+    color: '#1e293b',
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   headerSpacer: {
     width: 60,
@@ -306,21 +425,24 @@ const styles = StyleSheet.create({
   },
   progressSummary: {
     backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
   progressTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 20,
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
   progressGrid: {
     flexDirection: 'row',
@@ -329,62 +451,68 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     width: screenWidth < 400 ? '48%' : '48%',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: screenWidth < 400 ? 12 : 16,
-    marginBottom: 12,
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    padding: screenWidth < 400 ? 16 : 20,
+    marginBottom: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   progressIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 28,
+    marginBottom: 12,
   },
   progressNumber: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FF6B6B',
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#3b82f6',
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
   progressLabel: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 13,
+    color: '#64748b',
     textAlign: 'center',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   featuredSection: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   featuredTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 15,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   featuredCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
-    elevation: 3,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
   },
   featuredGradient: {
-    padding: 20,
+    padding: 24,
   },
   featuredContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   featuredIcon: {
-    fontSize: 48,
-    marginRight: 16,
+    fontSize: 56,
+    marginRight: 20,
   },
   featuredInfo: {
     flex: 1,
   },
   featuredModuleTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: 'white',
     marginBottom: 8,
   },
@@ -510,44 +638,49 @@ const styles = StyleSheet.create({
   },
   moduleCard: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: screenWidth < 400 ? 12 : 16,
-    marginBottom: 12,
-    elevation: 2,
+    borderRadius: 20,
+    padding: screenWidth < 400 ? 16 : 20,
+    marginBottom: 16,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
   },
   moduleHeader: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   moduleImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0',
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    backgroundColor: '#f8fafc',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   moduleImageText: {
-    fontSize: 24,
+    fontSize: 28,
   },
   moduleInfo: {
     flex: 1,
   },
   moduleTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 6,
+    letterSpacing: -0.2,
   },
   moduleDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: 15,
+    color: '#64748b',
+    marginBottom: 12,
   },
   moduleMeta: {
     flexDirection: 'row',
@@ -619,6 +752,41 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '600',
     fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f7',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f7',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
