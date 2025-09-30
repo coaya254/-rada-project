@@ -14,6 +14,8 @@ const {
   hasPermission
 } = require('./enhanced_auth_middleware');
 
+module.exports = router;
+
 // =====================================================
 // ENHANCED AUTHENTICATION ROUTES
 // =====================================================
