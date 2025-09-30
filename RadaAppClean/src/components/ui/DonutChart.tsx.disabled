@@ -1,0 +1,123 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Svg, Circle } from 'react-native-svg';
+import { colors, typography } from '../../theme';
+
+export interface DonutChartData {
+  value: number;
+  color: string;
+  label?: string;
+}
+
+export interface DonutChartProps {
+  data: DonutChartData[];
+  size?: number;
+  strokeWidth?: number;
+  centerContent?: React.ReactNode;
+  showLabels?: boolean;
+}
+
+export const DonutChart: React.FC<DonutChartProps> = ({
+  data,
+  size = 120,
+  strokeWidth = 12,
+  centerContent,
+  showLabels = true,
+}) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  let accumulatedPercentage = 0;
+
+  const renderSegment = (item: DonutChartData, index: number) => {
+    const percentage = (item.value / total) * 100;
+    const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
+    const strokeDashoffset = -((accumulatedPercentage / 100) * circumference);
+
+    accumulatedPercentage += percentage;
+
+    return (
+      <Circle
+        key={index}
+        cx={center}
+        cy={center}
+        r={radius}
+        fill="transparent"
+        stroke={item.color}
+        strokeWidth={strokeWidth}
+        strokeDasharray={strokeDasharray}
+        strokeDashoffset={strokeDashoffset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${center} ${center})`}
+      />
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.chartContainer, { width: size, height: size }]}>
+        <Svg width={size} height={size}>
+          {data.map(renderSegment)}
+        </Svg>
+
+        {centerContent && (
+          <View style={styles.centerContent}>
+            {centerContent}
+          </View>
+        )}
+      </View>
+
+      {showLabels && (
+        <View style={styles.legend}>
+          {data.map((item, index) => (
+            <View key={index} style={styles.legendItem}>
+              <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+              <Text style={styles.legendLabel}>
+                {item.label} ({((item.value / total) * 100).toFixed(1)}%)
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+  },
+  chartContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerContent: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legend: {
+    marginTop: 16,
+    alignItems: 'flex-start',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  legendLabel: {
+    fontSize: 14,
+    fontWeight: typography.fontWeights.medium as any,
+    color: colors.neutral[700],
+  },
+});
