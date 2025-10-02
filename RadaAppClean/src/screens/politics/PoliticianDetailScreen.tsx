@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, NewsCard } from '../../components/ui';
 import { NewsItem, Politician, Document, TimelineEvent, Commitment, VotingRecord } from '../../types';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
+import ApiService from '../../services/api';
 
 // Import individual screens
 import { PoliticianNewsScreen } from './PoliticianNewsScreen';
@@ -44,21 +45,8 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
   route,
   navigation,
 }) => {
-  // Get politician data
-  const politician = route.params?.politician || {
-    id: 1,
-    name: 'Amason Jeffah Kingi',
-    title: 'Speaker of the Senate',
-    current_position: 'Speaker of the Senate',
-    party: 'PAA',
-    constituency: 'Kilifi County',
-    party_color: '#1e40af',
-    key_achievements: ['Speaker of Senate 2022-present', 'Governor Kilifi 2013-2022', 'MP Kilifi North 2007-2013'],
-    education: 'University of Nairobi (LLB)',
-    party_history: ['ODM (2007-2012)', 'UDF (2012-2016)', 'Jubilee (2016-2022)', 'UDA (2022-present)'],
-    image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Amason_Kingi_2022.jpg/400px-Amason_Kingi_2022.jpg',
-    slug: 'amason-kingi'
-  };
+  // Get politician data from navigation params
+  const politician = route.params?.politician;
 
   // Main view state for full-screen navigation
   const [activeView, setActiveView] = useState<'dashboard' | 'voting' | 'promises' | 'timeline' | 'career' | 'documents' | 'news'>('dashboard');
@@ -90,7 +78,6 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
   const [showConstituencyModal, setShowConstituencyModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [showAdvancedFiltersModal, setShowAdvancedFiltersModal] = useState(false);
   const [comparisonPolitician, setComparisonPolitician] = useState<Politician | null>(null);
 
@@ -106,128 +93,64 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
     loadNewsData();
   };
 
-  const loadDocumentsData = () => {
-    const sampleDocuments: Document[] = [
-      {
-        id: 1,
-        politician_id: politician.id,
-        title: `${politician.name} - Healthcare Reform Bill`,
-        summary: 'Comprehensive policy document outlining strategic initiatives for healthcare development.',
-        type: 'bill',
-        date: '2023-09-15',
-        source: 'Parliament of Kenya',
-        tags: ['healthcare', 'policy', 'legislation'],
-        url: 'https://example.com/documents/healthcare-bill.pdf',
-      },
-      {
-        id: 2,
-        politician_id: politician.id,
-        title: 'Parliamentary Speech on Education',
-        summary: 'Key speech delivered on education reform and funding allocation.',
-        type: 'speech',
-        date: '2023-10-20',
-        source: 'Parliamentary Hansard',
-        tags: ['education', 'speech', 'reform'],
-        url: 'https://example.com/documents/education-speech.pdf',
-      }
-    ];
-    setDocumentsData(sampleDocuments);
+  const loadDocumentsData = async () => {
+    if (!politician) return;
+    try {
+      const response = await ApiService.getDocuments(politician.id);
+      const documents = response.success ? response.data : response;
+      setDocumentsData(documents);
+    } catch (error) {
+      console.error('Error loading documents:', error);
+      setDocumentsData([]);
+    }
   };
 
-  const loadTimelineData = () => {
-    const sampleTimeline: TimelineEvent[] = [
-      {
-        id: 1,
-        politician_id: politician.id,
-        title: `${politician.name} Elected to Parliament`,
-        description: 'Won constituency seat with significant margin, representing progressive policies.',
-        date: '2022-08-09',
-        type: 'position',
-      },
-      {
-        id: 2,
-        politician_id: politician.id,
-        title: 'Healthcare Reform Achievement',
-        description: 'Successfully passed landmark healthcare legislation expanding coverage.',
-        date: '2023-06-15',
-        type: 'achievement',
-      }
-    ];
-    setTimelineData(sampleTimeline);
+  const loadTimelineData = async () => {
+    if (!politician) return;
+    try {
+      const response = await ApiService.getTimeline(politician.id);
+      const timeline = response.success ? response.data : response;
+      setTimelineData(timeline);
+    } catch (error) {
+      console.error('Error loading timeline:', error);
+      setTimelineData([]);
+    }
   };
 
-  const loadCommitmentsData = () => {
-    const sampleCommitments: Commitment[] = [
-      {
-        id: 1,
-        politician_id: politician.id,
-        promise: `${politician.name} pledged to improve healthcare access`,
-        description: 'Committed to building 3 new health centers and increasing medical staff coverage.',
-        category: 'Healthcare',
-        date_made: '2022-03-15',
-        status: 'in_progress',
-        evidence: 'Construction begun on 1 health center, 10 medical staff hired.',
-      },
-      {
-        id: 2,
-        politician_id: politician.id,
-        promise: 'Education reform initiative',
-        description: 'Promised to digitize primary schools and provide learning resources.',
-        category: 'Education',
-        date_made: '2022-10-20',
-        status: 'kept',
-        evidence: 'All 5 primary schools digitized, 1,000 tablets distributed.',
-      }
-    ];
-    setCommitmentsData(sampleCommitments);
+  const loadCommitmentsData = async () => {
+    if (!politician) return;
+    try {
+      const response = await ApiService.getCommitments(politician.id);
+      const commitments = response.success ? response.data : response;
+      setCommitmentsData(commitments);
+    } catch (error) {
+      console.error('Error loading commitments:', error);
+      setCommitmentsData([]);
+    }
   };
 
-  const loadVotingData = () => {
-    const sampleVoting: VotingRecord[] = [
-      {
-        id: 1,
-        politician_id: politician.id,
-        bill_number: 'HB-2023-001',
-        bill_title: 'Healthcare Access Act',
-        bill_summary: 'Comprehensive healthcare reform to expand access and reduce costs.',
-        vote: 'yes',
-        date: '2023-06-15',
-        session: '2023 Legislative Session',
-        category: 'Healthcare',
-        bill_passed: true,
-        notes: `${politician.name} strongly supported this landmark healthcare legislation.`,
-      },
-      {
-        id: 2,
-        politician_id: politician.id,
-        bill_number: 'SB-2023-045',
-        bill_title: 'Education Funding Bill',
-        bill_summary: 'Increased budget allocation for primary and secondary education.',
-        vote: 'yes',
-        date: '2023-09-10',
-        session: '2023 Legislative Session',
-        category: 'Education',
-        bill_passed: true,
-        notes: 'Advocated for rural school development provisions.',
-      }
-    ];
-    setVotingData(sampleVoting);
+  const loadVotingData = async () => {
+    if (!politician) return;
+    try {
+      const response = await ApiService.getVotingRecords(politician.id);
+      const voting = response.success ? response.data : response;
+      setVotingData(voting);
+    } catch (error) {
+      console.error('Error loading voting records:', error);
+      setVotingData([]);
+    }
   };
 
-  const loadNewsData = () => {
-    const sampleNews: NewsItem[] = [
-      {
-        id: 1,
-        headline: `${politician.name} Announces New Policy Initiative`,
-        source_publication_date: '2024-08-20',
-        system_addition_date: '2024-08-21',
-        source: 'Daily Nation',
-        credibility: 'high',
-        link: 'https://example.com/news/1',
-        summary: `${politician.name} has announced a comprehensive new policy initiative aimed at improving governance in ${politician.constituency}.`
-      }
-    ];
-    setNewsData(sampleNews);
+  const loadNewsData = async () => {
+    if (!politician) return;
+    try {
+      const response = await ApiService.getPoliticianNews(politician.id);
+      const news = response.success ? response.data : response;
+      setNewsData(news);
+    } catch (error) {
+      console.error('Error loading news:', error);
+      setNewsData([]);
+    }
   };
 
   const onRefresh = async () => {
@@ -369,8 +292,8 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
           {/* Profile Info */}
           <View style={styles.profileInfo}>
             <View style={styles.profileImageContainer}>
-              {politician.image_url ? (
-                <Image source={{ uri: politician.image_url }} style={styles.profileImage} />
+              {politician.imageUrl ? (
+                <Image source={{ uri: politician.imageUrl }} style={styles.profileImage} />
               ) : (
                 <View style={styles.profileImagePlaceholder}>
                   <Text style={styles.profileInitial}>{politician.name.charAt(0)}</Text>
@@ -379,16 +302,8 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
               <View style={styles.onlineIndicator} />
             </View>
             <Text style={styles.profileName}>{politician.name}</Text>
-            <Text style={styles.profileTitle}>{politician.title}</Text>
+            <Text style={styles.profileTitle}>{politician.position || politician.current_position}</Text>
             <View style={styles.profileLocationContainer}>
-              <TouchableOpacity
-                onPress={() => setShowConstituencyModal(true)}
-                style={styles.profileLocationItem}
-              >
-                <Text style={styles.profileLocation}>📍 {politician.constituency}</Text>
-                <MaterialIcons name="info-outline" size={16} color="rgba(255,255,255,0.8)" />
-              </TouchableOpacity>
-              <Text style={styles.profileLocationSeparator}>•</Text>
               <TouchableOpacity
                 onPress={() => setShowPartyHistoryModal(true)}
                 style={styles.profileLocationItem}
@@ -406,12 +321,12 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
               <Text style={styles.statLabel}>Attendance</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{politician.party_history?.length || 0}</Text>
-              <Text style={styles.statLabel}>Parties</Text>
+              <Text style={styles.statValue}>{politician.rating || 0}</Text>
+              <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{politician.key_achievements?.length || 0}</Text>
-              <Text style={styles.statLabel}>Achievements</Text>
+              <Text style={styles.statValue}>{politician.bio ? '1' : '0'}</Text>
+              <Text style={styles.statLabel}>Profile</Text>
             </View>
           </View>
         </LinearGradient>
@@ -480,7 +395,7 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
             'compare-arrows',
             ['#8B5CF6', '#7C3AED'],
             { main: 'VS', sub: 'mode' },
-            () => setShowComparisonModal(true)
+            () => navigation.navigate('PoliticianComparison')
           )}
         </View>
       </View>
@@ -489,32 +404,16 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
       <View style={styles.quickInfoSection}>
         <Text style={styles.sectionTitle}>Quick Overview</Text>
 
-        {/* Education Card */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoHeader}>
-            <MaterialIcons name="school" size={24} color="#3B82F6" />
-            <Text style={styles.infoTitle}>Education</Text>
+        {/* Biography */}
+        {politician.bio && (
+          <View style={styles.infoCard}>
+            <View style={styles.infoHeader}>
+              <MaterialIcons name="person" size={24} color="#3B82F6" />
+              <Text style={styles.infoTitle}>Biography</Text>
+            </View>
+            <Text style={styles.infoText}>{politician.bio}</Text>
           </View>
-          <Text style={styles.infoText}>{politician.education}</Text>
-        </View>
-
-        {/* Key Achievements */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoHeader}>
-            <MaterialIcons name="emoji-events" size={24} color="#F59E0B" />
-            <Text style={styles.infoTitle}>Key Achievements</Text>
-          </View>
-          {politician.key_achievements?.slice(0, 3).map((achievement, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => handleAchievementPress(achievement)}
-              style={styles.achievementItemTouchable}
-            >
-              <Text style={styles.achievementItem}>• {achievement}</Text>
-              <MaterialIcons name="chevron-right" size={16} color="#3B82F6" />
-            </TouchableOpacity>
-          ))}
-        </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -861,7 +760,7 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
                 <View style={styles.achievementDetails}>
                   <Text style={styles.achievementDetailLabel}>Impact Assessment:</Text>
                   <Text style={styles.achievementDetailText}>
-                    Significant contribution to {politician.constituency} development and governance.
+                    Significant contribution to political development and governance.
                   </Text>
                 </View>
               </>
@@ -890,28 +789,21 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
           </View>
 
           <ScrollView style={styles.modalContent}>
-            <Text style={styles.partyHistoryTitle}>Party Affiliations Timeline</Text>
+            <Text style={styles.partyHistoryTitle}>Party Affiliation</Text>
 
-            {politician.party_history?.map((party, index) => (
-              <View key={index} style={styles.partyHistoryItem}>
-                <View style={styles.partyHistoryBadge}>
-                  <Text style={styles.partyHistoryText}>{party}</Text>
-                </View>
-                <View style={styles.partyHistoryDetails}>
-                  <Text style={styles.partyHistoryReason}>
-                    {index === 0 ? 'Initial political affiliation' :
-                     index === politician.party_history.length - 1 ? 'Current party' :
-                     'Strategic political realignment'}
-                  </Text>
-                </View>
+            <View style={styles.partyHistoryItem}>
+              <View style={styles.partyHistoryBadge}>
+                <Text style={styles.partyHistoryText}>{politician.party}</Text>
               </View>
-            ))}
+              <View style={styles.partyHistoryDetails}>
+                <Text style={styles.partyHistoryReason}>Current political party</Text>
+              </View>
+            </View>
 
             <View style={styles.partyAnalysis}>
               <Text style={styles.partyAnalysisTitle}>Analysis</Text>
               <Text style={styles.partyAnalysisText}>
-                {politician.name} has been affiliated with {politician.party_history?.length || 0} political parties,
-                showing adaptability to Kenya's evolving political landscape.
+                {politician.name} is currently affiliated with {politician.party}.
               </Text>
             </View>
           </ScrollView>
@@ -940,37 +832,19 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
           </View>
 
           <ScrollView style={styles.modalContent}>
-            <Text style={styles.constituencyName}>{politician.constituency}</Text>
-
-            <View style={styles.constituencyStats}>
-              <View style={styles.constituencyStat}>
-                <Text style={styles.constituencyStatNumber}>~245,000</Text>
-                <Text style={styles.constituencyStatLabel}>Population</Text>
-              </View>
-              <View style={styles.constituencyStat}>
-                <Text style={styles.constituencyStatNumber}>156</Text>
-                <Text style={styles.constituencyStatLabel}>Wards</Text>
-              </View>
-              <View style={styles.constituencyStat}>
-                <Text style={styles.constituencyStatNumber}>3</Text>
-                <Text style={styles.constituencyStatLabel}>Sub-counties</Text>
-              </View>
-            </View>
+            <Text style={styles.constituencyName}>{politician.party} Party</Text>
 
             <View style={styles.constituencyInfo}>
-              <Text style={styles.constituencyInfoTitle}>Key Development Projects</Text>
+              <Text style={styles.constituencyInfoTitle}>Political Party</Text>
               <Text style={styles.constituencyInfoText}>
-                • Healthcare center expansion{'\n'}
-                • Road infrastructure improvement{'\n'}
-                • Education facility modernization{'\n'}
-                • Water supply projects
+                {politician.name} represents the {politician.party} political party in Kenya.
               </Text>
             </View>
 
             <View style={styles.constituencyInfo}>
-              <Text style={styles.constituencyInfoTitle}>Economic Focus</Text>
+              <Text style={styles.constituencyInfoTitle}>Focus Areas</Text>
               <Text style={styles.constituencyInfoText}>
-                Agriculture, tourism, and coastal trade form the backbone of the local economy.
+                Working to advance party policies and serve constituents across various sectors.
               </Text>
             </View>
           </ScrollView>
@@ -1168,8 +1042,8 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
                 <View style={styles.timelineEventImpact}>
                   <Text style={styles.timelineEventImpactTitle}>Political Impact</Text>
                   <Text style={styles.timelineEventImpactText}>
-                    This event has had lasting implications for both {politician.name}'s career
-                    and the broader political landscape in {politician.constituency}.
+                    This event has had lasting implications for {politician.name}'s political career
+                    and Kenya's broader political landscape.
                   </Text>
                 </View>
               </>
@@ -1213,14 +1087,7 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
               <View style={styles.editFormField}>
                 <Text style={styles.editFormLabel}>Current Position</Text>
                 <View style={styles.editFormInput}>
-                  <Text style={styles.editFormInputText}>{politician.title}</Text>
-                </View>
-              </View>
-
-              <View style={styles.editFormField}>
-                <Text style={styles.editFormLabel}>Constituency</Text>
-                <View style={styles.editFormInput}>
-                  <Text style={styles.editFormInputText}>{politician.constituency}</Text>
+                  <Text style={styles.editFormInputText}>{politician.position || politician.current_position}</Text>
                 </View>
               </View>
 
@@ -1233,49 +1100,24 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
             </View>
 
             <View style={styles.editFormSection}>
-              <Text style={styles.editFormSectionTitle}>Education & Background</Text>
+              <Text style={styles.editFormSectionTitle}>Biography</Text>
 
               <View style={styles.editFormField}>
-                <Text style={styles.editFormLabel}>Education</Text>
+                <Text style={styles.editFormLabel}>Biography</Text>
                 <View style={[styles.editFormInput, styles.editFormTextArea]}>
-                  <Text style={styles.editFormInputText}>{politician.education}</Text>
+                  <Text style={styles.editFormInputText}>{politician.bio || 'No biography available'}</Text>
                 </View>
               </View>
             </View>
 
             <View style={styles.editFormSection}>
-              <Text style={styles.editFormSectionTitle}>Political Career</Text>
+              <Text style={styles.editFormSectionTitle}>Political Information</Text>
 
               <View style={styles.editFormField}>
-                <Text style={styles.editFormLabel}>Key Achievements</Text>
-                {politician.key_achievements?.map((achievement, index) => (
-                  <View key={index} style={styles.achievementEditItem}>
-                    <Text style={styles.achievementEditText}>• {achievement}</Text>
-                    <TouchableOpacity style={styles.achievementEditButton}>
-                      <MaterialIcons name="edit" size={16} color="#3B82F6" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                <TouchableOpacity style={styles.addAchievementButton}>
-                  <MaterialIcons name="add" size={16} color="#10B981" />
-                  <Text style={styles.addAchievementText}>Add Achievement</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.editFormField}>
-                <Text style={styles.editFormLabel}>Party History</Text>
-                {politician.party_history?.map((party, index) => (
-                  <View key={index} style={styles.partyEditItem}>
-                    <Text style={styles.partyEditText}>{party}</Text>
-                    <TouchableOpacity style={styles.partyEditButton}>
-                      <MaterialIcons name="edit" size={16} color="#3B82F6" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                <TouchableOpacity style={styles.addPartyButton}>
-                  <MaterialIcons name="add" size={16} color="#10B981" />
-                  <Text style={styles.addPartyText}>Add Party Affiliation</Text>
-                </TouchableOpacity>
+                <Text style={styles.editFormLabel}>Rating</Text>
+                <View style={styles.editFormInput}>
+                  <Text style={styles.editFormInputText}>{politician.rating || 'Not rated'}</Text>
+                </View>
               </View>
             </View>
 
@@ -1294,104 +1136,6 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
         </SafeAreaView>
       </Modal>
 
-      {/* Politician Comparison Modal */}
-      <Modal
-        visible={showComparisonModal}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setShowComparisonModal(false)}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowComparisonModal(false)}
-            >
-              <MaterialIcons name="close" size={24} color="#666" />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Compare Politicians</Text>
-            <TouchableOpacity style={styles.modalActionButton}>
-              <MaterialIcons name="compare" size={20} color="#3B82F6" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.modalContent}>
-            <Text style={styles.comparisonTitle}>Compare with {politician.name}</Text>
-
-            {/* Comparison Grid */}
-            <View style={styles.comparisonGrid}>
-              <View style={styles.comparisonColumn}>
-                <View style={styles.comparisonPoliticianCard}>
-                  <View style={styles.comparisonPoliticianImage}>
-                    <Text style={styles.comparisonPoliticianInitial}>
-                      {politician.name.charAt(0)}
-                    </Text>
-                  </View>
-                  <Text style={styles.comparisonPoliticianName}>{politician.name}</Text>
-                  <Text style={styles.comparisonPoliticianTitle}>{politician.title}</Text>
-                </View>
-
-                <View style={styles.comparisonData}>
-                  <View style={styles.comparisonDataItem}>
-                    <Text style={styles.comparisonDataLabel}>Experience</Text>
-                    <Text style={styles.comparisonDataValue}>15 years</Text>
-                  </View>
-                  <View style={styles.comparisonDataItem}>
-                    <Text style={styles.comparisonDataLabel}>Achievements</Text>
-                    <Text style={styles.comparisonDataValue}>{politician.key_achievements?.length || 0}</Text>
-                  </View>
-                  <View style={styles.comparisonDataItem}>
-                    <Text style={styles.comparisonDataLabel}>Party Changes</Text>
-                    <Text style={styles.comparisonDataValue}>{politician.party_history?.length || 0}</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.comparisonVs}>
-                <Text style={styles.comparisonVsText}>VS</Text>
-              </View>
-
-              <View style={styles.comparisonColumn}>
-                <TouchableOpacity
-                  style={styles.selectPoliticianCard}
-                  onPress={() => {
-                    // Handle politician selection for comparison
-                  }}
-                >
-                  <MaterialIcons name="add" size={48} color="#3B82F6" />
-                  <Text style={styles.selectPoliticianText}>Select Politician to Compare</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.comparisonSuggestions}>
-              <Text style={styles.suggestionTitle}>Suggested Comparisons</Text>
-
-              <TouchableOpacity style={styles.suggestionItem}>
-                <View style={styles.suggestionImage}>
-                  <Text style={styles.suggestionInitial}>W</Text>
-                </View>
-                <View style={styles.suggestionDetails}>
-                  <Text style={styles.suggestionName}>William Ruto</Text>
-                  <Text style={styles.suggestionReason}>Same region, different party</Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={20} color="#3B82F6" />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.suggestionItem}>
-                <View style={styles.suggestionImage}>
-                  <Text style={styles.suggestionInitial}>R</Text>
-                </View>
-                <View style={styles.suggestionDetails}>
-                  <Text style={styles.suggestionName}>Raila Odinga</Text>
-                  <Text style={styles.suggestionReason}>Similar experience level</Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={20} color="#3B82F6" />
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
     </SafeAreaView>
   );
 };

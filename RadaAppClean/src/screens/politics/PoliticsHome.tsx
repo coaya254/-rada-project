@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { PoliticsStackParamList } from '../../navigation/PoliticsStackNavigator';
+import ApiService from '../../services/api';
+import { Politician } from '../../types/politician';
 import {
   View,
   Text,
@@ -24,18 +26,6 @@ interface PoliticsHomeProps {
   navigation: NativeStackNavigationProp<PoliticsStackParamList, 'PoliticsHome'>;
 }
 
-interface Politician {
-  id: number;
-  name: string;
-  title: string;
-  party: string;
-  constituency: string;
-  image_url?: string;
-  party_color?: string;
-  key_achievements: string[];
-  education?: string;
-  party_history: string[];
-}
 
 interface NewsItem {
   id: number;
@@ -104,135 +94,36 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
   const [showVotingRecordsModal, setShowVotingRecordsModal] = useState(false);
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
-  const [politicians, setPoliticians] = useState<Politician[]>([
-    {
-      id: 1,
-      name: 'Amason Jeffah Kingi',
-      title: 'Speaker of the Senate',
-      party: 'PAA',
-      constituency: 'Kilifi County',
-      party_color: '#1e40af',
-      key_achievements: ['Speaker of Senate 2022-present', 'Governor Kilifi 2013-2022', 'MP Kilifi North 2007-2013'],
-      education: 'University of Nairobi (LLB)',
-      party_history: ['ODM (2007-2012)', 'UDF (2012-2016)', 'Jubilee (2016-2022)', 'UDA (2022-present)'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Amason_Kingi_2022.jpg/400px-Amason_Kingi_2022.jpg',
-    },
-    {
-      id: 2,
-      name: 'William Ruto',
-      title: 'President of Kenya',
-      party: 'UDA',
-      constituency: 'Kenya',
-      party_color: '#1e40af',
-      key_achievements: ['President 2022-present', 'Deputy President 2013-2022', 'Bottom-up Economic Transformation'],
-      education: 'University of Nairobi (BSc), University of Queensland (PhD)',
-      party_history: ['KANU (2002-2007)', 'ODM (2007-2012)', 'URP/Jubilee (2013-2021)', 'UDA (2022-present)'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/William_Ruto_2022.jpg/400px-William_Ruto_2022.jpg',
-    },
-    {
-      id: 3,
-      name: 'Raila Odinga',
-      title: 'Opposition Leader',
-      party: 'ODM',
-      constituency: 'Nairobi',
-      party_color: '#f97316',
-      key_achievements: ['Prime Minister 2008-2013', 'Opposition Leader', 'AU High Representative'],
-      education: 'University of Leipzig (MSc)',
-      party_history: ['KANU (1990s)', 'NARC (2002-2005)', 'ODM (2005-present)'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Raila_Odinga_2017.jpg/400px-Raila_Odinga_2017.jpg',
-    },
-  ]);
-
-  const [latestNews, setLatestNews] = useState<NewsItem[]>([
-    {
-      id: 1,
-      title: 'New Infrastructure Bill Passed',
-      summary: 'Senate approves major infrastructure development bill',
-      timestamp: '2h ago',
-      politician: 'Amason Kingi',
-    },
-    {
-      id: 2,
-      title: 'Education Reform Debate',
-      summary: 'Parliamentary discussion on education system changes',
-      timestamp: '4h ago',
-    },
-  ]);
-
-  const [externalNews1, setExternalNews1] = useState<NewsItem[]>([
-    {
-      id: 101,
-      title: 'Parliamentary Budget Session Update',
-      summary: 'Comprehensive coverage of the budget debate and key allocations for infrastructure and social programs',
-      timestamp: '1h ago',
-      politician: 'Rachel Ruto',
-      source: 'The Standard',
-      url: 'https://standardmedia.co.ke/politics',
-    },
-    {
-      id: 102,
-      title: 'County Government Performance Review',
-      summary: 'Analysis of county performance in service delivery and development projects across the nation',
-      timestamp: '3h ago',
-      source: 'The Standard',
-      url: 'https://standardmedia.co.ke/counties',
-    },
-    {
-      id: 103,
-      title: 'Opposition Alliance Strategy Meeting',
-      summary: 'Key opposition leaders meet to discuss upcoming political strategies and policy positions',
-      timestamp: '5h ago',
-      politician: 'Raila Odinga',
-      source: 'The Standard',
-      url: 'https://standardmedia.co.ke/politics',
-    },
-  ]);
-
-  const [externalNews2, setExternalNews2] = useState<NewsItem[]>([
-    {
-      id: 201,
-      title: 'Healthcare System Reforms Announced',
-      summary: 'Government announces major healthcare reforms including universal health coverage expansion and medical facility upgrades',
-      timestamp: '2h ago',
-      politician: 'Susan Nakhumicha',
-      source: 'Citizen TV',
-      url: 'https://citizen.digital/news',
-    },
-    {
-      id: 202,
-      title: 'Education Sector Budget Allocation',
-      summary: 'Ministry of Education receives increased budget allocation for infrastructure development and teacher training programs',
-      timestamp: '4h ago',
-      politician: 'Ezekiel Machogu',
-      source: 'Citizen TV',
-      url: 'https://citizen.digital/news',
-    },
-    {
-      id: 203,
-      title: 'Anti-Corruption Campaign Progress',
-      summary: 'Latest updates on the government\'s anti-corruption initiatives and prosecution of high-profile cases',
-      timestamp: '6h ago',
-      source: 'Citizen TV',
-      url: 'https://citizen.digital/news',
-    },
-  ]);
+  const [showVotingRecordDetailModal, setShowVotingRecordDetailModal] = useState(false);
+  const [selectedVotingRecord, setSelectedVotingRecord] = useState<any>(null);
+  const [showVotingSources, setShowVotingSources] = useState(false);
+  const [showVotingVerification, setShowVotingVerification] = useState(false);
+  const [politicians, setPoliticians] = useState<Politician[]>([]);
+  const [latestNews, setLatestNews] = useState<NewsItem[]>([]);
+  const [externalNews1, setExternalNews1] = useState<NewsItem[]>([]);
+  const [externalNews2, setExternalNews2] = useState<NewsItem[]>([]);
 
   useEffect(() => {
     // Filter and search logic
+    if (!Array.isArray(politicians)) {
+      setFilteredPoliticians([]);
+      return;
+    }
+
     const filtered = politicians.filter(politician => {
       // Search filter
       const matchesSearch = searchQuery === '' ||
         politician.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        politician.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (politician.position && politician.position.toLowerCase().includes(searchQuery.toLowerCase())) ||
         politician.party.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        politician.constituency.toLowerCase().includes(searchQuery.toLowerCase());
+        (politician.bio && politician.bio.toLowerCase().includes(searchQuery.toLowerCase()));
 
       // Category filter
       const matchesFilter = selectedFilter === 'all' ||
-        (selectedFilter === 'president' && politician.title.toLowerCase().includes('president')) ||
+        (selectedFilter === 'president' && politician.position && politician.position.toLowerCase().includes('president')) ||
         (selectedFilter === 'uda' && politician.party.includes('UDA')) ||
         (selectedFilter === 'odm' && politician.party.includes('ODM')) ||
-        (selectedFilter === 'speaker' && politician.title.toLowerCase().includes('speaker'));
+        (selectedFilter === 'speaker' && politician.position && politician.position.toLowerCase().includes('speaker'));
 
       return matchesSearch && matchesFilter;
     });
@@ -241,22 +132,35 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
   }, [searchQuery, selectedFilter, politicians]);
 
   useEffect(() => {
-    // Simulate initial data loading
+    // Load all data from API
     const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // Simulate potential error (uncomment to test error state)
-        // if (Math.random() > 0.7) {
-        //   throw new Error('Failed to load political data');
-        // }
+        // Load politicians
+        const politiciansResponse = await ApiService.getPoliticians();
+        const politiciansData = politiciansResponse.success ? politiciansResponse.data : politiciansResponse;
+        setPoliticians(Array.isArray(politiciansData) ? politiciansData : []);
+        setFilteredPoliticians(Array.isArray(politiciansData) ? politiciansData : []);
 
-        setFilteredPoliticians(politicians);
+        // Load news data
+        const newsResponse = await ApiService.getLatestNews();
+        const newsData = newsResponse.success ? newsResponse.data : newsResponse;
+        setLatestNews(newsData);
+
+        // Load external news sources
+        const externalNews1Response = await ApiService.getExternalNews('standard');
+        const externalNews1Data = externalNews1Response.success ? externalNews1Response.data : externalNews1Response;
+        setExternalNews1(externalNews1Data);
+
+        const externalNews2Response = await ApiService.getExternalNews('citizen');
+        const externalNews2Data = externalNews2Response.success ? externalNews2Response.data : externalNews2Response;
+        setExternalNews2(externalNews2Data);
+
         setLoading(false);
       } catch (err) {
+        console.error('Error loading data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
         setLoading(false);
       }
@@ -269,28 +173,53 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
     try {
       setRefreshing(true);
       setError(null);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Simulate potential error during refresh
-      if (Math.random() > 0.8) {
-        throw new Error('Failed to refresh data');
-      }
+      // Refresh politicians
+      const politiciansResponse = await ApiService.getPoliticians();
+      const politiciansData = politiciansResponse.success ? politiciansResponse.data : politiciansResponse;
+      setPoliticians(Array.isArray(politiciansData) ? politiciansData : []);
+      setFilteredPoliticians(Array.isArray(politiciansData) ? politiciansData : []);
+
+      // Refresh news data
+      const newsResponse = await ApiService.getLatestNews();
+      const newsData = newsResponse.success ? newsResponse.data : newsResponse;
+      setLatestNews(newsData);
+
+      // Refresh external news sources
+      const externalNews1Response = await ApiService.getExternalNews('standard');
+      const externalNews1Data = externalNews1Response.success ? externalNews1Response.data : externalNews1Response;
+      setExternalNews1(externalNews1Data);
+
+      const externalNews2Response = await ApiService.getExternalNews('citizen');
+      const externalNews2Data = externalNews2Response.success ? externalNews2Response.data : externalNews2Response;
+      setExternalNews2(externalNews2Data);
 
       setRefreshing(false);
     } catch (err) {
+      console.error('Error refreshing data:', err);
       setError(err instanceof Error ? err.message : 'Failed to refresh data');
       setRefreshing(false);
     }
   };
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setError(null);
     setLoading(true);
-    // Simulate retry
-    setTimeout(() => {
+
+    try {
+      const response = await ApiService.getPoliticians();
+
+      // Handle direct array response from test backend
+      const politiciansData = response.success ? response.data : response;
+
+      setPoliticians(Array.isArray(politiciansData) ? politiciansData : []);
+      setFilteredPoliticians(Array.isArray(politiciansData) ? politiciansData : []);
       setLoading(false);
-    }, 1000);
+    } catch (err) {
+      console.error('Error retrying politicians:', err);
+      setError(err instanceof Error ? err.message : 'Failed to retry loading politicians');
+      setLoading(false);
+    }
   };
 
   const handlePoliticianShare = (politician: Politician) => {
@@ -317,10 +246,11 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
       return exp >= advancedFilters.experience.min && exp <= advancedFilters.experience.max;
     });
 
-    // Achievements filter
+    // Rating filter (replacing achievements filter)
     filtered = filtered.filter(p => {
-      const achCount = p.key_achievements?.length || 0;
-      return achCount >= advancedFilters.achievements.min && achCount <= advancedFilters.achievements.max;
+      const rating = parseFloat(p.rating) || 0;
+      // Use rating instead of achievements - adjust range to 0-5
+      return rating >= (advancedFilters.achievements.min / 2) && rating <= 5;
     });
 
     setFilteredPoliticians(filtered);
@@ -381,16 +311,16 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
         {/* Card Header with Image and Basic Info */}
         <View style={styles.cardHeader}>
           <View style={styles.politicianImageContainer}>
-            {item.image_url ? (
+            {item.imageUrl ? (
               <Image
-                source={{ uri: item.image_url }}
+                source={{ uri: item.imageUrl }}
                 style={styles.politicianImage}
                 resizeMode="cover"
               />
             ) : (
               <View style={[
                 styles.politicianImagePlaceholder,
-                { backgroundColor: item.party_color || '#6b7280' }
+                { backgroundColor: '#6b7280' }
               ]}>
                 <Text style={styles.politicianInitial}>{item.name.charAt(0)}</Text>
               </View>
@@ -400,8 +330,8 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
 
           <View style={styles.cardHeaderInfo}>
             <Text style={styles.enhancedPoliticianName}>{item.name}</Text>
-            <Text style={styles.enhancedPoliticianTitle}>{item.title}</Text>
-            <Text style={styles.enhancedPoliticianConstituency}>{item.constituency}</Text>
+            <Text style={styles.enhancedPoliticianTitle}>{item.position}</Text>
+            <Text style={styles.enhancedPoliticianConstituency}>{item.party}</Text>
           </View>
 
           {!isSelectionMode && (
@@ -437,30 +367,23 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
           <View style={styles.partyInfo}>
             <View style={[
               styles.partyBadge,
-              { backgroundColor: item.party_color || '#6b7280' }
+              { backgroundColor: '#6b7280' }
             ]}>
               <Text style={styles.partyText}>
                 {item.party}
               </Text>
             </View>
             <Text style={styles.partyHistory}>
-              {item.party_history.length} party{item.party_history.length !== 1 ? 'ies' : ''}
+              Rating: {item.rating || 'N/A'}
             </Text>
           </View>
 
-          {/* Key Achievements */}
+          {/* Bio Preview */}
           <View style={styles.achievementsContainer}>
-            {item.key_achievements.slice(0, 2).map((achievement, index) => (
-              <View key={index} style={styles.achievementTag}>
-                <Text style={styles.achievementText}>{achievement}</Text>
-              </View>
-            ))}
-            {item.key_achievements.length > 2 && (
-              <TouchableOpacity style={styles.moreAchievements}>
-                <Text style={styles.moreAchievementsText}>
-                  +{item.key_achievements.length - 2} more
-                </Text>
-              </TouchableOpacity>
+            {item.bio && (
+              <Text style={styles.achievementText} numberOfLines={2}>
+                {item.bio}
+              </Text>
             )}
           </View>
         </View>
@@ -468,9 +391,9 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
         {/* Card Footer with Education and Navigation */}
         <View style={styles.cardFooter}>
           <View style={styles.cardFooterLeft}>
-            <MaterialIcons name="school" size={14} color="#666" />
+            <MaterialIcons name="star" size={14} color="#666" />
             <Text style={styles.cardFooterText}>
-              {item.education ? 'Educated' : 'Self-taught'}
+              Rating: {item.rating || 'N/A'}
             </Text>
           </View>
           {!isSelectionMode && (
@@ -527,6 +450,10 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
     setShowBulkActionsModal(false);
     setIsSelectionMode(false);
     setSelectedPoliticians([]);
+
+    if (action === 'compare') {
+      navigation.navigate('PoliticianComparison');
+    }
     // Add actual bulk action logic here
   };
 
@@ -542,9 +469,17 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
             <Text style={styles.headerTitle}>Politics</Text>
             <Text style={styles.headerSubtitle}>Track politicians & their commitments</Text>
           </View>
-          <TouchableOpacity style={styles.searchButton}>
-            <MaterialIcons name="search" size={24} color="#333" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.adminButton}
+              onPress={() => navigation.navigate('AdminLogin')}
+            >
+              <MaterialIcons name="admin-panel-settings" size={24} color="#EF4444" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.searchButton}>
+              <MaterialIcons name="search" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -605,93 +540,56 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Enhanced Gradient Header */}
-        <View style={styles.gradientHeaderContainer}>
-          <LinearGradient
-            colors={['#667eea', '#764ba2', '#f093fb']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.gradientHeader}
-          >
-            <View style={styles.headerTop}>
-              <View style={styles.headerLeft}>
-                <View style={styles.emojiContainer}>
-                  <Text style={styles.headerEmoji}>🏛️</Text>
-                </View>
-                <View>
-                  <Text style={styles.enhancedHeaderTitle}>Political Archive</Text>
-                  <Text style={styles.enhancedHeaderSubtitle}>Kenya's Political Database</Text>
-                </View>
-              </View>
-              <View style={styles.headerActions}>
-                <TouchableOpacity
-                  style={styles.headerActionButton}
-                  onPress={() => setShowAdvancedSearchModal(true)}
-                >
-                  <MaterialIcons name="search" size={20} color="#fff" />
-                </TouchableOpacity>
+        {/* Header with Title and Notification */}
+        <View style={styles.topHeader}>
+          <View>
+            <Text style={styles.pageTitle}>Political Archive</Text>
+            <Text style={styles.pageSubtitle}>Kenya's Political Database</Text>
+          </View>
+          <View style={styles.topHeaderActions}>
+            <TouchableOpacity
+              style={styles.topAdminButton}
+              onPress={() => navigation.navigate('AdminLogin')}
+            >
+              <MaterialIcons name="admin-panel-settings" size={24} color="#EF4444" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.topNotificationButton}
+              onPress={() => setShowNotificationsModal(true)}
+            >
+              <MaterialIcons name="notifications" size={24} color="#1a202c" />
+              <View style={styles.topNotificationBadge} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-                <TouchableOpacity
-                  style={styles.headerActionButton}
-                  onPress={() => setShowNotificationsModal(true)}
-                >
-                  <MaterialIcons name="notifications" size={20} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.headerActionButton}
-                  onPress={() => setShowFilters(!showFilters)}
-                >
-                  <MaterialIcons name="tune" size={20} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.headerActionButton}
-                  onPress={() => {
-                    // Handle sort/order toggle
-                    console.log('Toggle sort order');
-                  }}
-                >
-                  <MaterialIcons name="sort" size={20} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.headerActionButton}>
-                  <MaterialIcons name="notifications" size={20} color="#fff" />
-                  <View style={styles.notificationBadge} />
-                </TouchableOpacity>
+        {/* Stats Card */}
+        <View style={styles.section}>
+          <View style={styles.statsCard}>
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <View style={styles.statIconBox}>
+                  <MaterialIcons name="people" size={20} color="#667eea" />
+                </View>
+                <Text style={styles.statValue}>{politicians.length}</Text>
+                <Text style={styles.statTitle}>Politicians</Text>
+              </View>
+              <View style={styles.statCard}>
+                <View style={styles.statIconBox}>
+                  <MaterialIcons name="schedule" size={20} color="#667eea" />
+                </View>
+                <Text style={styles.statValue}>25</Text>
+                <Text style={styles.statTitle}>Years</Text>
+              </View>
+              <View style={styles.statCard}>
+                <View style={styles.statIconBox}>
+                  <MaterialIcons name="verified" size={20} color="#667eea" />
+                </View>
+                <Text style={styles.statValue}>100+</Text>
+                <Text style={styles.statTitle}>Sources</Text>
               </View>
             </View>
-
-            {/* Stats Overview */}
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <View style={styles.statIconContainer}>
-                  <LinearGradient colors={['#667eea', '#764ba2']} style={styles.statIconGradient}>
-                    <MaterialIcons name="people" size={16} color="#fff" />
-                  </LinearGradient>
-                </View>
-                <Text style={styles.statNumber}>{politicians.length}</Text>
-                <Text style={styles.statLabel}>Politicians</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <View style={styles.statIconContainer}>
-                  <LinearGradient colors={['#ffecd2', '#fcb69f']} style={styles.statIconGradient}>
-                    <MaterialIcons name="schedule" size={16} color="#fff" />
-                  </LinearGradient>
-                </View>
-                <Text style={styles.statNumber}>25</Text>
-                <Text style={styles.statLabel}>Years</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <View style={styles.statIconContainer}>
-                  <LinearGradient colors={['#a8edea', '#fed6e3']} style={styles.statIconGradient}>
-                    <MaterialIcons name="verified" size={16} color="#fff" />
-                  </LinearGradient>
-                </View>
-                <Text style={styles.statNumber}>100+</Text>
-                <Text style={styles.statLabel}>Sources</Text>
-              </View>
-            </View>
-          </LinearGradient>
+          </View>
         </View>
 
         {/* Enhanced Search Bar */}
@@ -728,6 +626,7 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
             >
               <MaterialIcons name="tune" size={20} color="#667eea" />
             </TouchableOpacity>
+
           </View>
 
           {/* Animated Filter Chips */}
@@ -791,9 +690,9 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                   </View>
                   <View style={styles.featuredInfo}>
                     <Text style={styles.featuredName}>{featuredPolitician.name}</Text>
-                    <Text style={styles.featuredTitle}>{featuredPolitician.title}</Text>
+                    <Text style={styles.featuredTitle}>{featuredPolitician.position}</Text>
                     <Text style={styles.featuredLocation}>
-                      📍 {featuredPolitician.constituency} • {featuredPolitician.party}
+                      {featuredPolitician.party} • Rating: {featuredPolitician.rating}
                     </Text>
                   </View>
                 </View>
@@ -816,19 +715,10 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Quick Access Tools */}
+        {/* Research Tools */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Research Tools</Text>
           <View style={styles.toolsGrid}>
-            <TouchableOpacity
-              style={styles.toolCard}
-              onPress={() => setShowNewsModal(true)}
-            >
-              <MaterialIcons name="article" size={32} color="#3B82F6" />
-              <Text style={styles.toolTitle}>Political News</Text>
-              <Text style={styles.toolCount}>156 articles</Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.toolCard}
               onPress={() => setShowVotingRecordsModal(true)}
@@ -849,11 +739,29 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
 
             <TouchableOpacity
               style={styles.toolCard}
-              onPress={() => setShowComparisonModal(true)}
+              onPress={() => navigation.navigate('PoliticianComparison')}
             >
               <MaterialIcons name="compare" size={32} color="#8B5CF6" />
               <Text style={styles.toolTitle}>Compare</Text>
               <Text style={styles.toolCount}>Side by side</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.toolCard}
+              onPress={() => setShowExportModal(true)}
+            >
+              <MaterialIcons name="file-download" size={32} color="#f093fb" />
+              <Text style={styles.toolTitle}>Export</Text>
+              <Text style={styles.toolCount}>Data reports</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.toolCard}
+              onPress={() => setShowPerformanceModal(true)}
+            >
+              <MaterialIcons name="trending-up" size={32} color="#4facfe" />
+              <Text style={styles.toolTitle}>Performance</Text>
+              <Text style={styles.toolCount}>Analytics</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -934,74 +842,7 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
           />
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            <TouchableOpacity
-              style={[styles.quickAction, styles.analyticsAction]}
-              onPress={() => setShowAnalyticsModal(true)}
-            >
-              <LinearGradient
-                colors={['#667eea', '#764ba2']}
-                style={styles.quickActionGradient}
-              >
-                <MaterialIcons name="analytics" size={24} color="#fff" />
-                <Text style={styles.quickActionText}>Analytics</Text>
-              </LinearGradient>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.quickAction, styles.comparisonAction]}
-              onPress={() => navigation.navigate('PoliticianComparison' as never)}
-            >
-              <LinearGradient
-                colors={['#f093fb', '#f5576c']}
-                style={styles.quickActionGradient}
-              >
-                <MaterialIcons name="compare" size={24} color="#fff" />
-                <Text style={styles.quickActionText}>Compare</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.quickAction, styles.comparisonAction]}
-              onPress={() => setShowExportModal(true)}
-            >
-              <LinearGradient
-                colors={['#f093fb', '#f5576c']}
-                style={styles.quickActionGradient}
-              >
-                <MaterialIcons name="file-download" size={24} color="#fff" />
-                <Text style={styles.quickActionText}>Export</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.quickAction, styles.favoritesAction]}
-              onPress={() => setShowPerformanceModal(true)}
-            >
-              <LinearGradient
-                colors={['#4facfe', '#00f2fe']}
-                style={styles.quickActionGradient}
-              >
-                <MaterialIcons name="trending-up" size={24} color="#fff" />
-                <Text style={styles.quickActionText}>Performance</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Latest News */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Latest Political News</Text>
-          <FlatList
-            data={latestNews}
-            renderItem={renderNewsItem}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-          />
-        </View>
       </ScrollView>
 
       {/* Share Modal */}
@@ -1034,7 +875,7 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                   </View>
                   <View>
                     <Text style={styles.shareProfileName}>{selectedPolitician.name}</Text>
-                    <Text style={styles.shareProfileTitle}>{selectedPolitician.title}</Text>
+                    <Text style={styles.shareProfileTitle}>{selectedPolitician.position}</Text>
                   </View>
                 </View>
 
@@ -1100,29 +941,27 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                   </View>
                   <View style={styles.quickInfoDetails}>
                     <Text style={styles.quickInfoName}>{selectedPolitician.name}</Text>
-                    <Text style={styles.quickInfoTitle}>{selectedPolitician.title}</Text>
+                    <Text style={styles.quickInfoTitle}>{selectedPolitician.position}</Text>
                     <Text style={styles.quickInfoLocation}>
-                      📍 {selectedPolitician.constituency} • {selectedPolitician.party}
+                      {selectedPolitician.party} • Rating: {selectedPolitician.rating}
                     </Text>
                   </View>
                 </View>
 
                 <View style={styles.quickInfoSection}>
-                  <Text style={styles.quickInfoSectionTitle}>Education</Text>
-                  <Text style={styles.quickInfoSectionText}>{selectedPolitician.education}</Text>
+                  <Text style={styles.quickInfoSectionTitle}>Bio</Text>
+                  <Text style={styles.quickInfoSectionText}>{selectedPolitician.bio || 'No bio available'}</Text>
                 </View>
 
                 <View style={styles.quickInfoSection}>
-                  <Text style={styles.quickInfoSectionTitle}>Key Achievements</Text>
-                  {selectedPolitician.key_achievements.slice(0, 3).map((achievement, index) => (
-                    <Text key={index} style={styles.quickInfoAchievement}>• {achievement}</Text>
-                  ))}
+                  <Text style={styles.quickInfoSectionTitle}>Position</Text>
+                  <Text style={styles.quickInfoAchievement}>• {selectedPolitician.position}</Text>
                 </View>
 
                 <View style={styles.quickInfoSection}>
-                  <Text style={styles.quickInfoSectionTitle}>Party History</Text>
+                  <Text style={styles.quickInfoSectionTitle}>Rating</Text>
                   <Text style={styles.quickInfoSectionText}>
-                    {selectedPolitician.party_history.length} party affiliations
+                    {selectedPolitician.rating} / 5.0
                   </Text>
                 </View>
 
@@ -1329,9 +1168,9 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
               <View style={styles.analyticsCard}>
                 <MaterialIcons name="verified" size={32} color="#10B981" />
                 <Text style={styles.analyticsNumber}>
-                  {politicians.filter(p => p.key_achievements.length > 2).length}
+                  {politicians.filter(p => p.rating >= 4.0).length}
                 </Text>
-                <Text style={styles.analyticsLabel}>High Achievers</Text>
+                <Text style={styles.analyticsLabel}>High Rated</Text>
               </View>
 
               <View style={styles.analyticsCard}>
@@ -1345,9 +1184,9 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
               <View style={styles.analyticsCard}>
                 <MaterialIcons name="location-on" size={32} color="#8B5CF6" />
                 <Text style={styles.analyticsNumber}>
-                  {new Set(politicians.map(p => p.constituency)).size}
+                  {politicians.filter(p => p.totalVotes > 0).length}
                 </Text>
-                <Text style={styles.analyticsLabel}>Constituencies</Text>
+                <Text style={styles.analyticsLabel}>With Votes</Text>
               </View>
             </View>
 
@@ -1722,8 +1561,8 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                       </View>
                       <View style={styles.watchlistItemInfo}>
                         <Text style={styles.watchlistItemName}>{politician.name}</Text>
-                        <Text style={styles.watchlistItemTitle}>{politician.title}</Text>
-                        <Text style={styles.watchlistItemUpdate}>Updated 2 hours ago</Text>
+                        <Text style={styles.watchlistItemTitle}>{politician.position}</Text>
+                        <Text style={styles.watchlistItemUpdate}>{politician.party} • Rating: {politician.rating}</Text>
                       </View>
                     </View>
                     <TouchableOpacity style={styles.watchlistItemAction}>
@@ -2335,7 +2174,41 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                   votingResult: "Passed",
                   yesVotes: 234,
                   noVotes: 89,
-                  abstains: 12
+                  abstains: 12,
+                  source_links: [
+                    {
+                      type: 'hansard',
+                      url: 'https://hansard.parliament.go.ke/senatesitting/2024/march/15',
+                      title: 'Senate Hansard - Healthcare Bill Second Reading',
+                      source: 'Parliament of Kenya',
+                      date: '2024-03-15'
+                    },
+                    {
+                      type: 'bill_document',
+                      url: 'https://parliament.go.ke/bills/universal-healthcare-2024',
+                      title: 'Kenya Healthcare Universal Coverage Bill 2024 - Full Text',
+                      source: 'Parliament of Kenya',
+                      date: '2024-02-01'
+                    }
+                  ],
+                  verification_links: [
+                    {
+                      type: 'official_record',
+                      url: 'https://kenyalaw.org/kl/official-gazette/2024-healthcare-act',
+                      title: 'Official Vote Tally - Healthcare Act 2024',
+                      source: 'Kenya Law Reports',
+                      date: '2024-03-15',
+                      content_summary: 'Confirmed vote count: 234 Yes, 89 No, 12 Abstentions. Bill passed by majority vote.'
+                    },
+                    {
+                      type: 'news_verification',
+                      url: 'https://nation.africa/kenya/news/politics/healthcare-bill-passes-senate',
+                      title: 'Senate Passes Universal Healthcare Bill',
+                      source: 'Daily Nation',
+                      date: '2024-03-15',
+                      content_summary: 'Comprehensive coverage of senate vote including detailed breakdown of voting patterns.'
+                    }
+                  ]
                 },
                 {
                   id: 2,
@@ -2347,7 +2220,33 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                   votingResult: "Failed",
                   yesVotes: 145,
                   noVotes: 187,
-                  abstains: 3
+                  abstains: 3,
+                  source_links: [
+                    {
+                      type: 'hansard',
+                      url: 'https://hansard.parliament.go.ke/senatesitting/2024/february/28',
+                      title: 'Senate Hansard - Education Infrastructure Bill Debate',
+                      source: 'Parliament of Kenya',
+                      date: '2024-02-28'
+                    },
+                    {
+                      type: 'committee_report',
+                      url: 'https://parliament.go.ke/committees/education/infrastructure-report-2024',
+                      title: 'Committee Report on Education Infrastructure Funding',
+                      source: 'Senate Education Committee',
+                      date: '2024-02-20'
+                    }
+                  ],
+                  verification_links: [
+                    {
+                      type: 'vote_tally',
+                      url: 'https://standardmedia.co.ke/politics/education-bill-fails-senate',
+                      title: 'Education Infrastructure Bill Fails in Senate Vote',
+                      source: 'The Standard',
+                      date: '2024-02-28',
+                      content_summary: 'Bill failed with 145 Yes votes against 187 No votes. Opposition cited budget concerns.'
+                    }
+                  ]
                 },
                 {
                   id: 3,
@@ -2359,10 +2258,54 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                   votingResult: "Passed",
                   yesVotes: 198,
                   noVotes: 87,
-                  abstains: 50
+                  abstains: 50,
+                  source_links: [
+                    {
+                      type: 'hansard',
+                      url: 'https://hansard.parliament.go.ke/senatesitting/2024/january/20',
+                      title: 'Senate Hansard - Digital Economy Act Third Reading',
+                      source: 'Parliament of Kenya',
+                      date: '2024-01-20'
+                    },
+                    {
+                      type: 'government_doc',
+                      url: 'https://ict.go.ke/digital-economy-strategy-2024',
+                      title: 'National Digital Economy Strategy Framework',
+                      source: 'Ministry of ICT',
+                      date: '2024-01-05'
+                    }
+                  ],
+                  verification_links: [
+                    {
+                      type: 'fact_check',
+                      url: 'https://citizen.digital/news/digital-economy-bill-vote-analysis',
+                      title: 'Digital Economy Act Vote Analysis',
+                      source: 'Citizen Digital',
+                      date: '2024-01-20',
+                      content_summary: 'Independent verification of voting records showing 198 Yes, 87 No, 50 Abstentions.'
+                    },
+                    {
+                      type: 'independent_report',
+                      url: 'https://kippra.or.ke/digital-economy-act-impact-analysis',
+                      title: 'Digital Economy Act - Legislative Impact Analysis',
+                      source: 'Kenya Institute for Public Policy Research',
+                      date: '2024-01-25',
+                      content_summary: 'Policy analysis confirming bill passage and potential economic implications.'
+                    }
+                  ]
                 }
               ].map((record) => (
-                <TouchableOpacity key={record.id} style={styles.votingRecordCard}>
+                <TouchableOpacity
+                  key={record.id}
+                  style={styles.votingRecordCard}
+                  onPress={() => {
+                    setSelectedVotingRecord(record);
+                    setShowVotingRecordDetailModal(true);
+                    setShowVotingSources(false);
+                    setShowVotingVerification(false);
+                  }}
+                  activeOpacity={0.8}
+                >
                   <View style={styles.votingRecordHeader}>
                     <View style={[
                       styles.voteStatusBadge,
@@ -2432,6 +2375,48 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                     </View>
                     <Text style={styles.votingDate}>{record.date}</Text>
                   </View>
+
+                  {/* Source Buttons */}
+                  {((record.source_links && record.source_links.length > 0) || (record.verification_links && record.verification_links.length > 0)) && (
+                    <View style={styles.actionButtons}>
+                      {record.source_links && record.source_links.length > 0 && (
+                        <TouchableOpacity
+                          style={styles.sourceButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            setSelectedVotingRecord(record);
+                            setShowVotingRecordDetailModal(true);
+                            setShowVotingSources(true);
+                            setShowVotingVerification(false);
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialIcons name="link" size={14} color="#3B82F6" />
+                          <Text style={styles.sourceButtonText}>
+                            Sources ({record.source_links.length})
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {record.verification_links && record.verification_links.length > 0 && (
+                        <TouchableOpacity
+                          style={styles.verificationButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            setSelectedVotingRecord(record);
+                            setShowVotingRecordDetailModal(true);
+                            setShowVotingSources(false);
+                            setShowVotingVerification(true);
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <MaterialIcons name="verified" size={14} color="#10B981" />
+                          <Text style={styles.verificationButtonText}>
+                            Verification ({record.verification_links.length})
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -2872,6 +2857,241 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Voting Record Detail Modal */}
+      <Modal
+        visible={showVotingRecordDetailModal}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowVotingRecordDetailModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowVotingRecordDetailModal(false)}
+            >
+              <MaterialIcons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Voting Record Details</Text>
+            <View style={styles.modalActionButton} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {selectedVotingRecord && (
+              <>
+                {/* Header */}
+                <View style={styles.promiseHeader}>
+                  <View style={styles.promiseStatusContainer}>
+                    <View style={[
+                      styles.voteStatusBadge,
+                      {
+                        backgroundColor: selectedVotingRecord.vote === 'yes' ? '#D1FAE5' :
+                                       selectedVotingRecord.vote === 'no' ? '#FEE2E2' : '#F3F4F6'
+                      }
+                    ]}>
+                      <MaterialIcons
+                        name={selectedVotingRecord.vote === 'yes' ? 'thumb-up' :
+                              selectedVotingRecord.vote === 'no' ? 'thumb-down' : 'remove'}
+                        size={16}
+                        color={selectedVotingRecord.vote === 'yes' ? '#10B981' :
+                               selectedVotingRecord.vote === 'no' ? '#EF4444' : '#6B7280'}
+                      />
+                      <Text style={[
+                        styles.voteStatusText,
+                        {
+                          color: selectedVotingRecord.vote === 'yes' ? '#065F46' :
+                                selectedVotingRecord.vote === 'no' ? '#991B1B' : '#374151'
+                        }
+                      ]}>
+                        {selectedVotingRecord.vote.toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={[
+                      styles.billResultBadge,
+                      {
+                        backgroundColor: selectedVotingRecord.votingResult === 'Passed' ? '#D1FAE5' : '#FEE2E2'
+                      }
+                    ]}>
+                      <Text style={[
+                        styles.billResultText,
+                        {
+                          color: selectedVotingRecord.votingResult === 'Passed' ? '#065F46' : '#991B1B'
+                        }
+                      ]}>
+                        {selectedVotingRecord.votingResult}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Bill Title */}
+                <Text style={styles.modalPromiseText}>
+                  {selectedVotingRecord.billTitle}
+                </Text>
+
+                {/* Description */}
+                <Text style={styles.modalPromiseDescription}>
+                  {selectedVotingRecord.description}
+                </Text>
+
+                {/* Vote Breakdown */}
+                <View style={styles.modalSectionContainer}>
+                  <Text style={styles.modalSectionTitle}>📊 Vote Breakdown</Text>
+                  <View style={styles.votingBreakdownStats}>
+                    <View style={styles.votingBreakdownItem}>
+                      <MaterialIcons name="thumb-up" size={18} color="#10B981" />
+                      <Text style={styles.votingBreakdownNumber}>{selectedVotingRecord.yesVotes}</Text>
+                      <Text style={styles.votingBreakdownLabel}>Yes</Text>
+                    </View>
+                    <View style={styles.votingBreakdownItem}>
+                      <MaterialIcons name="thumb-down" size={18} color="#EF4444" />
+                      <Text style={styles.votingBreakdownNumber}>{selectedVotingRecord.noVotes}</Text>
+                      <Text style={styles.votingBreakdownLabel}>No</Text>
+                    </View>
+                    <View style={styles.votingBreakdownItem}>
+                      <MaterialIcons name="remove" size={18} color="#6B7280" />
+                      <Text style={styles.votingBreakdownNumber}>{selectedVotingRecord.abstains}</Text>
+                      <Text style={styles.votingBreakdownLabel}>Abstain</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Original Sources Section */}
+                {selectedVotingRecord.source_links && selectedVotingRecord.source_links.length > 0 && (
+                  <View style={styles.modalSectionContainer}>
+                    <TouchableOpacity
+                      style={styles.collapsibleHeader}
+                      onPress={() => setShowVotingSources(!showVotingSources)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.modalSectionTitle}>
+                        🔗 Original Sources ({selectedVotingRecord.source_links.length})
+                      </Text>
+                      <MaterialIcons
+                        name={showVotingSources ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        size={24}
+                        color="#3B82F6"
+                      />
+                    </TouchableOpacity>
+
+                    {showVotingSources && (
+                      <View style={styles.collapsibleContent}>
+                        {selectedVotingRecord.source_links.map((link: any, index: number) => (
+                          <View key={index} style={styles.sourceCard}>
+                            <View style={styles.sourceCardHeader}>
+                              <View style={styles.sourceTypeContainer}>
+                                <MaterialIcons
+                                  name={
+                                    link.type === 'hansard' ? 'gavel' :
+                                    link.type === 'bill_document' ? 'description' :
+                                    link.type === 'committee_report' ? 'group' :
+                                    link.type === 'government_doc' ? 'account_balance' :
+                                    'link'
+                                  }
+                                  size={16}
+                                  color="#3B82F6"
+                                />
+                                <Text style={styles.sourceType}>{link.type.replace('_', ' ').toUpperCase()}</Text>
+                              </View>
+                              <Text style={styles.sourceDate}>{link.date}</Text>
+                            </View>
+                            <Text style={styles.sourceTitle}>{link.title}</Text>
+                            <Text style={styles.sourceProvider}>Source: {link.source}</Text>
+                            <TouchableOpacity
+                              style={styles.modalSourceButton}
+                              onPress={() => Linking.openURL(link.url)}
+                              activeOpacity={0.8}
+                            >
+                              <MaterialIcons name="open-in-new" size={16} color="#FFFFFF" />
+                              <Text style={styles.modalSourceButtonText}>View Source</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Verification Section */}
+                {selectedVotingRecord.verification_links && selectedVotingRecord.verification_links.length > 0 && (
+                  <View style={styles.modalSectionContainer}>
+                    <TouchableOpacity
+                      style={styles.collapsibleHeader}
+                      onPress={() => setShowVotingVerification(!showVotingVerification)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.modalSectionTitle}>
+                        ✅ Vote Verification ({selectedVotingRecord.verification_links.length})
+                      </Text>
+                      <MaterialIcons
+                        name={showVotingVerification ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        size={24}
+                        color="#10B981"
+                      />
+                    </TouchableOpacity>
+
+                    {showVotingVerification && (
+                      <View style={styles.collapsibleContent}>
+                        {selectedVotingRecord.verification_links.map((link: any, index: number) => (
+                          <View key={index} style={styles.verificationCard}>
+                            <View style={styles.sourceCardHeader}>
+                              <View style={styles.sourceTypeContainer}>
+                                <MaterialIcons
+                                  name={
+                                    link.type === 'official_record' ? 'verified' :
+                                    link.type === 'news_verification' ? 'article' :
+                                    link.type === 'fact_check' ? 'fact_check' :
+                                    link.type === 'vote_tally' ? 'poll' :
+                                    link.type === 'independent_report' ? 'assessment' :
+                                    'check_circle'
+                                  }
+                                  size={16}
+                                  color="#10B981"
+                                />
+                                <Text style={styles.verificationType}>{link.type.replace('_', ' ').toUpperCase()}</Text>
+                              </View>
+                              <Text style={styles.sourceDate}>{link.date}</Text>
+                            </View>
+                            <Text style={styles.sourceTitle}>{link.title}</Text>
+                            <Text style={styles.sourceProvider}>Source: {link.source}</Text>
+                            <Text style={styles.verificationSummary}>{link.content_summary}</Text>
+                            <TouchableOpacity
+                              style={styles.modalSourceButton}
+                              onPress={() => Linking.openURL(link.url)}
+                              activeOpacity={0.8}
+                            >
+                              <MaterialIcons name="open-in-new" size={16} color="#FFFFFF" />
+                              <Text style={styles.modalSourceButtonText}>View Verification</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Metadata */}
+                <View style={styles.modalSectionContainer}>
+                  <Text style={styles.modalSectionTitle}>📋 Additional Information</Text>
+                  <View style={styles.metadataContainer}>
+                    <View style={styles.metadataItem}>
+                      <MaterialIcons name="category" size={16} color="#6B7280" />
+                      <Text style={styles.metadataLabel}>Category:</Text>
+                      <Text style={styles.metadataValue}>{selectedVotingRecord.category}</Text>
+                    </View>
+                    <View style={styles.metadataItem}>
+                      <MaterialIcons name="event" size={16} color="#6B7280" />
+                      <Text style={styles.metadataLabel}>Vote Date:</Text>
+                      <Text style={styles.metadataValue}>{selectedVotingRecord.date}</Text>
+                    </View>
+                  </View>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -2890,7 +3110,7 @@ const styles = StyleSheet.create({
   },
   gradientHeaderContainer: {
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 32,
     paddingHorizontal: 20,
   },
   gradientHeader: {
@@ -2948,6 +3168,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headerActionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  notificationButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -3034,6 +3263,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  sectionHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  adminButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#fef2f2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
   searchButton: {
     width: 44,
     height: 44,
@@ -3045,6 +3289,7 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 24,
     marginBottom: 24,
+    marginTop: 8,
   },
   sectionTitle: {
     fontSize: 20,
@@ -3727,6 +3972,135 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#F8FAFC',
     marginLeft: 8,
+  },
+  notificationButtonSearch: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    position: 'relative',
+  },
+  notificationBadgeSearch: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ff4757',
+  },
+
+  // Top Header Styles
+  topHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1a202c',
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: 16,
+    color: '#718096',
+    fontWeight: '500',
+  },
+  topHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  topAdminButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fef2f2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  topNotificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  topNotificationBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ff4757',
+  },
+
+  // Stats Card Styles
+  statsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#f8faff',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  statIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  modalStatValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1a202c',
+    marginBottom: 4,
+  },
+  statTitle: {
+    fontSize: 12,
+    color: '#718096',
+    fontWeight: '500',
+    textAlign: 'center',
   },
 
   // Advanced Filter Modal Styles
@@ -5415,5 +5789,98 @@ const styles = StyleSheet.create({
   // Placeholder style for modal headers
   placeholder: {
     width: 40,
+  },
+
+  // Voting Record Detail Modal Styles
+  votingBreakdownLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  verificationType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  verificationSummary: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  metadataContainer: {
+    gap: 12,
+  },
+  metadataItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  metadataLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  metadataValue: {
+    fontSize: 14,
+    color: '#374151',
+    flex: 1,
+  },
+
+  // Voting Card Source Button Styles
+  verificationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 16,
+    gap: 4,
+  },
+  verificationButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+
+  // Missing styles for source verification
+  sourceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  sourceProvider: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  sourceDate: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  modalSourceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 8,
+    marginTop: 12,
+  },
+  modalSourceButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  modalSectionContainer: {
+    marginBottom: 24,
+  },
+  modalSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 16,
   },
 });

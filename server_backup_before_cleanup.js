@@ -69,11 +69,9 @@ const auditLog = (event, details, req) => {
 const enhancedAuthMiddleware = require('./enhanced_auth_middleware');
 const enhancedApiRoutes = require('./enhanced_api_routes');
 const contentApiRoutes = require('./content_api_routes_new');
-const politicsApiRoutes = require('./politics-api-routes');
-const adminApiRoutes = require('./admin-api-routes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
 // Enhanced rate limiting for authentication endpoints
@@ -2085,7 +2083,102 @@ app.post('/api/users/login', authLimiter, (req, res) => {
   });
 });
 
-// OLD ADMIN LOGIN REMOVED - TO BE REPLACED WITH CLEAN IMPLEMENTATION
+// Admin login endpoint
+app.post('/api/admin/login', authLimiter, (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
+  }
+
+  console.log('🔍 Admin login attempt with:', { email, hasPassword: !!password });
+
+  // Check if user exists and has admin role
+  db.query('SELECT * FROM users WHERE email = ? AND role = "admin"', [email], (err, results) => {
+    if (err) {
+      console.error('❌ Admin login database error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (results.length === 0) {
+      console.log('❌ Admin login: No admin user found with email:', email);
+      auditLog('ADMIN_LOGIN_FAILED', { email, reason: 'User not found or not admin' }, req);
+      return res.status(401).json({ error: 'Invalid admin credentials' });
+    }
+
+    const admin = results[0];
+
+    // Check if account is locked
+    if (admin.locked_until && new Date() < new Date(admin.locked_until)) {
+      console.log('❌ Admin login: Account locked until:', admin.locked_until);
+      auditLog('ADMIN_LOGIN_FAILED', { email, reason: 'Account locked' }, req);
+      return res.status(423).json({ error: 'Account temporarily locked due to too many failed attempts' });
+    }
+
+    // Verify password
+    bcrypt.compare(password, admin.password, (err, isMatch) => {
+      if (err) {
+        console.error('❌ Admin password verification error:', err);
+        return res.status(500).json({ error: 'Authentication error' });
+      }
+
+      if (!isMatch) {
+        console.log('❌ Admin login: Invalid password for:', email);
+        
+        // Increment failed attempts
+        const failedAttempts = (admin.login_attempts || 0) + 1;
+        const lockUntil = failedAttempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
+        
+        db.query('UPDATE users SET login_attempts = ?, locked_until = ? WHERE uuid = ?', 
+          [failedAttempts, lockUntil, admin.uuid], (err) => {
+            if (err) console.error('Error updating failed attempts:', err);
+          });
+
+        auditLog('ADMIN_LOGIN_FAILED', { email, reason: 'Invalid password' }, req);
+        return res.status(401).json({ error: 'Invalid admin credentials' });
+      }
+
+      // Generate JWT token for admin
+      const token = jwt.sign(
+        { 
+          uuid: admin.uuid, 
+          nickname: admin.nickname,
+          email: admin.email,
+          role: admin.role || 'admin',
+          permissions: admin.permissions ? JSON.parse(admin.permissions) : []
+        },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      
+      // Reset failed attempts and update last active timestamp
+      db.query('UPDATE users SET login_attempts = 0, locked_until = NULL, last_active = CURRENT_TIMESTAMP WHERE uuid = ?', [admin.uuid], (err) => {
+        if (err) {
+          console.error('Error updating admin status:', err);
+        }
+      });
+
+      console.log('✅ Admin logged in successfully:', { email, uuid: admin.uuid });
+      auditLog('ADMIN_LOGIN_SUCCESS', { uuid: admin.uuid, email, nickname: admin.nickname }, req);
+
+      res.json({
+        token,
+        user: {
+          uuid: admin.uuid,
+          nickname: admin.nickname,
+          email: admin.email,
+          emoji: admin.emoji,
+          county: admin.county,
+          role: admin.role || 'admin',
+          permissions: admin.permissions ? JSON.parse(admin.permissions) : [],
+          xp: admin.xp || 0,
+          badges: admin.badges || [],
+          streak: admin.streak || 0
+        }
+      });
+    });
+  });
+});
 
 // Get user profile
 app.get('/api/users/:uuid', (req, res) => {
@@ -3458,13 +3551,274 @@ app.get('/api/users/stats', (req, res) => {
   });
 });
 
-// ========== POLITICS API ROUTES ==========
-// Mount politics routes with database connection
-app.use(politicsApiRoutes(db));
+// ========== POLITICAL API ROUTES ==========
 
-// ========== ADMIN API ROUTES ==========
-// Mount admin routes with database connection
-app.use(adminApiRoutes(db));
+// Get all politicians
+app.get('/api/politicians', (req, res) => {
+  const query = `
+    SELECT p.*, 
+           COUNT(DISTINCT pn.article_id) as news_count,
+           COUNT(DISTINCT pw.id) as wikipedia_entries
+    FROM politicians p
+    LEFT JOIN politician_news pn ON p.id = pn.politician_id
+    LEFT JOIN politician_wikipedia pw ON p.id = pw.politician_id
+    WHERE p.is_active = 1
+    GROUP BY p.id
+    ORDER BY p.name
+  `;
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching politicians:', err);
+      return res.status(500).json({ error: 'Failed to fetch politicians' });
+    }
+    
+    // Transform results to match mobile app expectations
+    const politicians = results.map(politician => ({
+      id: politician.id,
+      name: politician.name,
+      position: politician.position,
+      party: politician.party,
+      party_color: getPartyColor(politician.party),
+      constituency: politician.constituency,
+      county: politician.county,
+      bio: politician.wikipedia_url ? 'Wikipedia profile available' : 'No bio available',
+      education: 'Education details not available',
+      career_summary: `Serving as ${politician.position}`,
+      image_url: `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face&sig=${politician.id}`,
+      social_media: {
+        twitter: `@${politician.name.replace(/\s+/g, '').toLowerCase()}`,
+        facebook: `${politician.name.replace(/\s+/g, '')}Official`,
+        instagram: politician.name.replace(/\s+/g, '').toLowerCase()
+      },
+      contact_info: {
+        email: `${politician.name.replace(/\s+/g, '').toLowerCase()}@government.go.ke`,
+        phone: '+254-20-2227411'
+      },
+      news_count: politician.news_count || 0,
+      wikipedia_entries: politician.wikipedia_entries || 0
+    }));
+    
+    res.json(politicians);
+  });
+});
+
+// Get single politician details
+app.get('/api/politicians/:id', (req, res) => {
+  const politicianId = req.params.id;
+  
+  const query = `
+    SELECT p.*, 
+           COUNT(DISTINCT pn.article_id) as news_count,
+           COUNT(DISTINCT pw.id) as wikipedia_entries
+    FROM politicians p
+    LEFT JOIN politician_news pn ON p.id = pn.politician_id
+    LEFT JOIN politician_wikipedia pw ON p.id = pw.politician_id
+    WHERE p.id = ? AND p.is_active = 1
+    GROUP BY p.id
+  `;
+  
+  db.query(query, [politicianId], (err, results) => {
+    if (err) {
+      console.error('Error fetching politician:', err);
+      return res.status(500).json({ error: 'Failed to fetch politician' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Politician not found' });
+    }
+    
+    const politician = results[0];
+    const politicianData = {
+      id: politician.id,
+      name: politician.name,
+      position: politician.position,
+      party: politician.party,
+      party_color: getPartyColor(politician.party),
+      constituency: politician.constituency,
+      county: politician.county,
+      bio: politician.wikipedia_url ? 'Wikipedia profile available' : 'No bio available',
+      education: 'Education details not available',
+      career_summary: `Serving as ${politician.position}`,
+      image_url: `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face&sig=${politician.id}`,
+      social_media: {
+        twitter: `@${politician.name.replace(/\s+/g, '').toLowerCase()}`,
+        facebook: `${politician.name.replace(/\s+/g, '')}Official`,
+        instagram: politician.name.replace(/\s+/g, '').toLowerCase()
+      },
+      contact_info: {
+        email: `${politician.name.replace(/\s+/g, '').toLowerCase()}@government.go.ke`,
+        phone: '+254-20-2227411'
+      },
+      news_count: politician.news_count || 0,
+      wikipedia_entries: politician.wikipedia_entries || 0
+    };
+    
+    res.json(politicianData);
+  });
+});
+
+// Get politician news
+app.get('/api/politicians/:id/news', (req, res) => {
+  const politicianId = req.params.id;
+  
+  const query = `
+    SELECT na.*, pn.relevance_score, pn.mention_type
+    FROM news_articles na
+    JOIN politician_news pn ON na.id = pn.article_id
+    WHERE pn.politician_id = ?
+    ORDER BY na.published_date DESC
+    LIMIT 20
+  `;
+  
+  db.query(query, [politicianId], (err, results) => {
+    if (err) {
+      console.error('Error fetching politician news:', err);
+      return res.status(500).json({ error: 'Failed to fetch news' });
+    }
+    
+    const news = results.map(article => ({
+      id: article.id,
+      headline: article.headline,
+      summary: article.summary || 'No summary available',
+      source: article.source_name || 'Unknown Source',
+      source_publication_date: article.published_date,
+      link: article.url || '#',
+      category: 'Politics',
+      tags: ['politics', 'kenya'],
+      is_breaking: false,
+      content: article.content || article.summary || 'Content not available'
+    }));
+    
+    res.json(news);
+  });
+});
+
+// Get politician documents (using news articles as documents for now)
+app.get('/api/politicians/:id/documents', (req, res) => {
+  const politicianId = req.params.id;
+  
+  const query = `
+    SELECT na.*, pn.relevance_score
+    FROM news_articles na
+    JOIN politician_news pn ON na.id = pn.article_id
+    WHERE pn.politician_id = ? AND na.content_summary IS NOT NULL
+    ORDER BY na.published_date DESC
+    LIMIT 10
+  `;
+  
+  db.query(query, [politicianId], (err, results) => {
+    if (err) {
+      console.error('Error fetching politician documents:', err);
+      return res.status(500).json({ error: 'Failed to fetch documents' });
+    }
+    
+    const documents = results.map(article => ({
+      id: article.id,
+      title: article.headline,
+      type: 'News Article',
+      summary: article.summary || 'No summary available',
+      date: article.published_date,
+      source: article.source_name || 'Unknown Source',
+      file_url: article.url || '#',
+      key_quotes: [article.summary || 'No quotes available'],
+      metadata: {
+        pages: 1,
+        language: 'English',
+        version: '1.0'
+      }
+    }));
+    
+    res.json(documents);
+  });
+});
+
+// Get politician timeline (using news articles as timeline events)
+app.get('/api/politicians/:id/timeline', (req, res) => {
+  const politicianId = req.params.id;
+  
+  const query = `
+    SELECT na.*, pn.relevance_score
+    FROM news_articles na
+    JOIN politician_news pn ON na.id = pn.article_id
+    WHERE pn.politician_id = ?
+    ORDER BY na.published_date DESC
+    LIMIT 15
+  `;
+  
+  db.query(query, [politicianId], (err, results) => {
+    if (err) {
+      console.error('Error fetching politician timeline:', err);
+      return res.status(500).json({ error: 'Failed to fetch timeline' });
+    }
+    
+    const timeline = results.map(article => ({
+      id: article.id,
+      event_type: 'News',
+      title: article.headline,
+      description: article.summary || 'No description available',
+      date: article.published_date,
+      source: article.source_name || 'Unknown Source',
+      metadata: {
+        relevance_score: article.relevance_score,
+        url: article.url
+      }
+    }));
+    
+    res.json(timeline);
+  });
+});
+
+// Get politician commitments (mock data for now)
+app.get('/api/politicians/:id/commitments', (req, res) => {
+  const politicianId = req.params.id;
+  
+  // Mock commitments data - in a real app, you'd have a commitments table
+  const mockCommitments = [
+    {
+      id: 1,
+      promise: 'Improve healthcare services',
+      context: 'Campaign speech',
+      date_made: '2022-08-15',
+      status: 'in_progress',
+      related_actions: [
+        {
+          action: 'Launched health insurance program',
+          date: '2023-01-15',
+          connection: 'Direct implementation of healthcare promise'
+        }
+      ],
+      sources: ['https://example.com/campaign-speech'],
+      notes: 'Progress being made through various government programs'
+    },
+    {
+      id: 2,
+      promise: 'Create more jobs',
+      context: 'Parliamentary address',
+      date_made: '2022-09-01',
+      status: 'pending',
+      related_actions: [],
+      sources: ['https://example.com/parliamentary-address'],
+      notes: 'Promise made during parliamentary session'
+    }
+  ];
+  
+  res.json(mockCommitments);
+});
+
+// Helper function to get party colors
+function getPartyColor(party) {
+  const partyColors = {
+    'UDA': '#FF6B35',
+    'ODM': '#FF0000',
+    'ANC': '#8B0000',
+    'NARC-Kenya': '#8B0000',
+    'Jubilee': '#FFD700',
+    'Wiper': '#0000FF',
+    'Ford Kenya': '#008000'
+  };
+  return partyColors[party] || '#6B7280';
+}
 
 // Catch all handler - send back React's index.html file for client-side routing
 // This MUST be placed AFTER all API routes

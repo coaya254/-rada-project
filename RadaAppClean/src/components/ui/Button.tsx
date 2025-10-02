@@ -22,12 +22,12 @@ interface ButtonProps {
 
 const getGradientColors = (variant: ButtonVariant): string[] => {
   switch (variant) {
-    case 'primary': return colors.gradients.primary;
-    case 'success': return colors.gradients.success;
-    case 'error': return colors.gradients.error;
-    case 'dark': return colors.gradients.dark;
+    case 'primary': return [...colors.gradients.primary];
+    case 'success': return [...colors.gradients.success];
+    case 'error': return [...colors.gradients.error];
+    case 'dark': return [...colors.gradients.dark];
     case 'secondary': return [colors.neutral[100], colors.neutral[200]];
-    default: return colors.gradients.primary;
+    default: return [...colors.gradients.primary];
   }
 };
 

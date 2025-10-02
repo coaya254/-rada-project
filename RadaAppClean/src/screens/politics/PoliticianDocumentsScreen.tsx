@@ -16,6 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Card, LoadingSpinner, ErrorDisplay } from '../../components/ui';
 import { Document } from '../../types';
 import { colors, shadows } from '../../theme';
+import ApiService from '../../services/api';
 
 interface PoliticianDocumentsScreenProps {
   politicianId: number;
@@ -33,15 +34,25 @@ export const PoliticianDocumentsScreen: React.FC<PoliticianDocumentsScreenProps>
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'bill' | 'speech' | 'interview' | 'report'>('all');
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showSources, setShowSources] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
 
   const fetchDocuments = async (refresh = false) => {
     if (!refresh) setLoading(true);
     setError(null);
 
     try {
-      // Mock documents data - replace with actual API call when backend is ready
+      // Fetch documents from API
+      const response = await ApiService.getDocuments(politicianId);
+      const data = response.success ? response.data : response;
+
+      setDocuments((data || []).sort((a: Document, b: Document) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ));
+
+      /* Mock documents data - replaced with actual API call
       const mockDocuments: Document[] = [
         {
           id: 1,
@@ -53,6 +64,40 @@ export const PoliticianDocumentsScreen: React.FC<PoliticianDocumentsScreenProps>
           source: 'Parliamentary Records',
           tags: ['healthcare', 'legislation', 'social-policy', 'public-health'],
           url: 'https://example.com/documents/healthcare-bill-2024.pdf',
+          source_links: [
+            {
+              type: 'hansard',
+              url: 'https://hansard.parliament.go.ke/nationalsitting/2024/january/15',
+              title: 'National Assembly Hansard - Healthcare Bill Introduction',
+              source: 'Parliament of Kenya',
+              date: '2024-01-15'
+            },
+            {
+              type: 'official_website',
+              url: 'https://parliament.go.ke/bills/universal-healthcare-access-2024',
+              title: 'Universal Healthcare Access Act 2024 - Official Bill Text',
+              source: 'Parliament of Kenya',
+              date: '2024-01-15'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'official_record',
+              url: 'https://kenyalaw.org/kl/bills/2024-healthcare-bill',
+              title: 'Healthcare Bill - Official Legislative Record',
+              source: 'Kenya Law Reports',
+              date: '2024-01-15',
+              content_summary: 'Complete bill text as presented to Parliament by ' + politicianName + ' including all amendments and committee recommendations.'
+            },
+            {
+              type: 'media_verification',
+              url: 'https://nation.africa/kenya/news/politics/healthcare-bill-introduced',
+              title: 'Healthcare Reform Bill Introduced in Parliament',
+              source: 'Daily Nation',
+              date: '2024-01-15',
+              content_summary: 'Independent verification of bill introduction and detailed analysis of proposed healthcare reforms.'
+            }
+          ]
         },
         {
           id: 2,
@@ -64,6 +109,32 @@ export const PoliticianDocumentsScreen: React.FC<PoliticianDocumentsScreenProps>
           source: 'Parliamentary Hansard',
           tags: ['education', 'speech', 'budget', 'infrastructure'],
           url: 'https://example.com/documents/education-speech-2024.pdf',
+          source_links: [
+            {
+              type: 'hansard',
+              url: 'https://hansard.parliament.go.ke/nationalsitting/2024/february/28',
+              title: 'Parliamentary Hansard - Education Funding Address',
+              source: 'Parliament of Kenya',
+              date: '2024-02-28'
+            },
+            {
+              type: 'video_recording',
+              url: 'https://youtube.com/watch?v=education-speech-2024',
+              title: 'Parliamentary Session - Education Funding Speech',
+              source: 'Parliament YouTube Channel',
+              date: '2024-02-28'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'media_verification',
+              url: 'https://standardmedia.co.ke/politics/education-funding-speech',
+              title: 'MP Calls for Increased Education Funding in Parliament',
+              source: 'The Standard',
+              date: '2024-02-28',
+              content_summary: 'Complete coverage of ' + politicianName + '\'s parliamentary address on education funding with key quotes and policy recommendations.'
+            }
+          ]
         },
         {
           id: 3,
@@ -75,6 +146,25 @@ export const PoliticianDocumentsScreen: React.FC<PoliticianDocumentsScreenProps>
           source: 'National Broadcasting Service',
           tags: ['media', 'interview', 'policy', 'constituency'],
           url: 'https://example.com/documents/nbs-interview-2024.mp4',
+          source_links: [
+            {
+              type: 'video_recording',
+              url: 'https://nbs.co.ke/programs/newsnight/2024-03-10-interview',
+              title: 'Newsnight Interview - Policy Priorities Discussion',
+              source: 'National Broadcasting Service',
+              date: '2024-03-10'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'archive_link',
+              url: 'https://archive.nbs.co.ke/interviews/2024/march/10',
+              title: 'NBS Interview Archive - March 10, 2024',
+              source: 'NBS Digital Archive',
+              date: '2024-03-10',
+              content_summary: 'Full interview transcript and video archive of ' + politicianName + '\'s discussion on policy priorities and constituency development.'
+            }
+          ]
         },
         {
           id: 4,
@@ -132,12 +222,11 @@ export const PoliticianDocumentsScreen: React.FC<PoliticianDocumentsScreenProps>
           url: 'https://example.com/documents/youth-employment-report-2023.pdf',
         },
       ];
-
-      setDocuments(mockDocuments.sort((a: Document, b: Document) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      ));
+      */
     } catch (err) {
+      console.error('Error fetching documents:', err);
       setError(err instanceof Error ? err.message : 'Failed to load documents');
+      setDocuments([]);
     } finally {
       setLoading(false);
       if (refresh) setRefreshing(false);
@@ -153,9 +242,11 @@ export const PoliticianDocumentsScreen: React.FC<PoliticianDocumentsScreenProps>
     fetchDocuments(true);
   };
 
-  const handleDocumentPress = (document: Document) => {
+  const handleDocumentPress = (document: any) => {
     setSelectedDocument(document);
     setShowDetailModal(true);
+    setShowSources(false);
+    setShowVerification(false);
   };
 
   const getDocumentTypeColor = (type: Document['type']) => {
@@ -254,6 +345,48 @@ export const PoliticianDocumentsScreen: React.FC<PoliticianDocumentsScreenProps>
               ))}
               {document.tags.length > 3 && (
                 <Text style={styles.moreTags}>+{document.tags.length - 3}</Text>
+              )}
+            </View>
+          )}
+
+          {/* Source Buttons */}
+          {((document.source_links && document.source_links.length > 0) || (document.verification_links && document.verification_links.length > 0)) && (
+            <View style={styles.actionButtons}>
+              {document.source_links && document.source_links.length > 0 && (
+                <TouchableOpacity
+                  style={styles.sourceButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setSelectedDocument(document);
+                    setShowDetailModal(true);
+                    setShowSources(true);
+                    setShowVerification(false);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons name="link" size={14} color="#3B82F6" />
+                  <Text style={styles.sourceButtonText}>
+                    Sources ({document.source_links.length})
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {document.verification_links && document.verification_links.length > 0 && (
+                <TouchableOpacity
+                  style={styles.verificationButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setSelectedDocument(document);
+                    setShowDetailModal(true);
+                    setShowSources(false);
+                    setShowVerification(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons name="verified" size={14} color="#10B981" />
+                  <Text style={styles.verificationButtonText}>
+                    Verification ({document.verification_links.length})
+                  </Text>
+                </TouchableOpacity>
               )}
             </View>
           )}
@@ -460,6 +593,121 @@ export const PoliticianDocumentsScreen: React.FC<PoliticianDocumentsScreenProps>
                       </View>
                     ))}
                   </View>
+                </View>
+              )}
+
+              {/* Original Sources Section */}
+              {selectedDocument.source_links && selectedDocument.source_links.length > 0 && (
+                <View style={styles.modalSourceSection}>
+                  <TouchableOpacity
+                    style={styles.collapsibleHeader}
+                    onPress={() => setShowSources(!showSources)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.modalSectionTitle}>
+                      🔗 Original Sources ({selectedDocument.source_links.length})
+                    </Text>
+                    <MaterialIcons
+                      name={showSources ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                      size={24}
+                      color="#3B82F6"
+                    />
+                  </TouchableOpacity>
+
+                  {showSources && (
+                    <View style={styles.collapsibleContent}>
+                      {selectedDocument.source_links.map((link: any, index: number) => (
+                        <View key={index} style={styles.sourceCard}>
+                          <View style={styles.sourceCardHeader}>
+                            <View style={styles.sourceTypeContainer}>
+                              <MaterialIcons
+                                name={
+                                  link.type === 'hansard' ? 'gavel' :
+                                  link.type === 'video_recording' ? 'play-circle' :
+                                  link.type === 'official_website' ? 'language' :
+                                  link.type === 'news_coverage' ? 'article' :
+                                  link.type === 'government_doc' ? 'account_balance' :
+                                  'link'
+                                }
+                                size={16}
+                                color="#3B82F6"
+                              />
+                              <Text style={styles.sourceType}>{link.type.replace('_', ' ').toUpperCase()}</Text>
+                            </View>
+                            <Text style={styles.sourceDate}>{link.date}</Text>
+                          </View>
+                          <Text style={styles.sourceTitle}>{link.title}</Text>
+                          <Text style={styles.sourceProvider}>Source: {link.source}</Text>
+                          <TouchableOpacity
+                            style={styles.modalSourceButton}
+                            onPress={() => Linking.openURL(link.url)}
+                            activeOpacity={0.8}
+                          >
+                            <MaterialIcons name="open-in-new" size={16} color="#FFFFFF" />
+                            <Text style={styles.modalSourceButtonText}>View Source</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Verification Section */}
+              {selectedDocument.verification_links && selectedDocument.verification_links.length > 0 && (
+                <View style={styles.modalSourceSection}>
+                  <TouchableOpacity
+                    style={styles.collapsibleHeader}
+                    onPress={() => setShowVerification(!showVerification)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.modalSectionTitle}>
+                      ✅ Document Verification ({selectedDocument.verification_links.length})
+                    </Text>
+                    <MaterialIcons
+                      name={showVerification ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                      size={24}
+                      color="#10B981"
+                    />
+                  </TouchableOpacity>
+
+                  {showVerification && (
+                    <View style={styles.collapsibleContent}>
+                      {selectedDocument.verification_links.map((link: any, index: number) => (
+                        <View key={index} style={styles.verificationCard}>
+                          <View style={styles.sourceCardHeader}>
+                            <View style={styles.sourceTypeContainer}>
+                              <MaterialIcons
+                                name={
+                                  link.type === 'official_record' ? 'verified' :
+                                  link.type === 'media_verification' ? 'fact_check' :
+                                  link.type === 'fact_check' ? 'check_circle' :
+                                  link.type === 'archive_link' ? 'archive' :
+                                  link.type === 'independent_source' ? 'balance' :
+                                  'verified'
+                                }
+                                size={16}
+                                color="#10B981"
+                              />
+                              <Text style={styles.verificationType}>{link.type.replace('_', ' ').toUpperCase()}</Text>
+                            </View>
+                            <Text style={styles.sourceDate}>{link.date}</Text>
+                          </View>
+                          <Text style={styles.sourceTitle}>{link.title}</Text>
+                          <Text style={styles.sourceProvider}>Source: {link.source}</Text>
+                          <Text style={styles.verificationSummary}>{link.content_summary}</Text>
+                          <TouchableOpacity
+                            style={styles.modalSourceButton}
+                            onPress={() => Linking.openURL(link.url)}
+                            activeOpacity={0.8}
+                          >
+                            <MaterialIcons name="open-in-new" size={16} color="#FFFFFF" />
+                            <Text style={styles.modalSourceButtonText}>View Verification</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               )}
 
@@ -765,5 +1013,143 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+
+  // Source/Verification section styles
+  modalSourceSection: {
+    marginBottom: 24,
+  },
+  modalSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  collapsibleContent: {
+    marginTop: 12,
+    gap: 12,
+  },
+  sourceCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
+  },
+  verificationCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+  },
+  sourceCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sourceTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sourceType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  verificationType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  sourceDate: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  sourceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  sourceProvider: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  verificationSummary: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 8,
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  modalSourceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  modalSourceButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  // Card source button styles
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  sourceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#DBEAFE',
+    borderRadius: 16,
+    gap: 4,
+  },
+  sourceButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  verificationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 16,
+    gap: 4,
+  },
+  verificationButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
   },
 });

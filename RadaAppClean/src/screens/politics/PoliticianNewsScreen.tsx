@@ -16,6 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { NewsCard, LoadingSpinner, ErrorDisplay } from '../../components/ui';
 import { NewsItem } from '../../types';
 import { colors, shadows } from '../../theme';
+import ApiService from '../../services/api';
 
 interface PoliticianNewsScreenProps {
   politicianId: number;
@@ -47,7 +48,13 @@ export const PoliticianNewsScreen: React.FC<PoliticianNewsScreenProps> = ({
     setError(null);
 
     try {
-      // Mock news data - replace with actual API call when backend is ready
+      // Fetch news from API
+      const response = await ApiService.getPoliticianNews(politicianId);
+      const data = response.success ? response.data : response;
+
+      setNews(data || []);
+
+      /* Mock news data - replaced with actual API call
       const sampleNews: NewsItem[] = [
         {
           id: 1,
@@ -80,10 +87,11 @@ export const PoliticianNewsScreen: React.FC<PoliticianNewsScreenProps> = ({
           summary: 'Educational initiative launched to improve learning resources and infrastructure in constituency schools.',
         },
       ];
-
-      setNews(sampleNews);
+      */
     } catch (err) {
+      console.error('Error fetching news:', err);
       setError(err instanceof Error ? err.message : 'Failed to load news');
+      setNews([]);
     } finally {
       setLoading(false);
       if (refresh) setRefreshing(false);
@@ -278,7 +286,7 @@ export const PoliticianNewsScreen: React.FC<PoliticianNewsScreenProps> = ({
           </View>
         ) : (
           <View style={styles.newsGrid}>
-            {news.map((item) => (
+            {filteredNews.map((item) => (
               <NewsCard
                 key={item.id}
                 item={item}

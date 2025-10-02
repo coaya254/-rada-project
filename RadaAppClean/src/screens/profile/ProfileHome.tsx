@@ -172,7 +172,7 @@ export const ProfileHome: React.FC<ProfileHomeProps> = ({ navigation }) => {
               title="Achievements"
               subtitle="Badges & milestones earned"
               icon="emoji-events"
-              gradientColors={colors.gradients.warning}
+              gradientColors={[...colors.gradients.warning]}
               stats={{ main: "23", sub: "badges" }}
               onPress={() => navigation.navigate('Achievements')}
               size="large"
@@ -182,7 +182,7 @@ export const ProfileHome: React.FC<ProfileHomeProps> = ({ navigation }) => {
               title="Privacy"
               subtitle="Data & security settings"
               icon="security"
-              gradientColors={colors.gradients.primary}
+              gradientColors={[...colors.gradients.primary]}
               stats={{ main: "✓", sub: "secure" }}
               onPress={() => console.log('Privacy pressed')}
             />
@@ -191,7 +191,7 @@ export const ProfileHome: React.FC<ProfileHomeProps> = ({ navigation }) => {
               title="Preferences"
               subtitle="App customization"
               icon="tune"
-              gradientColors={colors.gradients.success}
+              gradientColors={[...colors.gradients.success]}
               stats={{ main: "5", sub: "set" }}
               onPress={() => console.log('Preferences pressed')}
             />
@@ -200,7 +200,7 @@ export const ProfileHome: React.FC<ProfileHomeProps> = ({ navigation }) => {
               title="Activity"
               subtitle="Your engagement history"
               icon="timeline"
-              gradientColors={colors.gradients.error}
+              gradientColors={[...colors.gradients.error]}
               stats={{ main: "342", sub: "actions" }}
               onPress={() => console.log('Activity pressed')}
             />

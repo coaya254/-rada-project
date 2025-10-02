@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 
@@ -7,8 +7,10 @@ export interface TimelineItemProps {
   title: string;
   date: string;
   description?: string;
-  type?: 'vote' | 'speech' | 'bill' | 'meeting' | 'default';
+  type?: 'vote' | 'speech' | 'bill' | 'meeting' | 'default' | 'position' | 'achievement' | 'controversy' | 'legislation' | 'event';
   isLast?: boolean;
+  hasSourceLinks?: boolean;
+  onSourcePress?: () => void;
 }
 
 export const TimelineItem: React.FC<TimelineItemProps> = ({
@@ -17,6 +19,8 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({
   description,
   type = 'default',
   isLast = false,
+  hasSourceLinks = false,
+  onSourcePress,
 }) => {
   const getTypeConfig = () => {
     switch (type) {
@@ -33,6 +37,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({
           backgroundColor: colors.success[100],
         };
       case 'bill':
+      case 'legislation':
         return {
           icon: 'description' as keyof typeof MaterialIcons.glyphMap,
           color: colors.warning[600],
@@ -43,6 +48,24 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({
           icon: 'groups' as keyof typeof MaterialIcons.glyphMap,
           color: colors.purple[600],
           backgroundColor: colors.purple[100],
+        };
+      case 'position':
+        return {
+          icon: 'work' as keyof typeof MaterialIcons.glyphMap,
+          color: colors.primary[600],
+          backgroundColor: colors.primary[100],
+        };
+      case 'achievement':
+        return {
+          icon: 'emoji-events' as keyof typeof MaterialIcons.glyphMap,
+          color: colors.success[600],
+          backgroundColor: colors.success[100],
+        };
+      case 'controversy':
+        return {
+          icon: 'warning' as keyof typeof MaterialIcons.glyphMap,
+          color: colors.error[600],
+          backgroundColor: colors.error[100],
         };
       default:
         return {
@@ -66,7 +89,18 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({
 
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{title}</Text>
+            {hasSourceLinks && onSourcePress && (
+              <TouchableOpacity
+                style={styles.sourceIcon}
+                onPress={onSourcePress}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <MaterialIcons name="link" size={12} color={colors.primary[500]} />
+              </TouchableOpacity>
+            )}
+          </View>
           <Text style={styles.date}>{date}</Text>
         </View>
 
@@ -108,11 +142,25 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 8,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
   title: {
     fontSize: 16,
     fontWeight: typography.fontWeights.bold as any,
     color: colors.neutral[900],
-    marginBottom: 4,
+    flex: 1,
+  },
+  sourceIcon: {
+    padding: 2,
+    marginLeft: 8,
+    backgroundColor: colors.primary[50],
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: colors.primary[200],
   },
   date: {
     fontSize: 14,

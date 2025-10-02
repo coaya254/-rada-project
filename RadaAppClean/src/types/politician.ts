@@ -12,6 +12,31 @@ export interface Politician {
   image_url?: string;
   party_color?: string;
   slug: string;
+
+  // Source verification for career information
+  education_sources?: {
+    type: 'university_record' | 'official_certificate' | 'news_coverage' | 'biography' | 'academic_publication';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+  }[];
+
+  achievements_sources?: {
+    type: 'government_report' | 'news_coverage' | 'official_award' | 'project_documentation' | 'parliamentary_record';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+  }[];
+
+  position_sources?: {
+    type: 'appointment_letter' | 'gazette_notice' | 'news_announcement' | 'official_website' | 'parliamentary_record';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+  }[];
 }
 
 export interface Document {
@@ -22,24 +47,87 @@ export interface Document {
   source: string;
   key_quotes?: string[];
   summary: string;
+
+  // Source links for the document
+  source_links?: {
+    type: 'hansard' | 'video_recording' | 'official_website' | 'news_coverage' | 'government_doc';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+  }[];
+
+  // Verification links for document authenticity
+  verification_links?: {
+    type: 'official_record' | 'media_verification' | 'fact_check' | 'archive_link' | 'independent_source';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+    content_summary: string;
+  }[];
 }
 
 export interface TimelineEvent {
   id: number;
-  year: number;
-  event: string;
-  significance: string;
-  sources: string[];
-  context: string;
+  politician_id: number;
+  title: string;
+  description: string;
+  date: string;
+  type: 'position' | 'achievement' | 'controversy' | 'legislation' | 'event';
+
+  // Source links for timeline events
+  source_links?: {
+    type: 'news' | 'government_doc' | 'parliamentary_record' | 'official_statement' | 'press_release' | 'video' | 'gazette';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+  }[];
+
+  // Verification links for timeline event authenticity
+  verification_links?: {
+    type: 'fact_check' | 'independent_report' | 'official_record' | 'media_verification' | 'archive_link';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+    content_summary: string;
+  }[];
 }
 
 export interface Commitment {
   id: number;
+  politician_id: number;
   promise: string;
-  context: string;
+  description: string;
+  category: string;
+  context?: string;
   date_made: string;
-  sources: string[];
-  status: 'completed' | 'in_progress' | 'pending' | 'broken';
+  status: 'no_evidence' | 'early_progress' | 'significant_progress' | 'completed' | 'stalled';
+  progress_percentage: number; // 0-100
+  evidence?: string;
+  last_activity_date?: string; // For stalled promises
+
+  // Source links for where the promise was originally reported
+  source_links?: {
+    type: 'news' | 'speech' | 'manifesto' | 'interview' | 'government_doc';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+  }[];
+
+  // Verification links for proof of fulfillment or status
+  verification_links?: {
+    type: 'news' | 'government_report' | 'official_statement' | 'project_completion' | 'budget_allocation';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+    content_summary: string;
+  }[];
+
   related_actions?: {
     action: string;
     date: string;
@@ -51,8 +139,28 @@ export interface Commitment {
 export interface VotingRecord {
   id: number;
   bill_name: string;
+  bill_description: string;
   vote: 'yes' | 'no' | 'abstain' | 'absent';
   date: string;
   category: string;
   significance: string;
+
+  // Source links for the voting record
+  source_links?: {
+    type: 'hansard' | 'news' | 'parliament_website' | 'bill_document' | 'committee_report';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+  }[];
+
+  // Verification links for vote confirmation
+  verification_links?: {
+    type: 'official_record' | 'news_verification' | 'fact_check' | 'vote_tally' | 'independent_report';
+    url: string;
+    title: string;
+    source: string;
+    date: string;
+    content_summary: string;
+  }[];
 }

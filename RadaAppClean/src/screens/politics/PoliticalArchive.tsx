@@ -99,8 +99,8 @@ export const PoliticalArchive: React.FC<PoliticalArchiveProps> = ({ navigation }
       filtered = filtered.filter(politician =>
         politician.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         politician.party.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        politician.constituency.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        politician.title.toLowerCase().includes(searchQuery.toLowerCase())
+        (politician.position && politician.position.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (politician.bio && politician.bio.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
@@ -109,13 +109,13 @@ export const PoliticalArchive: React.FC<PoliticalArchiveProps> = ({ navigation }
       filtered = filtered.filter(politician => {
         switch (selectedFilter) {
           case 'senate':
-            return politician.title.toLowerCase().includes('senate');
+            return politician.position && politician.position.toLowerCase().includes('senate');
           case 'parliament':
-            return politician.title.toLowerCase().includes('member') || politician.title.toLowerCase().includes('mp');
+            return politician.position && (politician.position.toLowerCase().includes('member') || politician.position.toLowerCase().includes('mp'));
           case 'governors':
-            return politician.title.toLowerCase().includes('governor');
+            return politician.position && politician.position.toLowerCase().includes('governor');
           case 'cabinet':
-            return politician.title.toLowerCase().includes('minister') || politician.title.toLowerCase().includes('president');
+            return politician.position && (politician.position.toLowerCase().includes('minister') || politician.position.toLowerCase().includes('president'));
           default:
             return true;
         }
@@ -140,10 +140,10 @@ export const PoliticalArchive: React.FC<PoliticalArchiveProps> = ({ navigation }
         </View>
         <View style={styles.politicianInfo}>
           <Text style={styles.politicianName}>{item.name}</Text>
-          <Text style={styles.politicianTitle}>{item.title}</Text>
+          <Text style={styles.politicianTitle}>{item.position}</Text>
           <View style={styles.politicianMeta}>
             <Text style={styles.politicianParty}>{item.party}</Text>
-            <Text style={styles.politicianConstituency}> • {item.constituency}</Text>
+            <Text style={styles.politicianConstituency}> • Rating: {item.rating || 'N/A'}</Text>
           </View>
         </View>
         <MaterialIcons name="chevron-right" size={24} color="#666" />

@@ -9,12 +9,14 @@ import {
   SafeAreaView,
   StatusBar,
   Modal,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card, LoadingSpinner, ErrorDisplay } from '../../components/ui';
 import { VotingRecord } from '../../types';
 import { colors, shadows } from '../../theme';
+import ApiService from '../../services/api';
 
 interface PoliticianVotingScreenProps {
   politicianId: number;
@@ -32,15 +34,36 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterVote, setFilterVote] = useState<'all' | 'yes' | 'no' | 'abstain'>('all');
-  const [selectedRecord, setSelectedRecord] = useState<VotingRecord | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showSources, setShowSources] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
 
   const fetchVotingRecords = async (refresh = false) => {
     if (!refresh) setLoading(true);
     setError(null);
 
     try {
-      // Mock voting records data - replace with actual API call when backend is ready
+      const response = await ApiService.getVotingRecords(politicianId);
+      const votingData = response.success ? response.data : response;
+      setVotingRecords(votingData);
+    } catch (err) {
+      console.error('Error loading voting records:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load voting records');
+      setVotingRecords([]);
+    } finally {
+      setLoading(false);
+      if (refresh) setRefreshing(false);
+    }
+  };
+
+  // Keep mock data below for reference (to be removed once backend is fully integrated)
+  /*
+  const fetchVotingRecords_OLD = async (refresh = false) => {
+    if (!refresh) setLoading(true);
+    setError(null);
+
+    try {
       const mockVotingRecords: VotingRecord[] = [
         {
           id: 1,
@@ -54,6 +77,40 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
           category: 'Healthcare',
           bill_passed: true,
           notes: `${politicianName} strongly supported this bill, citing the need for accessible healthcare in rural areas.`,
+          source_links: [
+            {
+              type: 'hansard',
+              url: 'https://hansard.parliament.go.ke/nationalsitting/2024/january/15',
+              title: 'National Assembly Hansard - Healthcare Bill Second Reading',
+              source: 'Parliament of Kenya',
+              date: '2024-01-15'
+            },
+            {
+              type: 'bill_document',
+              url: 'https://parliament.go.ke/bills/universal-healthcare-access-2024',
+              title: 'Universal Healthcare Access Act 2024 - Full Text',
+              source: 'Parliament of Kenya',
+              date: '2024-01-01'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'official_record',
+              url: 'https://kenyalaw.org/kl/official-gazette/2024-healthcare-access-act',
+              title: 'Official Vote Record - Healthcare Access Act 2024',
+              source: 'Kenya Law Reports',
+              date: '2024-01-15',
+              content_summary: 'Confirmed individual voting record: YES vote by ' + politicianName + '. Bill passed with 234 votes in favor.'
+            },
+            {
+              type: 'news_verification',
+              url: 'https://nation.africa/kenya/news/politics/healthcare-access-bill-passes',
+              title: 'Parliament Passes Universal Healthcare Bill',
+              source: 'Daily Nation',
+              date: '2024-01-15',
+              content_summary: 'Comprehensive coverage including ' + politicianName + '\'s support statement and voting breakdown.'
+            }
+          ]
         },
         {
           id: 2,
@@ -67,6 +124,32 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
           category: 'Environment',
           bill_passed: true,
           notes: 'Advocated for increased funding allocation to coastal protection projects.',
+          source_links: [
+            {
+              type: 'hansard',
+              url: 'https://hansard.parliament.go.ke/senatesitting/2023/november/22',
+              title: 'Senate Hansard - Climate Mitigation Fund Bill',
+              source: 'Parliament of Kenya',
+              date: '2023-11-22'
+            },
+            {
+              type: 'government_doc',
+              url: 'https://environment.go.ke/climate-mitigation-fund-framework',
+              title: 'National Climate Mitigation Fund Framework',
+              source: 'Ministry of Environment',
+              date: '2023-11-01'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'fact_check',
+              url: 'https://citizen.digital/news/climate-fund-bill-senate-vote',
+              title: 'Senate Climate Fund Vote Verification',
+              source: 'Citizen Digital',
+              date: '2023-11-22',
+              content_summary: 'Independent verification of senate vote including ' + politicianName + '\'s YES vote and coastal protection amendment.'
+            }
+          ]
         },
         {
           id: 3,
@@ -80,6 +163,40 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
           category: 'Finance',
           bill_passed: false,
           notes: `${politicianName} opposed the bill due to concerns about reduced social program funding.`,
+          source_links: [
+            {
+              type: 'hansard',
+              url: 'https://hansard.parliament.go.ke/nationalsitting/2023/september/10',
+              title: 'National Assembly Hansard - Tax Reform Bill Debate',
+              source: 'Parliament of Kenya',
+              date: '2023-09-10'
+            },
+            {
+              type: 'committee_report',
+              url: 'https://parliament.go.ke/committees/finance/tax-reform-analysis-2023',
+              title: 'Finance Committee Report on Tax Reform Bill',
+              source: 'Parliamentary Finance Committee',
+              date: '2023-09-01'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'vote_tally',
+              url: 'https://standardmedia.co.ke/politics/tax-reform-bill-fails-parliament',
+              title: 'Tax Reform Bill Fails in Parliament Vote',
+              source: 'The Standard',
+              date: '2023-09-10',
+              content_summary: 'Bill failed with ' + politicianName + ' voting NO. Opposition cited concerns about social program impact.'
+            },
+            {
+              type: 'news_verification',
+              url: 'https://nation.africa/kenya/news/politics/tax-reform-vote-breakdown',
+              title: 'Tax Reform Vote: Complete Parliamentary Breakdown',
+              source: 'Daily Nation',
+              date: '2023-09-10',
+              content_summary: 'Detailed voting analysis including ' + politicianName + '\'s opposition statement and reasoning.'
+            }
+          ]
         },
         {
           id: 4,
@@ -93,6 +210,25 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
           category: 'Education',
           bill_passed: true,
           notes: 'Championed this bill and proposed amendments to include rural school priorities.',
+          source_links: [
+            {
+              type: 'hansard',
+              url: 'https://hansard.parliament.go.ke/senatesitting/2024/february/28',
+              title: 'Senate Hansard - Education Technology Bill',
+              source: 'Parliament of Kenya',
+              date: '2024-02-28'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'official_record',
+              url: 'https://kenyalaw.org/kl/vote-records/education-tech-2024',
+              title: 'Education Technology Bill - Official Vote Record',
+              source: 'Kenya Law Reports',
+              date: '2024-02-28',
+              content_summary: 'Confirmed YES vote by ' + politicianName + ' with rural amendments.'
+            }
+          ]
         },
         {
           id: 5,
@@ -106,6 +242,25 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
           category: 'Infrastructure',
           bill_passed: true,
           notes: 'Abstained due to concerns about environmental impact assessments being incomplete.',
+          source_links: [
+            {
+              type: 'hansard',
+              url: 'https://hansard.parliament.go.ke/nationalsitting/2023/december/05',
+              title: 'National Assembly Hansard - Infrastructure Bill Debate',
+              source: 'Parliament of Kenya',
+              date: '2023-12-05'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'independent_report',
+              url: 'https://citizen.digital/news/infrastructure-bill-vote-analysis',
+              title: 'Infrastructure Bill Vote Analysis',
+              source: 'Citizen Digital',
+              date: '2023-12-05',
+              content_summary: 'Detailed analysis of abstention votes including ' + politicianName + '\'s environmental concerns.'
+            }
+          ]
         },
         {
           id: 6,
@@ -119,9 +274,34 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
           category: 'Economy',
           bill_passed: true,
           notes: `${politicianName} highlighted the importance of supporting local entrepreneurs and job creation.`,
+          source_links: [
+            {
+              type: 'hansard',
+              url: 'https://hansard.parliament.go.ke/senatesitting/2024/march/12',
+              title: 'Senate Hansard - Small Business Support Bill',
+              source: 'Parliament of Kenya',
+              date: '2024-03-12'
+            },
+            {
+              type: 'government_doc',
+              url: 'https://treasury.go.ke/small-business-support-framework',
+              title: 'Small Business Support Framework 2024',
+              source: 'National Treasury',
+              date: '2024-03-01'
+            }
+          ],
+          verification_links: [
+            {
+              type: 'news_verification',
+              url: 'https://standardmedia.co.ke/business/small-business-bill-passes',
+              title: 'Small Business Support Bill Passes Senate',
+              source: 'The Standard',
+              date: '2024-03-12',
+              content_summary: 'Bill passed with strong support including from ' + politicianName + ' who emphasized local entrepreneurship.'
+            }
+          ]
         },
       ];
-
       setVotingRecords(mockVotingRecords);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load voting records');
@@ -130,14 +310,17 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
       if (refresh) setRefreshing(false);
     }
   };
+  */
 
   useEffect(() => {
     fetchVotingRecords();
   }, [politicianId]);
 
-  const handleRecordPress = (record: VotingRecord) => {
+  const handleRecordPress = (record: any) => {
     setSelectedRecord(record);
     setShowDetailModal(true);
+    setShowSources(false);
+    setShowVerification(false);
   };
 
   const onRefresh = () => {
@@ -235,6 +418,48 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
         <View style={styles.notesSection}>
           <MaterialIcons name="note" size={16} color={colors.neutral[500]} />
           <Text style={styles.notesText}>{record.notes}</Text>
+        </View>
+      )}
+
+      {/* Source Buttons */}
+      {((record.source_links && record.source_links.length > 0) || (record.verification_links && record.verification_links.length > 0)) && (
+        <View style={styles.actionButtons}>
+          {record.source_links && record.source_links.length > 0 && (
+            <TouchableOpacity
+              style={styles.sourceButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                setSelectedRecord(record);
+                setShowDetailModal(true);
+                setShowSources(true);
+                setShowVerification(false);
+              }}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="link" size={14} color="#3B82F6" />
+              <Text style={styles.sourceButtonText}>
+                Sources ({record.source_links.length})
+              </Text>
+            </TouchableOpacity>
+          )}
+          {record.verification_links && record.verification_links.length > 0 && (
+            <TouchableOpacity
+              style={styles.verificationButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                setSelectedRecord(record);
+                setShowDetailModal(true);
+                setShowSources(false);
+                setShowVerification(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="verified" size={14} color="#10B981" />
+              <Text style={styles.verificationButtonText}>
+                Verification ({record.verification_links.length})
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </Card>
@@ -415,16 +640,16 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
                   </Text>
                 </View>
 
-                <Text style={styles.modalBillTitle}>{selectedRecord.bill_name}</Text>
+                <Text style={styles.modalBillTitle}>{selectedRecord.bill_title}</Text>
 
                 <View style={styles.modalBillInfo}>
-                  <Text style={styles.modalBillNumber}>Bill: {selectedRecord.bill_name}</Text>
+                  <Text style={styles.modalBillNumber}>Bill: {selectedRecord.bill_number}</Text>
                   <Text style={styles.modalDate}>
                     {new Date(selectedRecord.date).toLocaleDateString()}
                   </Text>
                 </View>
 
-                <Text style={styles.modalSummary}>{selectedRecord.significance}</Text>
+                <Text style={styles.modalSummary}>{selectedRecord.bill_summary}</Text>
 
                 <View style={styles.modalCategorySection}>
                   <Text style={styles.modalSectionTitle}>Category</Text>
@@ -438,7 +663,129 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
                   <Text style={styles.modalVoteDetails}>
                     Voted {getVoteLabel(selectedRecord.vote).toLowerCase()} on this {selectedRecord.category.toLowerCase()} bill.
                   </Text>
+                  <Text style={styles.modalResultText}>
+                    Result: {selectedRecord.bill_passed ? 'PASSED' : 'FAILED'}
+                  </Text>
+                  {selectedRecord.notes && (
+                    <Text style={styles.modalNotesText}>
+                      {selectedRecord.notes}
+                    </Text>
+                  )}
                 </View>
+
+                {/* Original Sources Section */}
+                {selectedRecord.source_links && selectedRecord.source_links.length > 0 && (
+                  <View style={styles.modalSourceSection}>
+                    <TouchableOpacity
+                      style={styles.collapsibleHeader}
+                      onPress={() => setShowSources(!showSources)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.modalSectionTitle}>
+                        🔗 Original Sources ({selectedRecord.source_links.length})
+                      </Text>
+                      <MaterialIcons
+                        name={showSources ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        size={24}
+                        color="#3B82F6"
+                      />
+                    </TouchableOpacity>
+
+                    {showSources && (
+                      <View style={styles.collapsibleContent}>
+                        {selectedRecord.source_links.map((link: any, index: number) => (
+                          <View key={index} style={styles.sourceCard}>
+                            <View style={styles.sourceCardHeader}>
+                              <View style={styles.sourceTypeContainer}>
+                                <MaterialIcons
+                                  name={
+                                    link.type === 'hansard' ? 'gavel' :
+                                    link.type === 'bill_document' ? 'description' :
+                                    link.type === 'committee_report' ? 'group' :
+                                    link.type === 'government_doc' ? 'account_balance' :
+                                    'link'
+                                  }
+                                  size={16}
+                                  color="#3B82F6"
+                                />
+                                <Text style={styles.sourceType}>{link.type.replace('_', ' ').toUpperCase()}</Text>
+                              </View>
+                              <Text style={styles.sourceDate}>{link.date}</Text>
+                            </View>
+                            <Text style={styles.sourceTitle}>{link.title}</Text>
+                            <Text style={styles.sourceProvider}>Source: {link.source}</Text>
+                            <TouchableOpacity
+                              style={styles.modalSourceButton}
+                              onPress={() => Linking.openURL(link.url)}
+                              activeOpacity={0.8}
+                            >
+                              <MaterialIcons name="open-in-new" size={16} color="#FFFFFF" />
+                              <Text style={styles.modalSourceButtonText}>View Source</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Verification Section */}
+                {selectedRecord.verification_links && selectedRecord.verification_links.length > 0 && (
+                  <View style={styles.modalSourceSection}>
+                    <TouchableOpacity
+                      style={styles.collapsibleHeader}
+                      onPress={() => setShowVerification(!showVerification)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.modalSectionTitle}>
+                        ✅ Vote Verification ({selectedRecord.verification_links.length})
+                      </Text>
+                      <MaterialIcons
+                        name={showVerification ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        size={24}
+                        color="#10B981"
+                      />
+                    </TouchableOpacity>
+
+                    {showVerification && (
+                      <View style={styles.collapsibleContent}>
+                        {selectedRecord.verification_links.map((link: any, index: number) => (
+                          <View key={index} style={styles.verificationCard}>
+                            <View style={styles.sourceCardHeader}>
+                              <View style={styles.sourceTypeContainer}>
+                                <MaterialIcons
+                                  name={
+                                    link.type === 'official_record' ? 'verified' :
+                                    link.type === 'news_verification' ? 'article' :
+                                    link.type === 'fact_check' ? 'fact_check' :
+                                    link.type === 'vote_tally' ? 'poll' :
+                                    link.type === 'independent_report' ? 'assessment' :
+                                    'check_circle'
+                                  }
+                                  size={16}
+                                  color="#10B981"
+                                />
+                                <Text style={styles.verificationType}>{link.type.replace('_', ' ').toUpperCase()}</Text>
+                              </View>
+                              <Text style={styles.sourceDate}>{link.date}</Text>
+                            </View>
+                            <Text style={styles.sourceTitle}>{link.title}</Text>
+                            <Text style={styles.sourceProvider}>Source: {link.source}</Text>
+                            <Text style={styles.verificationSummary}>{link.content_summary}</Text>
+                            <TouchableOpacity
+                              style={styles.modalSourceButton}
+                              onPress={() => Linking.openURL(link.url)}
+                              activeOpacity={0.8}
+                            >
+                              <MaterialIcons name="open-in-new" size={16} color="#FFFFFF" />
+                              <Text style={styles.modalSourceButtonText}>View Verification</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
               </>
             )}
           </ScrollView>
@@ -779,5 +1126,151 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4B5563',
     lineHeight: 20,
+  },
+
+  // New styles for source/verification sections
+  modalResultText: {
+    fontSize: 14,
+    color: '#4B5563',
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  modalNotesText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
+  modalSourceSection: {
+    marginTop: 24,
+  },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  collapsibleContent: {
+    marginTop: 12,
+    gap: 12,
+  },
+  sourceCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
+  },
+  verificationCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+  },
+  sourceCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sourceTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sourceType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  verificationType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  sourceDate: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  sourceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  sourceProvider: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  verificationSummary: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 8,
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  modalSourceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  modalSourceButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  // Card source button styles
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  sourceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#DBEAFE',
+    borderRadius: 16,
+    gap: 4,
+  },
+  sourceButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#3B82F6',
+  },
+  verificationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 16,
+    gap: 4,
+  },
+  verificationButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
   },
 });

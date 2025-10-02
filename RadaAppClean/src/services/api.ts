@@ -40,7 +40,7 @@ export interface CommunityPost {
 
 // API Configuration
 const API_BASE_URL = __DEV__
-  ? 'http://localhost:5001'  // Development
+  ? 'http://localhost:3000'  // Development
   : 'https://your-production-api.com'; // Production
 
 const API_CONFIG = {
@@ -102,6 +102,41 @@ export class ApiService {
 
   static async getVotingRecords(politicianId: number): Promise<ApiResponse<any[]>> {
     const response = await apiClient.get(`/api/politicians/${politicianId}/voting`);
+    return response.data;
+  }
+
+  static async getDocuments(politicianId: number): Promise<ApiResponse<any[]>> {
+    const response = await apiClient.get(`/api/politicians/${politicianId}/documents`);
+    return response.data;
+  }
+
+  static async getTimeline(politicianId: number): Promise<ApiResponse<any[]>> {
+    const response = await apiClient.get(`/api/politicians/${politicianId}/timeline`);
+    return response.data;
+  }
+
+  static async getCommitments(politicianId: number): Promise<ApiResponse<any[]>> {
+    const response = await apiClient.get(`/api/politicians/${politicianId}/commitments`);
+    return response.data;
+  }
+
+  static async getPoliticianNews(politicianId: number): Promise<ApiResponse<any[]>> {
+    const response = await apiClient.get(`/api/politicians/${politicianId}/news`);
+    return response.data;
+  }
+
+  static async getCareer(politicianId: number): Promise<ApiResponse<any>> {
+    const response = await apiClient.get(`/api/politicians/${politicianId}/career`);
+    return response.data;
+  }
+
+  static async getLatestNews(): Promise<ApiResponse<any[]>> {
+    const response = await apiClient.get('/api/news/latest');
+    return response.data;
+  }
+
+  static async getExternalNews(source: string): Promise<ApiResponse<any[]>> {
+    const response = await apiClient.get(`/api/news/external/${source}`);
     return response.data;
   }
 
