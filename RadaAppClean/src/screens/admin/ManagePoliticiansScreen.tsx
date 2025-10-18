@@ -53,12 +53,12 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
     try {
       const response = await adminAPI.searchPoliticians('', { include_drafts: true });
 
-      if (response.success && response.data && response.data.data) {
-        const politiciansData: PoliticianWithStatus[] = response.data.data.map((p: any) => ({
+      if (response.success && response.data) {
+        const politiciansData: PoliticianWithStatus[] = response.data.map((p: any) => ({
           id: p.id,
           name: p.name,
-          title: p.position || p.title,
-          current_position: p.position || p.current_position,
+          title: p.title || p.position,
+          current_position: p.current_position || p.position,
           party: p.party,
           party_history: p.party_history || [],
           constituency: p.constituency || '',
@@ -67,11 +67,11 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
           key_achievements: p.key_achievements || [],
           education: p.education || '',
           image_url: p.image_url,
-          status: p.is_draft === 1 ? 'draft' : 'published',
-          last_updated: p.updated_at || p.created_at,
-          total_timeline_events: 0, // TODO: Get from API
-          total_commitments: 0, // TODO: Get from API
-          completion_score: 0, // TODO: Calculate based on content
+          status: p.status || (p.is_draft === 1 ? 'draft' : 'published'),
+          last_updated: p.last_updated || p.updated_at || p.created_at,
+          total_timeline_events: p.total_timeline_events || 0,
+          total_commitments: p.total_commitments || 0,
+          completion_score: p.completion_score || 0,
         }));
 
         setPoliticians(politiciansData);
@@ -172,9 +172,13 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
         ]);
         break;
       case 'unpublish':
+        console.log('🔵 Unpublish clicked for:', politician.name, politician.id);
         Alert.alert('Unpublish', `Move ${politician.name}'s profile to draft?`, [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Unpublish', onPress: () => updatePoliticianStatus(politician.id, 'draft') }
+          { text: 'Cancel', style: 'cancel', onPress: () => console.log('❌ Unpublish cancelled') },
+          { text: 'Unpublish', onPress: () => {
+            console.log('✅ Unpublish confirmed, calling updatePoliticianStatus');
+            updatePoliticianStatus(politician.id, 'draft');
+          }}
         ]);
         break;
       case 'delete':
@@ -186,14 +190,48 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
     }
   };
 
-  const updatePoliticianStatus = (id: number, status: 'published' | 'draft' | 'pending_review') => {
-    setPoliticians(prev => prev.map(p =>
-      p.id === id ? { ...p, status, last_updated: new Date().toISOString().split('T')[0] } : p
-    ));
+  const updatePoliticianStatus = async (id: number, status: 'published' | 'draft' | 'pending_review') => {
+    console.log('🔄 updatePoliticianStatus called with id:', id, 'status:', status);
+    try {
+      let response;
+      if (status === 'published') {
+        console.log('📤 Calling publishPolitician API...');
+        response = await adminAPI.publishPolitician(id);
+      } else if (status === 'draft') {
+        console.log('📤 Calling unpublishPolitician API...');
+        response = await adminAPI.unpublishPolitician(id);
+      }
+
+      console.log('📥 API response:', response);
+
+      if (response && response.success) {
+        setPoliticians(prev => prev.map(p =>
+          p.id === id ? { ...p, status, last_updated: new Date().toISOString().split('T')[0] } : p
+        ));
+        Alert.alert('Success', response.data?.message || `Politician ${status === 'published' ? 'published' : 'moved to draft'} successfully`);
+      } else {
+        console.error('❌ API call failed:', response?.error);
+        Alert.alert('Error', response?.error || 'Failed to update politician status');
+      }
+    } catch (error) {
+      console.error('❌ Error updating politician status:', error);
+      Alert.alert('Error', 'An error occurred while updating the politician');
+    }
   };
 
-  const deletePolitician = (id: number) => {
-    setPoliticians(prev => prev.filter(p => p.id !== id));
+  const deletePolitician = async (id: number) => {
+    try {
+      const response = await adminAPI.deletePolitician(id);
+      if (response.success) {
+        setPoliticians(prev => prev.filter(p => p.id !== id));
+        Alert.alert('Success', 'Politician deleted successfully');
+      } else {
+        Alert.alert('Error', response.error || 'Failed to delete politician');
+      }
+    } catch (error) {
+      console.error('Error deleting politician:', error);
+      Alert.alert('Error', 'An error occurred while deleting the politician');
+    }
   };
 
   const togglePoliticianSelection = (id: number) => {
@@ -332,7 +370,7 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
           <View style={styles.politicianDetails}>
             <Text style={styles.politicianName}>{item.name}</Text>
             <Text style={styles.politicianTitle}>{item.title}</Text>
-            <Text style={styles.politicianParty}>{item.party} • {item.constituency}</Text>
+            <Text style={styles.politicianParty}>{item.party}{item.constituency ? ` • ${item.constituency}` : ''}</Text>
           </View>
         </View>
         <View style={styles.cardActions}>

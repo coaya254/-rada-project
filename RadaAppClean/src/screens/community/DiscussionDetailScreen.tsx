@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -17,6 +19,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { CommunityStackParamList } from '../../navigation/CommunityStackNavigator';
+import { communityApi } from '../../services/communityApi';
+import { Alert } from 'react-native';
 
 interface DiscussionDetailScreenProps {
   navigation: NativeStackNavigationProp<CommunityStackParamList, 'DiscussionDetail'>;
@@ -31,64 +35,232 @@ interface Reply {
   likes: number;
   isLiked: boolean;
   avatar?: string;
+  uuid?: string;
+  isOwner?: boolean;
+}
+
+interface Discussion {
+  id: number;
+  title: string;
+  content: string;
+  category: string;
+  author: string;
+  timestamp: string;
+  likes_count: number;
+  replies_count: number;
+  views_count: number;
+  uuid?: string;
+  isOwner?: boolean;
 }
 
 export const DiscussionDetailScreen: React.FC<DiscussionDetailScreenProps> = ({ navigation, route }) => {
-  const { discussionId, title, author, timestamp, replies, category } = route.params;
+  const { discussionId } = route.params;
+  const [discussion, setDiscussion] = useState<Discussion | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [newReply, setNewReply] = useState('');
-  const [replyList, setReplyList] = useState<Reply[]>([
-    {
-      id: 1,
-      author: 'Sarah Chen',
-      content: 'This is a really important topic. I think we need more transparency in how these decisions are made.',
-      timestamp: '2h ago',
-      likes: 12,
-      isLiked: false,
-    },
-    {
-      id: 2,
-      author: 'Mike Johnson',
-      content: 'I agree with the points made here. Has anyone looked into the historical context of similar policies?',
-      timestamp: '1h ago',
-      likes: 8,
-      isLiked: true,
-    },
-    {
-      id: 3,
-      author: 'Lisa Rodriguez',
-      content: 'Great discussion everyone! I found some additional resources that might be helpful. Let me know if you want me to share them.',
-      timestamp: '45m ago',
-      likes: 15,
-      isLiked: false,
-    },
-  ]);
+  const [replyList, setReplyList] = useState<Reply[]>([]);
+  const [replyingTo, setReplyingTo] = useState<{ id: number; author: string } | null>(null);
 
-  const handleSubmitReply = () => {
-    if (newReply.trim()) {
-      const reply: Reply = {
-        id: replyList.length + 1,
-        author: 'You',
-        content: newReply.trim(),
-        timestamp: 'Just now',
-        likes: 0,
+  useEffect(() => {
+    loadDiscussion();
+  }, [discussionId]);
+
+  const loadDiscussion = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch discussion details
+      const discussionData = await communityApi.getDiscussion(discussionId);
+
+      const userUuid = 'bdcc72dc-d14a-461b-bbe8-c1407a06f14d';
+
+      setDiscussion({
+        id: discussionData.id,
+        title: discussionData.title,
+        content: discussionData.content,
+        category: discussionData.category,
+        author: discussionData.nickname || 'Anonymous',
+        timestamp: formatTimestamp(discussionData.created_at),
+        likes_count: discussionData.likes_count || 0,
+        replies_count: discussionData.replies_count || 0,
+        views_count: discussionData.views_count || 0,
+        uuid: discussionData.uuid,
+        isOwner: discussionData.uuid === userUuid,
+      });
+
+      // Fetch replies
+      const repliesData = await communityApi.getReplies(discussionId);
+
+      const transformedReplies = repliesData.map(reply => ({
+        id: reply.id,
+        author: reply.nickname || 'Anonymous',
+        content: reply.content,
+        timestamp: formatTimestamp(reply.created_at),
+        likes: reply.likes_count,
         isLiked: false,
-      };
-      setReplyList([...replyList, reply]);
-      setNewReply('');
+        uuid: reply.uuid,
+        isOwner: reply.uuid === userUuid,
+      }));
+
+      setReplyList(transformedReplies);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading discussion:', error);
+      Alert.alert('Error', 'Failed to load discussion');
+      setLoading(false);
     }
   };
 
-  const handleLikeReply = (replyId: number) => {
-    setReplyList(replyList.map(reply =>
-      reply.id === replyId
-        ? {
-            ...reply,
-            isLiked: !reply.isLiked,
-            likes: reply.isLiked ? reply.likes - 1 : reply.likes + 1
-          }
-        : reply
-    ));
+  const handleSubmitReply = async () => {
+    if (newReply.trim()) {
+      try {
+        const userUuid = 'bdcc72dc-d14a-461b-bbe8-c1407a06f14d';
+
+        // If replying to a specific reply, add mention
+        let content = newReply.trim();
+        if (replyingTo) {
+          content = `@${replyingTo.author} ${content}`;
+        }
+
+        await communityApi.addReply(discussionId, {
+          uuid: userUuid,
+          content: content,
+        });
+
+        setNewReply('');
+        setReplyingTo(null);
+
+        // Reload the entire discussion to update reply count and get new reply
+        await loadDiscussion();
+      } catch (error) {
+        console.error('Error adding reply:', error);
+        Alert.alert('Error', 'Failed to add reply. Please try again.');
+      }
+    }
+  };
+  
+  // Helper function
+  const formatTimestamp = (timestamp: string) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffMs = now.getTime() - then.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+  
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return '1d ago';
+    return 'Just now';
+  };
+
+  const handleLikeReply = async (replyId: number) => {
+    try {
+      const userUuid = 'bdcc72dc-d14a-461b-bbe8-c1407a06f14d';
+      await communityApi.likeReply(replyId, userUuid);
+
+      setReplyList(replyList.map(reply =>
+        reply.id === replyId
+          ? {
+              ...reply,
+              isLiked: !reply.isLiked,
+              likes: reply.isLiked ? reply.likes - 1 : reply.likes + 1
+            }
+          : reply
+      ));
+    } catch (error) {
+      console.error('Error liking reply:', error);
+    }
+  };
+
+  const handleDeleteReply = async (replyId: number) => {
+    Alert.alert(
+      'Delete Reply',
+      'Are you sure you want to delete this reply?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const userUuid = 'bdcc72dc-d14a-461b-bbe8-c1407a06f14d';
+              await communityApi.deleteReply(replyId, userUuid);
+
+              // Reload discussion to update counts
+              await loadDiscussion();
+
+              Alert.alert('Success', 'Reply deleted successfully');
+            } catch (error) {
+              console.error('Error deleting reply:', error);
+              Alert.alert('Error', 'Failed to delete reply');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteDiscussion = async () => {
+    Alert.alert(
+      'Delete Discussion',
+      'Are you sure you want to delete this discussion? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const userUuid = 'bdcc72dc-d14a-461b-bbe8-c1407a06f14d';
+              await communityApi.deleteDiscussion(discussionId, userUuid);
+
+              Alert.alert('Success', 'Discussion deleted successfully', [
+                { text: 'OK', onPress: () => navigation.goBack() },
+              ]);
+            } catch (error) {
+              console.error('Error deleting discussion:', error);
+              Alert.alert('Error', 'Failed to delete discussion');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleLikeDiscussion = async () => {
+    try {
+      const userUuid = 'bdcc72dc-d14a-461b-bbe8-c1407a06f14d';
+      await communityApi.likeDiscussion(discussionId, userUuid);
+
+      // Reload to get updated like count
+      await loadDiscussion();
+    } catch (error) {
+      console.error('Error liking discussion:', error);
+    }
+  };
+
+  const handleShareDiscussion = async () => {
+    try {
+      await Share.share({
+        message: `${discussion?.title}\n\n${discussion?.content}\n\nShared from Rada Community`,
+        title: discussion?.title,
+      });
+    } catch (error) {
+      console.error('Error sharing discussion:', error);
+    }
+  };
+
+  const handleShareReply = async (reply: Reply) => {
+    try {
+      await Share.share({
+        message: `${reply.author} replied: ${reply.content}\n\nShared from Rada Community`,
+        title: `Reply by ${reply.author}`,
+      });
+    } catch (error) {
+      console.error('Error sharing reply:', error);
+    }
   };
 
   const renderReply = ({ item }: { item: Reply }) => (
@@ -103,8 +275,8 @@ export const DiscussionDetailScreen: React.FC<DiscussionDetailScreenProps> = ({ 
           <View style={styles.replyInfo}>
             <TouchableOpacity
               onPress={() => navigation.navigate('UserProfile', {
-                userId: item.id,
-                username: item.author
+                userId: item.uuid || '',
+                userName: item.author
               })}
             >
               <Text style={styles.replyAuthorName}>{item.author}</Text>
@@ -112,9 +284,14 @@ export const DiscussionDetailScreen: React.FC<DiscussionDetailScreenProps> = ({ 
             <Text style={styles.replyTimestamp}>{item.timestamp}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.replyOptions}>
-          <MaterialIcons name="more-vert" size={20} color="#666" />
-        </TouchableOpacity>
+        {item.isOwner && (
+          <TouchableOpacity
+            style={styles.replyOptions}
+            onPress={() => handleDeleteReply(item.id)}
+          >
+            <MaterialIcons name="delete" size={20} color="#EF4444" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <Text style={styles.replyContent}>{item.content}</Text>
@@ -134,18 +311,39 @@ export const DiscussionDetailScreen: React.FC<DiscussionDetailScreenProps> = ({ 
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.replyAction}>
+        <TouchableOpacity
+          style={styles.replyAction}
+          onPress={() => {
+            setReplyingTo({ id: item.id, author: item.author });
+            // Focus input (we'll scroll to it)
+          }}
+        >
           <MaterialIcons name="reply" size={18} color="#666" />
           <Text style={styles.replyActionText}>Reply</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.replyAction}>
+        <TouchableOpacity
+          style={styles.replyAction}
+          onPress={() => handleShareReply(item)}
+        >
           <MaterialIcons name="share" size={18} color="#666" />
           <Text style={styles.replyActionText}>Share</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
+
+  if (loading || !discussion) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading discussion...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -161,11 +359,24 @@ export const DiscussionDetailScreen: React.FC<DiscussionDetailScreenProps> = ({ 
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Discussion</Text>
-          <Text style={styles.headerSubtitle}>{category}</Text>
+          <Text style={styles.headerSubtitle}>{discussion.category}</Text>
         </View>
-        <TouchableOpacity style={styles.shareButton}>
-          <MaterialIcons name="share" size={24} color="#333" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {discussion.isOwner && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDeleteDiscussion}
+            >
+              <MaterialIcons name="delete" size={24} color="#EF4444" />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={handleShareDiscussion}
+          >
+            <MaterialIcons name="share" size={24} color="#333" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -179,44 +390,43 @@ export const DiscussionDetailScreen: React.FC<DiscussionDetailScreenProps> = ({ 
               <View style={styles.postAuthor}>
                 <View style={styles.authorAvatar}>
                   <Text style={styles.authorAvatarText}>
-                    {author.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                    {discussion.author.split(' ').map(n => n[0]).join('').substring(0, 2)}
                   </Text>
                 </View>
                 <View style={styles.authorInfo}>
                   <TouchableOpacity
                     onPress={() => navigation.navigate('UserProfile', {
-                      userId: 1,
-                      username: author
+                      userId: discussion.uuid || '',
+                      userName: discussion.author
                     })}
                   >
-                    <Text style={styles.authorName}>{author}</Text>
+                    <Text style={styles.authorName}>{discussion.author}</Text>
                   </TouchableOpacity>
-                  <Text style={styles.postTimestamp}>{timestamp}</Text>
+                  <Text style={styles.postTimestamp}>{discussion.timestamp}</Text>
                 </View>
               </View>
               <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{category}</Text>
+                <Text style={styles.categoryText}>{discussion.category}</Text>
               </View>
             </View>
 
-            <Text style={styles.postTitle}>{title}</Text>
+            <Text style={styles.postTitle}>{discussion.title}</Text>
             <Text style={styles.postContent}>
-              This is the main content of the discussion post. It would contain the full text of what the user originally posted, including their thoughts, questions, or topics they want to discuss with the community.
+              {discussion.content}
             </Text>
 
             <View style={styles.postStats}>
               <View style={styles.statItem}>
                 <MaterialIcons name="forum" size={20} color="#3B82F6" />
-                <Text style={styles.statText}>{replyList.length} replies</Text>
+                <Text style={styles.statText}>{discussion.replies_count} replies</Text>
               </View>
-              <View style={styles.statItem}>
-                <MaterialIcons name="visibility" size={20} color="#10B981" />
-                <Text style={styles.statText}>234 views</Text>
-              </View>
-              <View style={styles.statItem}>
+              <TouchableOpacity
+                style={styles.statItem}
+                onPress={handleLikeDiscussion}
+              >
                 <MaterialIcons name="favorite" size={20} color="#EF4444" />
-                <Text style={styles.statText}>18 likes</Text>
-              </View>
+                <Text style={styles.statText}>{discussion.likes_count} likes</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -234,10 +444,22 @@ export const DiscussionDetailScreen: React.FC<DiscussionDetailScreenProps> = ({ 
 
         {/* Reply Input */}
         <View style={styles.replyInputContainer}>
+          {replyingTo && (
+            <View style={styles.replyingToBar}>
+              <MaterialIcons name="reply" size={16} color="#3B82F6" />
+              <Text style={styles.replyingToText}>Replying to {replyingTo.author}</Text>
+              <TouchableOpacity
+                onPress={() => setReplyingTo(null)}
+                style={styles.cancelReplyButton}
+              >
+                <MaterialIcons name="close" size={16} color="#666" />
+              </TouchableOpacity>
+            </View>
+          )}
           <View style={styles.replyInputContent}>
             <TextInput
               style={styles.replyInput}
-              placeholder="Add your reply..."
+              placeholder={replyingTo ? `Reply to ${replyingTo.author}...` : "Add your reply..."}
               value={newReply}
               onChangeText={setNewReply}
               multiline
@@ -300,6 +522,14 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FEE2E2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -482,7 +712,26 @@ const styles = StyleSheet.create({
     borderTopColor: '#e9ecef',
     backgroundColor: '#fff',
     paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingVertical: 12,
+  },
+  replyingToBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+    gap: 6,
+  },
+  replyingToText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+  cancelReplyButton: {
+    padding: 4,
   },
   replyInputContent: {
     flexDirection: 'row',
@@ -510,5 +759,15 @@ const styles = StyleSheet.create({
   },
   submitButtonDisabled: {
     backgroundColor: '#e9ecef',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
 });

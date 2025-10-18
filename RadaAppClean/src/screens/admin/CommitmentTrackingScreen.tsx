@@ -10,12 +10,14 @@ import {
   Modal,
   Alert,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Commitment } from '../../types';
+import adminAPI from '../../services/AdminAPIService';
 
 interface CommitmentTrackingScreenProps {
   navigation: NativeStackNavigationProp<any, 'CommitmentTracking'>;
@@ -41,6 +43,10 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCommitment, setEditingCommitment] = useState<Commitment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategoryInput, setCustomCategoryInput] = useState('');
+  const [politician, setPolitician] = useState<any>(null);
 
   const [formData, setFormData] = useState<FormData>({
     promise: '',
@@ -58,14 +64,7 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  // Mock politicians data
-  const politicians = [
-    { id: 1, name: 'William Ruto' },
-    { id: 2, name: 'Raila Odinga' },
-    { id: 3, name: 'Martha Karua' },
-    { id: 4, name: 'Kalonzo Musyoka' },
-  ];
+  const [politicians, setPoliticians] = useState<Array<{ id: number; name: string }>>([]);
 
   // Commitment categories
   const categories = [
@@ -117,94 +116,67 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
     'news', 'speech', 'manifesto', 'interview', 'government_doc'
   ];
 
-  // Mock commitments data
+  // Load commitments from database
   useEffect(() => {
-    const mockCommitments: Commitment[] = [
-      {
-        id: 1,
-        politician_id: 1,
-        promise: 'Create 1 million jobs annually',
-        description: 'Government will create one million jobs every year through various economic initiatives and public-private partnerships.',
-        category: 'Economy',
-        context: 'Campaign promise during 2022 presidential election',
-        date_made: '2022-03-15',
-        status: 'early_progress',
-        progress_percentage: 25,
-        evidence: 'Launched youth employment programs and announced infrastructure projects',
-        last_activity_date: '2024-01-15',
-        source_links: [
-          {
-            type: 'speech',
-            url: 'https://example.com/ruto-jobs-speech',
-            title: 'Ruto Promises One Million Jobs',
-            source: 'Campaign Rally',
-            date: '2022-03-15'
-          }
-        ],
-        verification_links: [
-          {
-            type: 'government_report',
-            url: 'https://example.com/jobs-report',
-            title: 'Q4 2023 Employment Report',
-            source: 'Ministry of Labour',
-            date: '2024-01-15',
-            content_summary: 'Shows 250,000 new jobs created in 2023'
-          }
-        ]
-      },
-      {
-        id: 2,
-        politician_id: 1,
-        promise: 'Reduce cost of living by 50%',
-        description: 'Lower the cost of essential commodities including food, fuel, and housing by 50% within the first year.',
-        category: 'Economy',
-        context: 'Key campaign promise',
-        date_made: '2022-02-20',
-        status: 'stalled',
-        progress_percentage: 10,
-        evidence: 'Some subsidies introduced but overall costs remain high',
-        last_activity_date: '2023-08-20',
-        source_links: [
-          {
-            type: 'manifesto',
-            url: 'https://example.com/uda-manifesto',
-            title: 'UDA Party Manifesto 2022',
-            source: 'UDA Party',
-            date: '2022-02-20'
-          }
-        ]
-      },
-      {
-        id: 3,
-        politician_id: 2,
-        promise: 'Universal Healthcare for all Kenyans',
-        description: 'Implement a comprehensive universal healthcare system that provides free quality healthcare to all Kenyan citizens.',
-        category: 'Healthcare',
-        context: 'Long-standing policy position',
-        date_made: '2017-08-10',
-        status: 'significant_progress',
-        progress_percentage: 70,
-        evidence: 'NHIF expansion and county health programs implemented',
-        source_links: [
-          {
-            type: 'interview',
-            url: 'https://example.com/raila-healthcare',
-            title: 'Raila on Universal Healthcare',
-            source: 'Citizen TV',
-            date: '2017-08-10'
-          }
-        ]
-      }
-    ];
-
-    // Filter by politician if specified
-    const filtered = politicianId
-      ? mockCommitments.filter(commitment => commitment.politician_id === politicianId)
-      : mockCommitments;
-
-    setCommitments(filtered);
-    setFilteredCommitments(filtered);
+    loadCommitments();
+    if (!politicianId) {
+      loadPoliticians();
+    }
   }, [politicianId]);
+
+  // Load politician details if politicianId is provided
+  useEffect(() => {
+    if (politicianId) {
+      loadPolitician();
+    }
+  }, [politicianId]);
+
+  const loadPolitician = async () => {
+    if (!politicianId) return;
+    try {
+      const response = await adminAPI.getPolitician(politicianId);
+      if (response.success && response.data) {
+        setPolitician(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading politician:', error);
+    }
+  };
+
+  const loadPoliticians = async () => {
+    try {
+      const response = await adminAPI.searchPoliticians('', { include_drafts: true });
+      if (response.success && response.data) {
+        setPoliticians(response.data.map((p: any) => ({ id: p.id, name: p.name })));
+      }
+    } catch (error) {
+      console.error('Error loading politicians:', error);
+    }
+  };
+
+  const loadCommitments = async () => {
+    try {
+      setLoading(true);
+      const filters: any = {};
+      if (politicianId) {
+        filters.politicianId = politicianId;
+      }
+
+      const response = await adminAPI.getCommitments(filters);
+
+      if (response.success && response.data) {
+        setCommitments(response.data);
+      } else if (response.error) {
+        console.error('Error loading commitments:', response.error);
+        Alert.alert('Error', 'Failed to load commitments');
+      }
+    } catch (error) {
+      console.error('Exception loading commitments:', error);
+      Alert.alert('Error', 'An error occurred while loading commitments');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter commitments based on search and filters
   useEffect(() => {
@@ -258,6 +230,16 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
     });
     setValidationErrors({});
     setEditingCommitment(null);
+    setShowCustomCategory(false);
+    setCustomCategoryInput('');
+  };
+
+  const handleAddCustomCategory = () => {
+    if (customCategoryInput.trim()) {
+      setFormData(prev => ({ ...prev, category: customCategoryInput.trim() }));
+      setShowCustomCategory(false);
+      setCustomCategoryInput('');
+    }
   };
 
   const validateForm = () => {
@@ -282,30 +264,45 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
     return Object.keys(errors).length === 0;
   };
 
-  const handleSaveCommitment = () => {
+  const handleSaveCommitment = async () => {
     if (!validateForm()) return;
 
-    if (editingCommitment) {
-      // Update existing commitment
-      setCommitments(prev => prev.map(commitment =>
-        commitment.id === editingCommitment.id
-          ? { ...commitment, ...formData, politician_id: politicianId || formData.politician_id! }
-          : commitment
-      ));
-      Alert.alert('Success', 'Commitment updated successfully');
-    } else {
-      // Add new commitment
-      const newCommitment: Commitment = {
+    try {
+      const commitmentData = {
         ...formData,
-        id: Date.now(),
         politician_id: politicianId || formData.politician_id!,
       };
-      setCommitments(prev => [...prev, newCommitment]);
-      Alert.alert('Success', 'Commitment added successfully');
-    }
 
-    setShowAddModal(false);
-    resetForm();
+      if (editingCommitment) {
+        // Update existing commitment
+        const response = await adminAPI.updateCommitment(editingCommitment.id, commitmentData);
+
+        if (response.success) {
+          Alert.alert('Success', 'Commitment updated successfully');
+          await loadCommitments(); // Reload from database
+        } else {
+          Alert.alert('Error', response.error || 'Failed to update commitment');
+          return;
+        }
+      } else {
+        // Add new commitment
+        const response = await adminAPI.createCommitment(commitmentData);
+
+        if (response.success) {
+          Alert.alert('Success', 'Commitment added successfully');
+          await loadCommitments(); // Reload from database
+        } else {
+          Alert.alert('Error', response.error || 'Failed to create commitment');
+          return;
+        }
+      }
+
+      setShowAddModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving commitment:', error);
+      Alert.alert('Error', 'An error occurred while saving the commitment');
+    }
   };
 
   const handleEditCommitment = (commitment: Commitment) => {
@@ -336,9 +333,20 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setCommitments(prev => prev.filter(commitment => commitment.id !== commitmentId));
-            Alert.alert('Success', 'Commitment deleted successfully');
+          onPress: async () => {
+            try {
+              const response = await adminAPI.deleteCommitment(commitmentId);
+
+              if (response.success) {
+                Alert.alert('Success', 'Commitment deleted successfully');
+                await loadCommitments(); // Reload from database
+              } else {
+                Alert.alert('Error', response.error || 'Failed to delete commitment');
+              }
+            } catch (error) {
+              console.error('Error deleting commitment:', error);
+              Alert.alert('Error', 'An error occurred while deleting the commitment');
+            }
           }
         }
       ]
@@ -543,43 +551,95 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
             {validationErrors.description && <Text style={styles.errorText}>{validationErrors.description}</Text>}
           </View>
 
-          {/* Category and Date */}
-          <View style={styles.rowInputs}>
-            <View style={[styles.inputGroup, styles.halfInput]}>
-              <Text style={styles.inputLabel}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.categorySelector}>
-                  {categories.map(category => (
-                    <TouchableOpacity
-                      key={category}
-                      style={[
-                        styles.categoryChip,
-                        formData.category === category && styles.categoryChipSelected
-                      ]}
-                      onPress={() => setFormData(prev => ({ ...prev, category }))}
-                    >
-                      <Text style={[
-                        styles.categoryChipText,
-                        formData.category === category && styles.categoryChipTextSelected
-                      ]}>
-                        {category}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
+          {/* Category */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Category</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.categorySelector}>
+                {categories.map(category => (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryChip,
+                      formData.category === category && styles.categoryChipSelected
+                    ]}
+                    onPress={() => {
+                      setFormData(prev => ({ ...prev, category }));
+                      setShowCustomCategory(false);
+                    }}
+                  >
+                    <Text style={[
+                      styles.categoryChipText,
+                      formData.category === category && styles.categoryChipTextSelected
+                    ]}>
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={[
+                    styles.categoryChip,
+                    styles.customCategoryChip,
+                    showCustomCategory && styles.categoryChipSelected
+                  ]}
+                  onPress={() => setShowCustomCategory(true)}
+                >
+                  <MaterialIcons
+                    name="add"
+                    size={16}
+                    color={showCustomCategory ? '#FFFFFF' : '#3B82F6'}
+                  />
+                  <Text style={[
+                    styles.categoryChipText,
+                    showCustomCategory && styles.categoryChipTextSelected
+                  ]}>
+                    Custom
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
 
-            <View style={[styles.inputGroup, styles.halfInput]}>
-              <Text style={styles.inputLabel}>Date Made *</Text>
-              <TextInput
-                style={[styles.textInput, validationErrors.date_made && styles.inputError]}
-                value={formData.date_made}
-                onChangeText={(value) => setFormData(prev => ({ ...prev, date_made: value }))}
-                placeholder="2023-12-01"
-              />
-              {validationErrors.date_made && <Text style={styles.errorText}>{validationErrors.date_made}</Text>}
-            </View>
+            {/* Custom Category Input */}
+            {showCustomCategory && (
+              <View style={styles.customCategoryContainer}>
+                <TextInput
+                  style={styles.customCategoryInput}
+                  value={customCategoryInput}
+                  onChangeText={setCustomCategoryInput}
+                  placeholder="Enter custom category..."
+                  autoFocus
+                />
+                <TouchableOpacity
+                  style={styles.customCategoryButton}
+                  onPress={handleAddCustomCategory}
+                >
+                  <Text style={styles.customCategoryButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Show selected custom category */}
+            {!categories.includes(formData.category) && formData.category && !showCustomCategory && (
+              <View style={styles.selectedCustomCategory}>
+                <MaterialIcons name="label" size={16} color="#3B82F6" />
+                <Text style={styles.selectedCustomCategoryText}>{formData.category}</Text>
+                <TouchableOpacity onPress={() => setFormData(prev => ({ ...prev, category: 'Economy' }))}>
+                  <MaterialIcons name="close" size={16} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Date Made */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Date Made *</Text>
+            <TextInput
+              style={[styles.textInput, validationErrors.date_made && styles.inputError]}
+              value={formData.date_made}
+              onChangeText={(value) => setFormData(prev => ({ ...prev, date_made: value }))}
+              placeholder="2023-12-01"
+            />
+            {validationErrors.date_made && <Text style={styles.errorText}>{validationErrors.date_made}</Text>}
           </View>
 
           {/* Status and Progress */}
@@ -614,7 +674,34 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
 
           {/* Progress Percentage */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Progress Percentage (0-100)</Text>
+            <View style={styles.progressHeader}>
+              <Text style={styles.inputLabel}>Progress Percentage (0-100)</Text>
+              <TouchableOpacity
+                style={styles.guideButton}
+                onPress={() => Alert.alert(
+                  'Progress Measurement Guide',
+                  'How to measure commitment progress:\n\n' +
+                  '0-20% (No Evidence/Early):\n' +
+                  '• Promise announced but no concrete action taken\n' +
+                  '• Planning or consultation phase only\n\n' +
+                  '21-40% (Early Progress):\n' +
+                  '• Initial steps or pilot programs launched\n' +
+                  '• Budget allocated or legislation drafted\n\n' +
+                  '41-60% (Significant Progress):\n' +
+                  '• Major milestones achieved\n' +
+                  '• Implementation underway with measurable results\n\n' +
+                  '61-80% (Near Completion):\n' +
+                  '• Most objectives achieved\n' +
+                  '• Final stages of implementation\n\n' +
+                  '81-100% (Completed):\n' +
+                  '• Promise fully delivered\n' +
+                  '• Verifiable evidence of completion',
+                  [{ text: 'Got it', style: 'default' }]
+                )}
+              >
+                <MaterialIcons name="help-outline" size={20} color="#3B82F6" />
+              </TouchableOpacity>
+            </View>
             <View style={styles.progressInputContainer}>
               <TextInput
                 style={[styles.textInput, styles.progressInput, validationErrors.progress_percentage && styles.inputError]}
@@ -642,6 +729,22 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
               </View>
             </View>
             {validationErrors.progress_percentage && <Text style={styles.errorText}>{validationErrors.progress_percentage}</Text>}
+
+            {/* Progress Guide Indicator */}
+            <View style={styles.progressGuideContainer}>
+              <View style={styles.progressGuideItem}>
+                <View style={[styles.progressGuideDot, { backgroundColor: '#EF4444' }]} />
+                <Text style={styles.progressGuideText}>0-20%: No/Early Evidence</Text>
+              </View>
+              <View style={styles.progressGuideItem}>
+                <View style={[styles.progressGuideDot, { backgroundColor: '#F59E0B' }]} />
+                <Text style={styles.progressGuideText}>21-60%: In Progress</Text>
+              </View>
+              <View style={styles.progressGuideItem}>
+                <View style={[styles.progressGuideDot, { backgroundColor: '#10B981' }]} />
+                <Text style={styles.progressGuideText}>61-100%: Near/Complete</Text>
+              </View>
+            </View>
           </View>
 
           {/* Evidence */}
@@ -743,7 +846,7 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {politicianId ? `Commitments - ${getPoliticianName(politicianId)}` : 'Commitment Tracking'}
+          Commitment Tracking
         </Text>
         <TouchableOpacity
           style={styles.addButton}
@@ -752,6 +855,29 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
           <MaterialIcons name="add" size={24} color="#3B82F6" />
         </TouchableOpacity>
       </View>
+
+      {/* Politician Banner */}
+      {politician && (
+        <View style={styles.politicianBanner}>
+          <View style={styles.politicianInfo}>
+            <MaterialIcons name="person" size={20} color="#F59E0B" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.politicianName}>{politician.name}</Text>
+              <Text style={styles.politicianPosition}>{politician.current_position || 'Politician'}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.changePoliticianButton}
+            onPress={() => navigation.navigate('PoliticianSelector', {
+              targetScreen: 'CommitmentTracking',
+              title: 'Commitment Tracking',
+              allowViewAll: true,
+            })}
+          >
+            <Text style={styles.changePoliticianText}>Change</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Search and Filters */}
       <View style={styles.filtersSection}>
@@ -840,26 +966,33 @@ export const CommitmentTrackingScreen: React.FC<CommitmentTrackingScreenProps> =
       </View>
 
       {/* Commitments List */}
-      <FlatList
-        data={filteredCommitments}
-        renderItem={renderCommitmentCard}
-        keyExtractor={(item) => item.id.toString()}
-        style={styles.commitmentsList}
-        contentContainerStyle={styles.commitmentsListContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <MaterialIcons name="assignment-turned-in" size={64} color="#e9ecef" />
-            <Text style={styles.emptyStateTitle}>No commitments found</Text>
-            <Text style={styles.emptyStateDescription}>
-              {searchQuery || selectedStatus !== 'all' || selectedPolitician !== 'all' || selectedCategory !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Add the first commitment to get started'
-              }
-            </Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Loading commitments...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredCommitments}
+          renderItem={renderCommitmentCard}
+          keyExtractor={(item) => item.id.toString()}
+          style={styles.commitmentsList}
+          contentContainerStyle={styles.commitmentsListContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <MaterialIcons name="assignment-turned-in" size={64} color="#e9ecef" />
+              <Text style={styles.emptyStateTitle}>No commitments found</Text>
+              <Text style={styles.emptyStateDescription}>
+                {searchQuery || selectedStatus !== 'all' || selectedPolitician !== 'all' || selectedCategory !== 'all'
+                  ? 'Try adjusting your filters'
+                  : 'Add the first commitment to get started'
+                }
+              </Text>
+            </View>
+          }
+        />
+      )}
 
       {renderAddCommitmentModal()}
     </SafeAreaView>
@@ -1126,6 +1259,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 64,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 16,
+  },
   modalContainer: {
     flex: 1,
     backgroundColor: '#f8f9fa',
@@ -1229,6 +1373,54 @@ const styles = StyleSheet.create({
   categoryChipTextSelected: {
     color: '#FFFFFF',
   },
+  customCategoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  customCategoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  customCategoryInput: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#333',
+  },
+  customCategoryButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  customCategoryButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  selectedCustomCategory: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#f0f4ff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  selectedCustomCategoryText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#3B82F6',
+  },
   statusSelector: {
     marginHorizontal: -24,
     paddingHorizontal: 24,
@@ -1282,6 +1474,29 @@ const styles = StyleSheet.create({
   progressPreviewText: {
     fontSize: 12,
     fontWeight: 'bold',
+    color: '#666',
+  },
+  guideButton: {
+    padding: 4,
+  },
+  progressGuideContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingHorizontal: 8,
+  },
+  progressGuideItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  progressGuideDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  progressGuideText: {
+    fontSize: 11,
     color: '#666',
   },
   politicianSelector: {
@@ -1356,5 +1571,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 4,
+  },
+  politicianBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  politicianInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  politicianName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  politicianPosition: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  changePoliticianButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  changePoliticianText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
   },
 });

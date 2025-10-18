@@ -73,42 +73,9 @@ const SimpleLearningHub: React.FC<SimpleLearningHubProps> = ({ navigation }) => 
     } catch (error) {
       console.error('Error loading data:', error);
       setError('Failed to load content. Please check your connection.');
-
-      // Fallback to mock data if API fails
-      setModules([
-        {
-          id: 1,
-          title: "Civic Engagement Basics",
-          description: "Learn the fundamentals of civic participation and democracy",
-          status: 'completed',
-          progress: 100,
-          lessons_count: 8,
-        },
-        {
-          id: 2,
-          title: "Understanding Government",
-          description: "How your local and national government works",
-          status: 'in_progress',
-          progress: 60,
-          lessons_count: 12,
-        },
-        {
-          id: 3,
-          title: "Political History of Kenya",
-          description: "Journey through Kenya's political evolution",
-          status: 'pending',
-          progress: 0,
-          lessons_count: 15,
-        },
-        {
-          id: 4,
-          title: "Rights and Responsibilities",
-          description: "Your constitutional rights and civic duties",
-          status: 'pending',
-          progress: 0,
-          lessons_count: 10,
-        },
-      ]);
+      
+      // No fallback data - show error state instead
+      setModules([]);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -248,6 +215,19 @@ const SimpleLearningHub: React.FC<SimpleLearningHubProps> = ({ navigation }) => 
       textAlign: 'center',
       lineHeight: typography.lineHeights.relaxed,
     },
+    retryButton: {
+      backgroundColor: colors.primary.main,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
+      borderRadius: borderRadius.md,
+      marginTop: spacing.lg,
+    },
+    retryButtonText: {
+      color: colors.primary.text,
+      fontSize: typography.sizes.base,
+      fontWeight: typography.weights.semibold,
+      textAlign: 'center',
+    },
   });
 
   if (isLoading && modules.length === 0) {
@@ -300,7 +280,21 @@ const SimpleLearningHub: React.FC<SimpleLearningHubProps> = ({ navigation }) => 
       >
         <Text style={styles.sectionTitle}>Your Learning Journey</Text>
 
-        {modules.map((module) => (
+        {modules.length === 0 && !isLoading ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>📚</Text>
+            <Text style={styles.emptyTitle}>No Learning Modules Available</Text>
+            <Text style={styles.emptyDescription}>
+              {error ? 'Failed to load learning content. Please check your connection and try again.' : 'No learning modules are currently available. Check back later for new content!'}
+            </Text>
+            {error && (
+              <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          modules.map((module) => (
           <Card key={module.id} style={styles.moduleCard}>
             <View style={styles.moduleContent}>
               <View style={styles.moduleHeader}>
@@ -339,7 +333,7 @@ const SimpleLearningHub: React.FC<SimpleLearningHubProps> = ({ navigation }) => 
               </View>
             </View>
           </Card>
-        ))}
+        )))}
 
         <View style={{ height: spacing['5xl'] }} />
       </ScrollView>

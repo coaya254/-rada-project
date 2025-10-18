@@ -12,6 +12,16 @@ export interface Politician {
   image_url?: string;
   party_color?: string;
   slug: string;
+  years_in_office?: number;
+  age?: number | string;
+  bio?: string;
+  position?: string;
+  imageUrl?: string;
+  rating?: number | string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  social_media_twitter?: string;
 
   // Source verification for career information
   education_sources?: {
@@ -43,7 +53,7 @@ export interface Document {
   id: number;
   title: string;
   date: string;
-  type: 'speech' | 'policy' | 'parliamentary';
+  type: 'speech' | 'policy' | 'bill' | 'press_release' | 'interview' | 'manifesto' | 'report' | 'letter' | 'parliamentary' | 'other';
   source: string;
   key_quotes?: string[];
   summary: string;
@@ -138,12 +148,30 @@ export interface Commitment {
 
 export interface VotingRecord {
   id: number;
+  politician_id?: number;
   bill_name: string;
-  bill_description: string;
-  vote: 'yes' | 'no' | 'abstain' | 'absent';
+  bill_title?: string;
+  bill_number?: string;
+  bill_description?: string;
+  bill_summary?: string;
+  significance?: string;
+  vote: 'yes' | 'no' | 'for' | 'against' | 'abstain' | 'absent';
+  vote_value?: string;
   date: string;
+  vote_date?: string;
   category: string;
-  significance: string;
+  notes?: string;
+  reasoning?: string;
+  bill_status?: 'Proposed' | 'Under Review' | 'Passed' | 'Rejected' | 'Withdrawn';
+  bill_passed?: boolean;
+  vote_count_for?: number;
+  vote_count_against?: number;
+  vote_count_abstain?: number;
+  total_votes?: number;
+  session?: string;
+  session_name?: string;
+  hansard_reference?: string;
+  created_at?: string;
 
   // Source links for the voting record
   source_links?: {

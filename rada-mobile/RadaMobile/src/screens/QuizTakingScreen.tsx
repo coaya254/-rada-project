@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import LearningAPI from '../services/LearningAPI';
 
 const QuizTakingScreen = ({ route, navigation }) => {
   const { quizId, quizTitle } = route.params;
@@ -13,24 +14,47 @@ const QuizTakingScreen = ({ route, navigation }) => {
   const [score, setScore] = useState(0);
 
   useEffect(() => {
-    // Mock data - replace with API call
-    const mockQuestions = [
-      {
-        id: 1,
-        question: "What is the capital of Kenya?",
-        options: ["Nairobi", "Mombasa", "Kisumu", "Nakuru"],
-        correctAnswer: 0
-      },
-      {
-        id: 2,
-        question: "Which ocean borders Kenya to the east?",
-        options: ["Atlantic Ocean", "Indian Ocean", "Pacific Ocean", "Arctic Ocean"],
-        correctAnswer: 1
+    loadQuizData();
+  }, [quizId]);
+
+  const loadQuizData = async () => {
+    try {
+      setIsLoading(true);
+      console.log('🔄 Loading quiz data for ID:', quizId);
+      
+      // Load quiz data from API
+      const quizData = await LearningAPI.getQuiz(quizId);
+      console.log('✅ Quiz data loaded:', quizData);
+      
+      if (quizData && quizData.questions) {
+        // Transform API data to match our interface
+        const transformedQuestions = quizData.questions.map((q: any, index: number) => ({
+          id: q.id || index + 1,
+          question: q.question_text || q.question,
+          options: q.options || q.choices || [],
+          correctAnswer: q.correct_answer || q.correct_answer_index || 0
+        }));
+        
+        setQuestions(transformedQuestions);
+        console.log('✅ Questions transformed:', transformedQuestions.length);
+      } else {
+        console.warn('⚠️ No questions found in quiz data');
+        setQuestions([]);
       }
-    ];
-    setQuestions(mockQuestions);
-    setIsLoading(false);
-  }, []);
+    } catch (error) {
+      console.error('❌ Error loading quiz data:', error);
+      Alert.alert(
+        'Error Loading Quiz',
+        'Failed to load quiz questions. Please check your connection and try again.',
+        [
+          { text: 'Retry', onPress: loadQuizData },
+          { text: 'Go Back', onPress: () => navigation.goBack() }
+        ]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAnswerSelect = (questionId, answerIndex) => {
     setSelectedAnswers(prev => ({ ...prev, [questionId]: answerIndex }));
@@ -44,13 +68,31 @@ const QuizTakingScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleSubmit = () => {
-    let correct = 0;
-    questions.forEach(q => {
-      if (selectedAnswers[q.id] === q.correctAnswer) correct++;
-    });
-    setScore(Math.round((correct / questions.length) * 100));
-    setShowResults(true);
+  const handleSubmit = async () => {
+    try {
+      let correct = 0;
+      questions.forEach(q => {
+        if (selectedAnswers[q.id] === q.correctAnswer) correct++;
+      });
+      const calculatedScore = Math.round((correct / questions.length) * 100);
+      setScore(calculatedScore);
+      
+      // Submit quiz attempt to API
+      console.log('🔄 Submitting quiz attempt...');
+      await LearningAPI.submitQuizAttempt(quizId, selectedAnswers);
+      console.log('✅ Quiz attempt submitted successfully');
+      
+      setShowResults(true);
+    } catch (error) {
+      console.error('❌ Error submitting quiz:', error);
+      // Still show results even if submission fails
+      setShowResults(true);
+      Alert.alert(
+        'Submission Error',
+        'Your answers were saved locally, but could not be submitted to the server. Your progress may not be recorded.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   if (isLoading) {

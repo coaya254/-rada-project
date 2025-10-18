@@ -692,22 +692,22 @@ export const PoliticsHome: React.FC<PoliticsHomeProps> = ({ navigation }) => {
                     <Text style={styles.featuredName}>{featuredPolitician.name}</Text>
                     <Text style={styles.featuredTitle}>{featuredPolitician.position}</Text>
                     <Text style={styles.featuredLocation}>
-                      {featuredPolitician.party} • Rating: {featuredPolitician.rating}
+                      {featuredPolitician.party} • {featuredPolitician.constituency || 'National'}
                     </Text>
                   </View>
                 </View>
                 <View style={styles.featuredStats}>
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>95%</Text>
-                    <Text style={styles.statLabel}>Attendance</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>17</Text>
+                    <Text style={styles.statValue}>{featuredPolitician.years_in_office || 0}</Text>
                     <Text style={styles.statLabel}>Years</Text>
                   </View>
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>89</Text>
-                    <Text style={styles.statLabel}>Promises</Text>
+                    <Text style={styles.statValue}>{featuredPolitician.rating || 'N/A'}</Text>
+                    <Text style={styles.statLabel}>Rating</Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{featuredPolitician.party?.substring(0, 3) || 'N/A'}</Text>
+                    <Text style={styles.statLabel}>Party</Text>
                   </View>
                 </View>
               </View>

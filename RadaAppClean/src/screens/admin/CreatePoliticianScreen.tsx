@@ -269,9 +269,9 @@ export const CreatePoliticianScreen: React.FC<CreatePoliticianScreenProps> = ({ 
       const response = await adminAPI.createPolitician(politicianData);
       console.log('Create draft response:', response);
 
-      if (response.success && response.data && response.data.success) {
+      if (response.success && response.data) {
         console.log('Success - navigating to edit screen');
-        const politicianId = response.data.data.id;
+        const politicianId = response.data.id;
 
         // Close preview first
         setShowPreview(false);

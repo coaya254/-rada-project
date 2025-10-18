@@ -106,73 +106,7 @@ const ModulesScreen = ({ navigation }) => {
     earned_badges: 2
   };
 
-  const sampleModules = [
-    {
-      id: 1,
-      title: 'Kenyan Constitution Basics',
-      description: 'Learn about the fundamental principles of Kenya\'s 2010 Constitution',
-      image: '🏛️',
-      estimated_duration: 30,
-      difficulty: 'Beginner',
-      xp_reward: 50,
-      lesson_count: 5,
-      category: 'constitution',
-      is_featured: true,
-      progress: 0
-    },
-    {
-      id: 2,
-      title: 'Civic Rights & Responsibilities',
-      description: 'Understand your rights and responsibilities as a Kenyan citizen',
-      image: '⚖️',
-      estimated_duration: 25,
-      difficulty: 'Beginner',
-      xp_reward: 40,
-      lesson_count: 4,
-      category: 'human-rights',
-      is_featured: false,
-      progress: 25
-    },
-    {
-      id: 3,
-      title: 'Electoral Process',
-      description: 'Master the electoral process and voting procedures',
-      image: '🗳️',
-      estimated_duration: 35,
-      difficulty: 'Intermediate',
-      xp_reward: 60,
-      lesson_count: 6,
-      category: 'civic-participation',
-      is_featured: false,
-      progress: 0
-    },
-    {
-      id: 4,
-      title: 'Devolution & County Government',
-      description: 'Understand Kenya\'s devolved system of government',
-      image: '🏢',
-      estimated_duration: 40,
-      difficulty: 'Intermediate',
-      xp_reward: 70,
-      lesson_count: 7,
-      category: 'devolution',
-      is_featured: false,
-      progress: 0
-    },
-    {
-      id: 5,
-      title: 'Anti-Corruption & Ethics',
-      description: 'Learn about transparency, accountability, and ethical governance',
-      image: '🛡️',
-      estimated_duration: 45,
-      difficulty: 'Advanced',
-      xp_reward: 80,
-      lesson_count: 8,
-      category: 'anti-corruption',
-      is_featured: false,
-      progress: 0
-    }
-  ];
+  // Sample modules removed - using real API data only
 
   const filteredModules = selectedCategory === 'all' 
     ? modules 

@@ -202,6 +202,14 @@ export class ApiService {
     return response.data;
   }
 
+  // Politician Comparison API
+  static async comparePoliticians(politicianIds: number[]): Promise<ApiResponse<any>> {
+    const response = await apiClient.post('/api/politicians/compare', {
+      politicianIds
+    });
+    return response.data;
+  }
+
   // Generic API method for custom endpoints
   static async get<T = any>(endpoint: string): Promise<ApiResponse<T>> {
     const response = await apiClient.get(endpoint);

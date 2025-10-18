@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StatusBar,
   FlatList,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { PoliticsStackParamList } from '../../navigation/PoliticsStackNavigator';
+import politicsAPI from '../../services/PoliticsAPIService';
 
 interface VotingRecordsScreenProps {
   navigation: NativeStackNavigationProp<PoliticsStackParamList, 'VotingRecords'>;
@@ -23,75 +25,41 @@ interface VotingRecordsScreenProps {
 
 interface VotingRecord {
   id: number;
-  bill: string;
-  vote: 'For' | 'Against' | 'Abstain';
+  bill_name: string;
+  vote: string;
   date: string;
-  description: string;
-  category: string;
-  importance: 'High' | 'Medium' | 'Low';
+  bill_description?: string;
+  category?: string;
+  significance?: string;
+  notes?: string;
 }
 
 export const VotingRecordsScreen: React.FC<VotingRecordsScreenProps> = ({ navigation, route }) => {
-  const { politicianName } = route.params;
+  const { politicianName, politicianId } = route.params;
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('all');
 
-  const [votingRecords] = useState<VotingRecord[]>([
-    {
-      id: 1,
-      bill: 'Healthcare Reform Act 2024',
-      vote: 'For',
-      date: '2024-03-15',
-      description: 'Comprehensive healthcare reform to improve accessibility and reduce costs',
-      category: 'Healthcare',
-      importance: 'High',
-    },
-    {
-      id: 2,
-      bill: 'Education Funding Bill',
-      vote: 'For',
-      date: '2024-03-10',
-      description: 'Increase funding for primary and secondary education nationwide',
-      category: 'Education',
-      importance: 'High',
-    },
-    {
-      id: 3,
-      bill: 'Climate Action Initiative',
-      vote: 'Against',
-      date: '2024-03-05',
-      description: 'New regulations on carbon emissions for industrial sectors',
-      category: 'Environment',
-      importance: 'High',
-    },
-    {
-      id: 4,
-      bill: 'Infrastructure Development Act',
-      vote: 'For',
-      date: '2024-02-28',
-      description: 'Investment in roads, bridges, and digital infrastructure',
-      category: 'Infrastructure',
-      importance: 'Medium',
-    },
-    {
-      id: 5,
-      bill: 'Tax Reform Amendment',
-      vote: 'Abstain',
-      date: '2024-02-20',
-      description: 'Modifications to corporate tax structure',
-      category: 'Economy',
-      importance: 'Medium',
-    },
-    {
-      id: 6,
-      bill: 'Agricultural Support Package',
-      vote: 'For',
-      date: '2024-02-15',
-      description: 'Financial assistance for small-scale farmers',
-      category: 'Agriculture',
-      importance: 'Low',
-    },
-  ]);
+  const [votingRecords, setVotingRecords] = useState<VotingRecord[]>([]);
+
+  useEffect(() => {
+    loadVotingRecords();
+  }, [politicianId]);
+
+  const loadVotingRecords = async () => {
+    try {
+      setLoading(true);
+      const response = await politicsAPI.getVotingRecords(politicianId);
+
+      if (response.success && response.data) {
+        setVotingRecords(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading voting records:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filters = [
     { id: 'all', label: 'All Votes' },
@@ -100,9 +68,10 @@ export const VotingRecordsScreen: React.FC<VotingRecordsScreenProps> = ({ naviga
     { id: 'abstain', label: 'Abstained' },
   ];
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    await loadVotingRecords();
+    setRefreshing(false);
   };
 
   const getFilteredRecords = () => {
@@ -139,34 +108,64 @@ export const VotingRecordsScreen: React.FC<VotingRecordsScreenProps> = ({ naviga
     abstain: votingRecords.filter(r => r.vote === 'Abstain').length,
   };
 
+  const getVoteIcon = (vote: string) => {
+    switch (vote.toLowerCase()) {
+      case 'for': return 'thumbs-up';
+      case 'against': return 'thumbs-down';
+      case 'abstain': return 'hand-left';
+      default: return 'help-circle';
+    }
+  };
+
   const renderVotingRecord = ({ item }: { item: VotingRecord }) => (
     <View style={styles.recordCard}>
-      <View style={styles.recordHeader}>
-        <View style={styles.recordMeta}>
-          <View style={[styles.voteBadge, { backgroundColor: getVoteColor(item.vote) }]}>
-            <Text style={styles.voteText}>{item.vote}</Text>
+      <Text style={styles.billTitle}>{item.bill_name}</Text>
+
+      <View style={styles.recordDetails}>
+        <View style={styles.voteContainer}>
+          <MaterialIcons
+            name={getVoteIcon(item.vote)}
+            size={18}
+            color={getVoteColor(item.vote)}
+          />
+          <Text style={[styles.voteText, { color: getVoteColor(item.vote) }]}>
+            {item.vote.toUpperCase()}
+          </Text>
+        </View>
+
+        {item.category && (
+          <View style={[styles.categoryBadge, { borderColor: '#3B82F6' + '40' }]}>
+            <Text style={styles.categoryText}>{item.category}</Text>
           </View>
-          <View style={[styles.importanceBadge, { borderColor: getImportanceColor(item.importance) }]}>
-            <Text style={[styles.importanceText, { color: getImportanceColor(item.importance) }]}>
-              {item.importance}
+        )}
+
+        {item.significance && (
+          <View style={[styles.significanceBadge, { borderColor: getImportanceColor(item.significance) }]}>
+            <Text style={[styles.significanceText, { color: getImportanceColor(item.significance) }]}>
+              {item.significance}
             </Text>
           </View>
-        </View>
-        <Text style={styles.recordDate}>{new Date(item.date).toLocaleDateString()}</Text>
+        )}
       </View>
 
-      <Text style={styles.billTitle}>{item.bill}</Text>
-      <Text style={styles.billDescription}>{item.description}</Text>
+      {item.bill_description && (
+        <Text style={styles.billDescription} numberOfLines={2}>
+          {item.bill_description}
+        </Text>
+      )}
 
       <View style={styles.recordFooter}>
-        <View style={styles.categoryTag}>
-          <Text style={styles.categoryText}>{item.category}</Text>
-        </View>
-        <TouchableOpacity style={styles.detailsButton}>
-          <Text style={styles.detailsButtonText}>View Details</Text>
-          <MaterialIcons name="chevron-right" size={16} color="#3B82F6" />
-        </TouchableOpacity>
+        <Text style={styles.recordDate}>
+          <MaterialIcons name="event" size={14} color="#9CA3AF" /> {new Date(item.date).toLocaleDateString()}
+        </Text>
       </View>
+
+      {item.notes && (
+        <View style={styles.notesContainer}>
+          <Text style={styles.notesLabel}>Notes:</Text>
+          <Text style={styles.notesText}>{item.notes}</Text>
+        </View>
+      )}
     </View>
   );
 
@@ -254,12 +253,24 @@ export const VotingRecordsScreen: React.FC<VotingRecordsScreenProps> = ({ naviga
               {filteredRecords.length} records
             </Text>
           </View>
-          <FlatList
-            data={filteredRecords}
-            renderItem={renderVotingRecord}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-          />
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text style={styles.loadingText}>Loading voting records...</Text>
+            </View>
+          ) : filteredRecords.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <MaterialIcons name="how-to-vote" size={64} color="#CBD5E1" />
+              <Text style={styles.emptyText}>No voting records found</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredRecords}
+              renderItem={renderVotingRecord}
+              keyExtractor={(item) => item.id.toString()}
+              scrollEnabled={false}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -398,76 +409,107 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
-  recordHeader: {
+  billTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 12,
+    lineHeight: 24,
+  },
+  recordDetails: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 12,
   },
-  recordMeta: {
+  voteContainer: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  voteBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    alignItems: 'center',
+    gap: 6,
   },
   voteText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
-  importanceBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  categoryBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 12,
     borderWidth: 1,
   },
-  importanceText: {
+  categoryText: {
     fontSize: 12,
-    fontWeight: 'bold',
+    color: '#3B82F6',
+    fontWeight: '600',
   },
-  recordDate: {
+  significanceBadge: {
+    backgroundColor: '#FFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  significanceText: {
     fontSize: 12,
-    color: '#666',
-  },
-  billTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 6,
+    fontWeight: '600',
   },
   billDescription: {
     fontSize: 14,
-    color: '#666',
+    color: '#6B7280',
     lineHeight: 20,
     marginBottom: 12,
   },
   recordFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
-  categoryTag: {
-    backgroundColor: '#e9ecef',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  categoryText: {
+  recordDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#9CA3AF',
     fontWeight: '500',
   },
-  detailsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  notesContainer: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3B82F6',
   },
-  detailsButtonText: {
-    fontSize: 14,
-    color: '#3B82F6',
+  notesLabel: {
+    fontSize: 12,
     fontWeight: '600',
+    color: '#4B5563',
+    marginBottom: 4,
+  },
+  notesText: {
+    fontSize: 13,
+    color: '#6B7280',
+    lineHeight: 18,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: '#666',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

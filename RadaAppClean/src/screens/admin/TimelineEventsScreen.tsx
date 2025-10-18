@@ -16,6 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TimelineEvent } from '../../types';
+import adminAPI from '../../services/AdminAPIService';
 
 interface TimelineEventsScreenProps {
   navigation: NativeStackNavigationProp<any, 'TimelineEvents'>;
@@ -35,11 +36,12 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
   const { politicianId } = route.params || {};
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<TimelineEvent[]>([]);
-  const [selectedPolitician, setSelectedPolitician] = useState<string>('all');
+  const [selectedPolitician, setSelectedPolitician] = useState<string>(politicianId ? politicianId.toString() : 'all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<TimelineEvent | null>(null);
+  const [politician, setPolitician] = useState<any>(null);
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -51,101 +53,83 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
-  // Mock politicians data
-  const politicians = [
-    { id: 1, name: 'William Ruto' },
-    { id: 2, name: 'Raila Odinga' },
-    { id: 3, name: 'Martha Karua' },
-    { id: 4, name: 'Kalonzo Musyoka' },
-  ];
+  const [politicians, setPoliticians] = useState<Array<{ id: number; name: string }>>([]);
 
   // Event type configurations
-  const eventTypes = [
+  const [eventTypes, setEventTypes] = useState([
     { value: 'position', label: 'Position/Role', icon: 'work', color: '#3B82F6' },
     { value: 'achievement', label: 'Achievement', icon: 'emoji-events', color: '#10B981' },
     { value: 'controversy', label: 'Controversy', icon: 'warning', color: '#EF4444' },
     { value: 'legislation', label: 'Legislation', icon: 'description', color: '#F59E0B' },
     { value: 'event', label: 'General Event', icon: 'event', color: '#6B7280' },
-  ];
+  ]);
+
+  const [showAddTypeModal, setShowAddTypeModal] = useState(false);
+  const [newEventType, setNewEventType] = useState({
+    value: '',
+    label: '',
+    icon: 'event',
+    color: '#6B7280'
+  });
 
   const sourceTypes = [
     'news', 'government_doc', 'parliamentary_record', 'official_statement',
     'press_release', 'video', 'gazette'
   ];
 
-  // Mock timeline events data
+  // Load politician details if politicianId is provided
   useEffect(() => {
-    const mockEvents: TimelineEvent[] = [
-      {
-        id: 1,
-        politician_id: 1,
-        title: 'Elected President of Kenya',
-        description: 'Won the 2022 presidential election with 50.49% of the vote',
-        date: '2022-08-15',
-        type: 'position',
-        source_links: [
-          {
-            type: 'news',
-            url: 'https://example.com/ruto-wins',
-            title: 'Ruto Declared Winner of Kenya Presidential Election',
-            source: 'Daily Nation',
-            date: '2022-08-15'
-          }
-        ]
-      },
-      {
-        id: 2,
-        politician_id: 1,
-        title: 'Deputy President Appointment',
-        description: 'Appointed as Deputy President under Uhuru Kenyatta',
-        date: '2013-04-09',
-        type: 'position',
-        source_links: [
-          {
-            type: 'gazette',
-            url: 'https://example.com/gazette-dp',
-            title: 'Kenya Gazette Notice - Deputy President',
-            source: 'Kenya Gazette',
-            date: '2013-04-09'
-          }
-        ]
-      },
-      {
-        id: 3,
-        politician_id: 2,
-        title: 'Prime Minister of Kenya',
-        description: 'Served as Prime Minister under the coalition government',
-        date: '2008-04-17',
-        type: 'position',
-        source_links: [
-          {
-            type: 'official_statement',
-            url: 'https://example.com/pm-appointment',
-            title: 'Raila Odinga Sworn in as Prime Minister',
-            source: 'State House',
-            date: '2008-04-17'
-          }
-        ]
-      },
-      {
-        id: 4,
-        politician_id: 3,
-        title: 'Minister of Justice and Constitutional Affairs',
-        description: 'Served as Minister of Justice and Constitutional Affairs',
-        date: '2003-01-03',
-        type: 'position'
-      }
-    ];
-
-    // Filter by politician if specified
-    const filtered = politicianId
-      ? mockEvents.filter(event => event.politician_id === politicianId)
-      : mockEvents;
-
-    setEvents(filtered);
-    setFilteredEvents(filtered);
+    if (politicianId) {
+      loadPolitician();
+    }
   }, [politicianId]);
+
+  const loadPolitician = async () => {
+    if (!politicianId) return;
+    try {
+      const response = await adminAPI.getPolitician(politicianId);
+      if (response.success && response.data) {
+        setPolitician(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading politician:', error);
+    }
+  };
+
+  const loadPoliticians = async () => {
+    try {
+      const response = await adminAPI.searchPoliticians('', { include_drafts: true });
+      if (response.success && response.data) {
+        setPoliticians(response.data.map((p: any) => ({ id: p.id, name: p.name })));
+      }
+    } catch (error) {
+      console.error('Error loading politicians:', error);
+    }
+  };
+
+  // Load timeline events from API
+  useEffect(() => {
+    loadEvents();
+    if (!politicianId) {
+      loadPoliticians();
+    }
+  }, [politicianId]);
+
+  const loadEvents = async () => {
+    try {
+      const response = await adminAPI.getTimelineEvents(politicianId);
+
+      if (response.success && response.data) {
+        setEvents(response.data);
+        setFilteredEvents(response.data);
+      } else {
+        Alert.alert('Error', response.error || 'Failed to load timeline events');
+      }
+    } catch (error) {
+      console.error('Error loading timeline events:', error);
+      Alert.alert('Error', 'Failed to load timeline events');
+    }
+  };
 
   // Filter events based on search and filters
   useEffect(() => {
@@ -206,30 +190,42 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
     return Object.keys(errors).length === 0;
   };
 
-  const handleSaveEvent = () => {
+  const handleSaveEvent = async () => {
     if (!validateForm()) return;
 
-    if (editingEvent) {
-      // Update existing event
-      setEvents(prev => prev.map(event =>
-        event.id === editingEvent.id
-          ? { ...event, ...formData, politician_id: politicianId || formData.politician_id! }
-          : event
-      ));
-      Alert.alert('Success', 'Timeline event updated successfully');
-    } else {
-      // Add new event
-      const newEvent: TimelineEvent = {
-        ...formData,
-        id: Date.now(),
-        politician_id: politicianId || formData.politician_id!,
-      };
-      setEvents(prev => [...prev, newEvent]);
-      Alert.alert('Success', 'Timeline event added successfully');
-    }
+    try {
+      if (editingEvent) {
+        // Update existing event
+        const response = await adminAPI.updateTimelineEvent(editingEvent.id, formData);
+        if (response.success) {
+          Alert.alert('Success', 'Timeline event updated successfully');
+          await loadEvents();
+        } else {
+          Alert.alert('Error', response.error || 'Failed to update timeline event');
+          return;
+        }
+      } else {
+        // Add new event
+        const eventData = {
+          ...formData,
+          politician_id: politicianId || formData.politician_id!,
+        };
+        const response = await adminAPI.createTimelineEvent(eventData);
+        if (response.success) {
+          Alert.alert('Success', 'Timeline event added successfully');
+          await loadEvents();
+        } else {
+          Alert.alert('Error', response.error || 'Failed to create timeline event');
+          return;
+        }
+      }
 
-    setShowAddModal(false);
-    resetForm();
+      setShowAddModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving timeline event:', error);
+      Alert.alert('Error', 'An error occurred while saving the timeline event');
+    }
   };
 
   const handleEditEvent = (event: TimelineEvent) => {
@@ -254,9 +250,19 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setEvents(prev => prev.filter(event => event.id !== eventId));
-            Alert.alert('Success', 'Timeline event deleted successfully');
+          onPress: async () => {
+            try {
+              const response = await adminAPI.deleteTimelineEvent(eventId);
+              if (response.success) {
+                Alert.alert('Success', 'Timeline event deleted successfully');
+                await loadEvents();
+              } else {
+                Alert.alert('Error', response.error || 'Failed to delete timeline event');
+              }
+            } catch (error) {
+              console.error('Error deleting timeline event:', error);
+              Alert.alert('Error', 'An error occurred while deleting the timeline event');
+            }
           }
         }
       ]
@@ -295,6 +301,25 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
 
   const getEventTypeConfig = (type: string) => {
     return eventTypes.find(t => t.value === type) || eventTypes[eventTypes.length - 1];
+  };
+
+  const handleAddCustomType = () => {
+    if (!newEventType.label || !newEventType.value) {
+      Alert.alert('Error', 'Please provide both a label and value for the custom event type');
+      return;
+    }
+
+    // Check if type already exists
+    if (eventTypes.find(t => t.value === newEventType.value)) {
+      Alert.alert('Error', 'An event type with this value already exists');
+      return;
+    }
+
+    setEventTypes(prev => [...prev, { ...newEventType }]);
+    setFormData(prev => ({ ...prev, type: newEventType.value as any }));
+    setShowAddTypeModal(false);
+    setNewEventType({ value: '', label: '', icon: 'event', color: '#6B7280' });
+    Alert.alert('Success', 'Custom event type added successfully');
   };
 
   const getPoliticianName = (politicianId: number) => {
@@ -424,7 +449,13 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
 
           {/* Event Type */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Event Type</Text>
+            <View style={styles.sourceLinkHeader}>
+              <Text style={styles.inputLabel}>Event Type</Text>
+              <TouchableOpacity style={styles.addSourceButton} onPress={() => setShowAddTypeModal(true)}>
+                <MaterialIcons name="add" size={16} color="#3B82F6" />
+                <Text style={styles.addSourceText}>Add Custom Type</Text>
+              </TouchableOpacity>
+            </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeSelector}>
               {eventTypes.map(type => (
                 <TouchableOpacity
@@ -537,9 +568,7 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
         >
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {politicianId ? `Timeline - ${getPoliticianName(politicianId)}` : 'Timeline Events'}
-        </Text>
+        <Text style={styles.headerTitle}>Timeline Events</Text>
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => setShowAddModal(true)}
@@ -547,6 +576,29 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
           <MaterialIcons name="add" size={24} color="#3B82F6" />
         </TouchableOpacity>
       </View>
+
+      {/* Politician Info Banner */}
+      {politician && (
+        <View style={styles.politicianBanner}>
+          <View style={styles.politicianInfo}>
+            <MaterialIcons name="person" size={20} color="#8B5CF6" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.politicianName}>{politician.name}</Text>
+              <Text style={styles.politicianPosition}>{politician.current_position || 'Politician'}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.changePoliticianButton}
+            onPress={() => navigation.navigate('PoliticianSelector', {
+              targetScreen: 'TimelineEvents',
+              title: 'Timeline Events',
+              allowViewAll: true,
+            })}
+          >
+            <Text style={styles.changePoliticianText}>Change</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Search and Filters */}
       <View style={styles.filtersSection}>
@@ -635,6 +687,163 @@ export const TimelineEventsScreen: React.FC<TimelineEventsScreenProps> = ({ navi
       />
 
       {renderAddEventModal()}
+
+      {/* Add Custom Event Type Modal */}
+      <Modal visible={showAddTypeModal} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.customTypeModal}>
+            <View style={styles.customTypeHeader}>
+              <Text style={styles.customTypeTitle}>Add Custom Event Type</Text>
+              <TouchableOpacity
+                style={styles.modalCloseIcon}
+                onPress={() => {
+                  setShowAddTypeModal(false);
+                  setNewEventType({ value: '', label: '', icon: 'event', color: '#6B7280' });
+                }}
+              >
+                <MaterialIcons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.customTypeContent} showsVerticalScrollIndicator={false}>
+              {/* Preview Card */}
+              <View style={styles.previewSection}>
+                <Text style={styles.previewLabel}>Preview</Text>
+                <View style={styles.previewCard}>
+                  <View style={[styles.previewIcon, { backgroundColor: newEventType.color + '20' }]}>
+                    <MaterialIcons
+                      name={newEventType.icon as keyof typeof MaterialIcons.glyphMap}
+                      size={28}
+                      color={newEventType.color}
+                    />
+                  </View>
+                  <Text style={styles.previewText}>
+                    {newEventType.label || 'Event Type Label'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Type Label */}
+              <View style={styles.customInputGroup}>
+                <Text style={styles.customInputLabel}>Display Name *</Text>
+                <Text style={styles.customInputHint}>This is what users will see</Text>
+                <TextInput
+                  style={styles.customTextInput}
+                  value={newEventType.label}
+                  onChangeText={(value) => {
+                    setNewEventType(prev => ({
+                      ...prev,
+                      label: value,
+                      value: prev.value || value.toLowerCase().replace(/\s+/g, '_')
+                    }));
+                  }}
+                  placeholder="e.g., Policy Change, Public Appearance"
+                  placeholderTextColor="#999"
+                />
+              </View>
+
+              {/* Type Value */}
+              <View style={styles.customInputGroup}>
+                <Text style={styles.customInputLabel}>Internal Value *</Text>
+                <Text style={styles.customInputHint}>Auto-generated from display name</Text>
+                <TextInput
+                  style={[styles.customTextInput, styles.readOnlyInput]}
+                  value={newEventType.value}
+                  editable={false}
+                  placeholder="auto_generated_value"
+                  placeholderTextColor="#999"
+                />
+              </View>
+
+              {/* Icon Selector */}
+              <View style={styles.customInputGroup}>
+                <Text style={styles.customInputLabel}>Icon</Text>
+                <Text style={styles.customInputHint}>Choose an icon that represents this event type</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.iconSelector}
+                >
+                  {['event', 'work', 'star', 'emoji-events', 'warning', 'description', 'gavel', 'campaign', 'groups', 'handshake', 'ballot', 'account-balance', 'flag', 'verified'].map(iconName => (
+                    <TouchableOpacity
+                      key={iconName}
+                      style={[
+                        styles.iconOption,
+                        newEventType.icon === iconName && styles.iconOptionSelected
+                      ]}
+                      onPress={() => setNewEventType(prev => ({ ...prev, icon: iconName }))}
+                    >
+                      <MaterialIcons
+                        name={iconName as keyof typeof MaterialIcons.glyphMap}
+                        size={24}
+                        color={newEventType.icon === iconName ? '#3B82F6' : '#666'}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Color Selector */}
+              <View style={styles.customInputGroup}>
+                <Text style={styles.customInputLabel}>Color</Text>
+                <Text style={styles.customInputHint}>Select a color for this event type</Text>
+                <View style={styles.colorGrid}>
+                  {[
+                    { name: 'Blue', value: '#3B82F6' },
+                    { name: 'Green', value: '#10B981' },
+                    { name: 'Red', value: '#EF4444' },
+                    { name: 'Orange', value: '#F59E0B' },
+                    { name: 'Purple', value: '#8B5CF6' },
+                    { name: 'Pink', value: '#EC4899' },
+                    { name: 'Indigo', value: '#6366F1' },
+                    { name: 'Teal', value: '#14B8A6' },
+                    { name: 'Gray', value: '#6B7280' },
+                    { name: 'Yellow', value: '#EAB308' },
+                  ].map(color => (
+                    <TouchableOpacity
+                      key={color.value}
+                      style={[
+                        styles.colorOption,
+                        { backgroundColor: color.value },
+                        newEventType.color === color.value && styles.colorOptionSelected
+                      ]}
+                      onPress={() => setNewEventType(prev => ({ ...prev, color: color.value }))}
+                    >
+                      {newEventType.color === color.value && (
+                        <MaterialIcons name="check" size={20} color="#FFFFFF" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.customTypeActions}>
+                <TouchableOpacity
+                  style={styles.cancelTypeButton}
+                  onPress={() => {
+                    setShowAddTypeModal(false);
+                    setNewEventType({ value: '', label: '', icon: 'event', color: '#6B7280' });
+                  }}
+                >
+                  <Text style={styles.cancelTypeText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.addTypeButton,
+                    (!newEventType.label || !newEventType.value) && styles.addTypeButtonDisabled
+                  ]}
+                  onPress={handleAddCustomType}
+                  disabled={!newEventType.label || !newEventType.value}
+                >
+                  <MaterialIcons name="add" size={20} color="#FFFFFF" />
+                  <Text style={styles.addTypeText}>Add Event Type</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1009,5 +1218,228 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 4,
+  },
+  // Custom Type Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  customTypeModal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  customTypeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  customTypeTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+  },
+  modalCloseIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  customTypeContent: {
+    padding: 24,
+  },
+  previewSection: {
+    marginBottom: 32,
+  },
+  previewLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  previewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#e9ecef',
+    borderStyle: 'dashed',
+  },
+  previewIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  previewText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    flex: 1,
+  },
+  customInputGroup: {
+    marginBottom: 28,
+  },
+  customInputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 6,
+  },
+  customInputHint: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 10,
+  },
+  customTextInput: {
+    backgroundColor: '#f8f9fa',
+    borderWidth: 2,
+    borderColor: '#e9ecef',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#1a1a1a',
+  },
+  readOnlyInput: {
+    backgroundColor: '#f0f0f0',
+    color: '#666',
+  },
+  iconSelector: {
+    marginHorizontal: -24,
+    paddingHorizontal: 24,
+    marginTop: 4,
+  },
+  iconOption: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#e9ecef',
+  },
+  iconOptionSelected: {
+    backgroundColor: '#e7f1ff',
+    borderColor: '#3B82F6',
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 4,
+  },
+  colorOption: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  colorOptionSelected: {
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  customTypeActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+    marginBottom: 24,
+  },
+  cancelTypeButton: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelTypeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  addTypeButton: {
+    flex: 2,
+    backgroundColor: '#3B82F6',
+    paddingVertical: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  addTypeButtonDisabled: {
+    backgroundColor: '#cbd5e1',
+  },
+  addTypeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  politicianBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  politicianInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  politicianName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  politicianPosition: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  changePoliticianButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  changePoliticianText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8B5CF6',
   },
 });

@@ -18,6 +18,7 @@ import {
   IntegrityCheckResult,
   IntegrityCheck
 } from '../../utils/validation';
+import adminAPI from '../../services/AdminAPIService';
 
 interface DataIntegrityScreenProps {
   navigation: any;
@@ -54,35 +55,24 @@ export const DataIntegrityScreen: React.FC<DataIntegrityScreenProps> = ({ naviga
     try {
       setIsLoading(true);
 
-      // In a real app, this would fetch from API
-      const mockData = {
-        politicians: [
-          { id: 1, name: 'William Ruto', slug: 'william-ruto', title: 'President of Kenya', party: 'UDA', constituency: 'Uasin Gishu' },
-          { id: 2, name: 'Raila Odinga', slug: 'raila-odinga', title: 'Opposition Leader', party: 'ODM', constituency: 'Nairobi' },
-          { id: 3, name: 'Martha Karua', slug: 'martha-karua', title: 'NARC-Kenya Leader', party: 'NARC-Kenya', constituency: 'Kirinyaga' },
-          // Duplicate for testing
-          { id: 4, name: 'william ruto', slug: 'william-ruto-2', title: 'Test Duplicate', party: 'Test', constituency: 'Test' }
-        ],
-        timelineEvents: [
-          { id: 1, title: 'Elected President', date: '2022-08-15', type: 'position', politician_id: 1 },
-          { id: 2, title: 'Future Event Test', date: '2025-12-31', type: 'event', politician_id: 1 }, // Future date for testing
-          { id: 3, title: 'Very Old Event', date: '1950-01-01', type: 'event', politician_id: 2 } // Old date for testing
-        ],
-        commitments: [
-          { id: 1, title: 'Create 2 million jobs', date_made: '2022-08-15', deadline: '2027-08-15', status: 'early_progress' },
-          { id: 2, title: 'Build affordable houses', date_made: '2022-08-15', deadline: '2021-08-15', status: 'no_evidence' } // Invalid deadline
-        ],
-        documents: [
-          { id: 1, title: 'State of Nation Address', type: 'speech', date_published: '2024-03-15', source_url: 'https://valid-url.com' },
-          { id: 2, title: 'Policy Document', type: 'policy', date_published: '2024-02-15', source_url: 'invalid-url' } // Invalid URL
-        ],
-        votingRecords: [
-          { id: 1, bill_title: 'Climate Bill', bill_number: 'H.R. 2024-15', vote_date: '2024-01-15', vote_value: 'for' },
-          { id: 2, bill_title: 'Budget Bill', bill_number: 'Invalid Format', vote_date: '2024-01-20', vote_value: 'against' } // Invalid bill number
-        ]
+      // Fetch real data from API
+      const [politiciansRes, timelineRes, commitmentsRes, documentsRes, votingRes] = await Promise.all([
+        adminAPI.searchPoliticians('', { include_drafts: true }),
+        adminAPI.getTimelineEvents(),
+        adminAPI.getCommitments({}),
+        adminAPI.getDocuments({}),
+        adminAPI.getVotingRecords({})
+      ]);
+
+      const realData = {
+        politicians: politiciansRes.success ? politiciansRes.data : [],
+        timelineEvents: timelineRes.success ? timelineRes.data : [],
+        commitments: commitmentsRes.success ? commitmentsRes.data : [],
+        documents: documentsRes.success ? documentsRes.data : [],
+        votingRecords: votingRes.success ? votingRes.data : []
       };
 
-      const result = runIntegrityChecks(mockData);
+      const result = runIntegrityChecks(realData);
       setIntegrityResult(result);
 
     } catch (error) {
@@ -95,14 +85,22 @@ export const DataIntegrityScreen: React.FC<DataIntegrityScreenProps> = ({ naviga
   };
 
   const loadDataStats = async () => {
-    // Mock data stats - in real app, fetch from API
-    setDataStats({
-      politicians: 24,
-      timelineEvents: 145,
-      commitments: 89,
-      documents: 67,
-      votingRecords: 267
-    });
+    try {
+      // Fetch real data counts from API
+      const statsResponse = await adminAPI.getStatistics();
+
+      if (statsResponse.success && statsResponse.data) {
+        setDataStats({
+          politicians: statsResponse.data.totalPoliticians || 0,
+          timelineEvents: statsResponse.data.totalTimelineEvents || 0,
+          commitments: statsResponse.data.totalCommitments || 0,
+          documents: statsResponse.data.totalDocuments || 0,
+          votingRecords: statsResponse.data.totalVotingRecords || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error loading data stats:', error);
+    }
   };
 
   const handleRefresh = () => {

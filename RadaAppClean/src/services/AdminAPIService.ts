@@ -64,7 +64,7 @@ class AdminAPIService {
       }
 
       const data = await response.json();
-      return { success: true, data };
+      return data; // Backend already returns { success, data } format
     } catch (error: any) {
       console.error(`Admin API Error (${endpoint}):`, error);
       return {
@@ -126,6 +126,12 @@ class AdminAPIService {
 
   async publishPolitician(id: number): Promise<APIResponse<any>> {
     return this.makeRequest(`/politicians/${id}/publish`, {
+      method: 'POST',
+    });
+  }
+
+  async unpublishPolitician(id: number): Promise<APIResponse<any>> {
+    return this.makeRequest(`/politicians/${id}/unpublish`, {
       method: 'POST',
     });
   }
@@ -207,7 +213,11 @@ class AdminAPIService {
   }): Promise<APIResponse<any>> {
     return this.makeRequest(`/commitments/${id}/progress`, {
       method: 'PATCH',
-      body: progress,
+      body: {
+        status: progress.status,
+        progress_percentage: progress.percentage,
+        evidence: progress.evidence_links?.join(', ') || progress.notes || ''
+      },
     });
   }
 
@@ -267,6 +277,19 @@ class AdminAPIService {
     });
   }
 
+  async getCustomCategories(): Promise<APIResponse<any>> {
+    return this.makeRequest('/custom-categories');
+  }
+
+  async createCustomCategory(data: { name: string; color: string }): Promise<APIResponse<any>> {
+    return this.makeRequest('/custom-categories', {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  // Document APIs - consolidated version removed, kept the comprehensive one below
+
   async getVotingRecords(filters?: {
     politicianId?: number;
     billNumber?: string;
@@ -306,17 +329,21 @@ class AdminAPIService {
       }
 
       const data = await response.json();
-      return { success: true, data };
+      return data; // Backend already returns { success, data } format
     } catch (error: any) {
       return { success: false, error: error.message };
     }
   }
 
-  async createDocument(documentData: any): Promise<APIResponse<any>> {
+  async createDocument(data: any): Promise<APIResponse<any>> {
     return this.makeRequest('/documents', {
       method: 'POST',
-      body: documentData,
+      body: data,
     });
+  }
+
+  async getDocument(id: number): Promise<APIResponse<any>> {
+    return this.makeRequest(`/documents/${id}`);
   }
 
   async updateDocument(id: number, updates: any): Promise<APIResponse<any>> {
@@ -351,6 +378,19 @@ class AdminAPIService {
       });
     }
     return this.makeRequest(`/documents?${params}`);
+  }
+
+  // Statistics APIs
+  async getStatistics(): Promise<APIResponse<{
+    totalPoliticians: number;
+    pendingReviews: number;
+    draftEntries: number;
+    publishedPoliticians: number;
+    totalTimelineEvents: number;
+    totalCommitments: number;
+    totalVotingRecords: number;
+  }>> {
+    return this.makeRequest('/statistics');
   }
 
   // Analytics APIs
@@ -545,11 +585,179 @@ class AdminAPIService {
     return { success: true, data: results as T };
   }
 
+  // ========== NEWS MANAGEMENT APIs ==========
+
+  // Get all news with optional filters
+  async getNews(filters?: {
+    category?: string;
+    isExternal?: boolean | 'all';
+    search?: string;
+  }): Promise<APIResponse<any[]>> {
+    const params = new URLSearchParams();
+
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.isExternal !== undefined && filters.isExternal !== 'all') {
+      params.append('isExternal', filters.isExternal.toString());
+    }
+    if (filters?.search) params.append('search', filters.search);
+
+    const queryString = params.toString();
+    return this.makeRequest(`/news${queryString ? `?${queryString}` : ''}`);
+  }
+
+  // Get single news by ID
+  async getNewsById(id: number): Promise<APIResponse<any>> {
+    return this.makeRequest(`/news/${id}`);
+  }
+
+  // Create new news article
+  async createNews(newsData: {
+    title: string;
+    description: string;
+    source: string;
+    url?: string;
+    published_date: string;
+    image_url?: string;
+    category?: string;
+    is_external?: boolean;
+  }): Promise<APIResponse<any>> {
+    return this.makeRequest('/news', {
+      method: 'POST',
+      body: newsData,
+    });
+  }
+
+  // Update news article
+  async updateNews(id: number, newsData: {
+    title?: string;
+    description?: string;
+    source?: string;
+    url?: string;
+    published_date?: string;
+    image_url?: string;
+    category?: string;
+    is_external?: boolean;
+  }): Promise<APIResponse<any>> {
+    return this.makeRequest(`/news/${id}`, {
+      method: 'PUT',
+      body: newsData,
+    });
+  }
+
+  // Delete news article
+  async deleteNews(id: number): Promise<APIResponse<void>> {
+    return this.makeRequest(`/news/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Get politicians linked to a news article
+  async getNewsPoliticians(newsId: number): Promise<APIResponse<any[]>> {
+    return this.makeRequest(`/news/${newsId}/politicians`);
+  }
+
+  // Link news to politician
+  async linkNewsToPolitician(newsId: number, politicianId: number): Promise<APIResponse<void>> {
+    return this.makeRequest(`/news/${newsId}/link/${politicianId}`, {
+      method: 'POST',
+    });
+  }
+
+  // Unlink news from politician
+  async unlinkNewsFromPolitician(newsId: number, politicianId: number): Promise<APIResponse<void>> {
+    return this.makeRequest(`/news/${newsId}/unlink/${politicianId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Connection testing
   async testConnection(): Promise<APIResponse<{ status: string; timestamp: string }>> {
     return this.makeRequest('/health');
   }
+
+  // ========== AUDIT LOG ==========
+
+  // Get recent admin activity
+  async getRecentActivity(limit: number = 20): Promise<APIResponse<any[]>> {
+    return this.makeRequest(`/audit-log/recent?limit=${limit}`);
+  }
+
+  // Get audit log statistics
+  async getAuditStats(): Promise<APIResponse<any>> {
+    return this.makeRequest('/audit-log/stats');
+  }
+
+  // ========== ANALYTICS ==========
+
+  // Get analytics data
+  async getAnalytics(period: string = '30d'): Promise<APIResponse<any>> {
+    return this.makeRequest(`/analytics?period=${period}`);
+  }
+
+  // ========== GENERIC HTTP METHODS ==========
+
+  // Generic GET request
+  async get<T = any>(endpoint: string): Promise<APIResponse<T>> {
+    return this.makeRequest<T>(endpoint, { method: 'GET' });
+  }
+
+  // Generic POST request
+  async post<T = any>(endpoint: string, data?: any): Promise<APIResponse<T>> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  // Generic PUT request
+  async put<T = any>(endpoint: string, data?: any): Promise<APIResponse<T>> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'PUT',
+      body: data,
+    });
+  }
+
+  // Generic PATCH request
+  async patch<T = any>(endpoint: string, data?: any): Promise<APIResponse<T>> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'PATCH',
+      body: data,
+    });
+  }
+
+  // Generic DELETE request
+  async delete<T = any>(endpoint: string): Promise<APIResponse<T>> {
+    return this.makeRequest<T>(endpoint, { method: 'DELETE' });
+  }
+
+  // ========== LEARNING ADMIN METHODS ==========
+
+  // Get all learning modules
+  async getLearningModules(): Promise<any> {
+    const response = await this.get('/learning/modules');
+    return response;
+  }
+
+  // Create learning module
+  async createLearningModule(data: any): Promise<any> {
+    return this.post('/learning/modules', data);
+  }
+
+  // Update learning module
+  async updateLearningModule(id: number, data: any): Promise<any> {
+    return this.put(`/learning/modules/${id}`, data);
+  }
+
+  // Delete learning module
+  async deleteLearningModule(id: number): Promise<any> {
+    return this.delete(`/learning/modules/${id}`);
+  }
 }
 
-export const adminAPI = new AdminAPIService();
-export default adminAPI;
+// Create singleton instance
+const adminAPIInstance = new AdminAPIService();
+
+// Export both the class and the instance
+export { AdminAPIService };
+export const adminAPI = adminAPIInstance;
+export default adminAPIInstance;

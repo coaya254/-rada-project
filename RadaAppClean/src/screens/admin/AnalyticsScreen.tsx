@@ -111,22 +111,16 @@ export const AnalyticsScreen: React.FC = () => {
   const loadAnalytics = useCallback(async () => {
     setLoading(true);
     try {
-      // Simulate API call with different data based on period
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const adminAPI = (await import('../../services/AdminAPIService')).default;
+      const response = await adminAPI.getAnalytics(selectedPeriod);
 
-      // In real implementation, this would be an API call
-      const periodMultiplier = selectedPeriod === '7d' ? 0.25 : selectedPeriod === '30d' ? 1 : 3;
-
-      setAnalytics(prev => ({
-        ...prev,
-        engagement: {
-          ...prev.engagement,
-          dailyActiveUsers: Math.floor(prev.engagement.dailyActiveUsers * periodMultiplier),
-          weeklyActiveUsers: Math.floor(prev.engagement.weeklyActiveUsers * periodMultiplier),
-          monthlyActiveUsers: Math.floor(prev.engagement.monthlyActiveUsers * periodMultiplier),
-        },
-      }));
+      if (response.success && response.data) {
+        setAnalytics(response.data);
+      } else {
+        Alert.alert('Error', response.error || 'Failed to load analytics data');
+      }
     } catch (error) {
+      console.error('Error loading analytics:', error);
       Alert.alert('Error', 'Failed to load analytics data');
     } finally {
       setLoading(false);

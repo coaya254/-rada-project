@@ -5,6 +5,7 @@ import { ProfileHome } from '../screens/profile/ProfileHome';
 import { SettingsScreen } from '../screens/profile/SettingsScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
 import { AchievementsScreen } from '../screens/profile/AchievementsScreen';
+import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 
 export type ProfileStackParamList = {
   ProfileHome: undefined;
@@ -12,12 +13,14 @@ export type ProfileStackParamList = {
   EditProfile: {
     currentProfile: {
       name: string;
-      email: string;
       bio: string;
-      location: string;
     };
   };
   Achievements: undefined;
+  UserProfile: {
+    userId: string;
+    userName?: string;
+  };
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -49,6 +52,13 @@ export const ProfileStackNavigator: React.FC = () => {
       <Stack.Screen
         name="Achievements"
         component={AchievementsScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="UserProfile"
+        component={UserProfileScreen}
         options={{
           animation: 'slide_from_right',
         }}

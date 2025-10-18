@@ -18,6 +18,10 @@ import { AdminLoginScreen } from '../screens/admin/AdminLoginScreen';
 import { DataIntegrityScreen } from '../screens/admin/DataIntegrityScreen';
 import { AnalyticsScreen } from '../screens/admin/AnalyticsScreen';
 import { ReportsScreen } from '../screens/admin/ReportsScreen';
+import { CommitmentTrackingScreen } from '../screens/admin/CommitmentTrackingScreen';
+import { NewsManagementScreen } from '../screens/admin/NewsManagementScreen';
+import { CareerManagementScreen } from '../screens/admin/CareerManagementScreen';
+import { PoliticianSelectorScreen } from '../screens/admin/PoliticianSelectorScreen';
 
 export type PoliticsStackParamList = {
   PoliticsHome: undefined;
@@ -46,13 +50,20 @@ export type PoliticsStackParamList = {
   ManagePoliticians: undefined;
   TimelineEvents: { politicianId?: number };
   CommitmentTracking: { politicianId?: number };
-  VotingRecordsAdmin: undefined;
-  DocumentManagement: undefined;
+  VotingRecordsAdmin: { politicianId?: number };
+  DocumentManagement: { politicianId?: number };
   AdminLogin: undefined;
   EditPolitician: { politicianId: number };
   DataIntegrity: undefined;
   Analytics: undefined;
   Reports: undefined;
+  NewsManagement: undefined;
+  CareerManagement: { politicianId?: number };
+  PoliticianSelector: {
+    targetScreen: string;
+    title: string;
+    allowViewAll?: boolean;
+  };
 };
 
 const Stack = createNativeStackNavigator<PoliticsStackParamList>();
@@ -131,6 +142,13 @@ export const PoliticsStackNavigator: React.FC = () => {
         }}
       />
       <Stack.Screen
+        name="CommitmentTracking"
+        component={CommitmentTrackingScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
         name="VotingRecordsAdmin"
         component={AdminVotingRecordsScreen}
         options={{
@@ -175,6 +193,27 @@ export const PoliticsStackNavigator: React.FC = () => {
       <Stack.Screen
         name="Reports"
         component={ReportsScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="NewsManagement"
+        component={NewsManagementScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="CareerManagement"
+        component={CareerManagementScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="PoliticianSelector"
+        component={PoliticianSelectorScreen}
         options={{
           animation: 'slide_from_right',
         }}

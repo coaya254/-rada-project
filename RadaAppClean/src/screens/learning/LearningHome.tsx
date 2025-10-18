@@ -8,6 +8,7 @@ import {
   StatusBar,
   FlatList,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { LearningStackParamList } from '../../navigation/LearningStackNavigator';
 import { LoadingSpinner, ErrorDisplay, LoadingCard, ErrorCard } from '../../components/ui';
+import LearningAPIService from '../../services/LearningAPIService';
 
 interface Module {
   id: number;
@@ -64,111 +66,170 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
     totalModules: 24,
   });
 
-  const [featuredModules, setFeaturedModules] = useState<Module[]>([
-    {
-      id: 1,
-      title: 'Constitutional Basics',
-      description: 'Learn fundamental rights and government structure',
-      icon: 'gavel',
-      progress: 75,
-      totalLessons: 8,
-      completedLessons: 6,
-      xpReward: 200,
-      difficulty: 'Beginner',
-      category: 'Government',
-    },
-    {
-      id: 2,
-      title: 'Electoral Process',
-      description: 'Understanding elections and voting systems',
-      icon: 'how-to-vote',
-      progress: 30,
-      totalLessons: 12,
-      completedLessons: 4,
-      xpReward: 300,
-      difficulty: 'Intermediate',
-      category: 'Elections',
-    },
-    {
-      id: 3,
-      title: 'Civil Rights History',
-      description: 'Key movements and landmark cases',
-      icon: 'people',
-      progress: 0,
-      totalLessons: 10,
-      completedLessons: 0,
-      xpReward: 250,
-      difficulty: 'Advanced',
-      category: 'Rights',
-    },
-  ]);
+  const [featuredModules, setFeaturedModules] = useState<Module[]>([]);
+  const [completedModules, setCompletedModules] = useState<Module[]>([]);
 
-  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([
-    {
-      id: 1,
-      title: 'Democracy Week Challenge',
-      description: 'Complete 5 lessons about democratic processes',
-      xpReward: 500,
-      participants: 1247,
-      timeLeft: '3 days',
-      category: 'Democracy',
-    },
-    {
-      id: 2,
-      title: 'Constitution Quiz Master',
-      description: 'Score 90%+ on 3 constitutional quizzes',
-      xpReward: 300,
-      participants: 892,
-      timeLeft: '1 week',
-      category: 'Constitution',
-    },
-  ]);
+  const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([]);
 
-  const [recentAchievements, setRecentAchievements] = useState<Achievement[]>([
-    {
-      id: 1,
-      title: 'Knowledge Seeker',
-      description: 'Completed first 10 lessons',
-      icon: 'school',
-      earned: true,
-      rarity: 'Common',
-    },
-    {
-      id: 2,
-      title: 'Quiz Champion',
-      description: 'Score perfect on 5 quizzes',
-      icon: 'stars',
-      earned: false,
-      rarity: 'Rare',
-    },
-  ]);
+  const [recentAchievements, setRecentAchievements] = useState<Achievement[]>([]);
 
   useEffect(() => {
-    // Simulate initial data loading
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1200));
-
-        setLoading(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load learning data');
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
+
+  const calculateTimeLeft = (endDate: string | null) => {
+    if (!endDate) return 'No deadline';
+
+    const end = new Date(endDate);
+    const now = new Date();
+    const diff = end.getTime() - now.getTime();
+
+    if (diff < 0) return 'Ended';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} left`;
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    return `${hours} hour${hours > 1 ? 's' : ''} left`;
+  };
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch user progress
+      try {
+        const progressResponse = await LearningAPIService.getUserProgress();
+        if (progressResponse.success && progressResponse.progress) {
+          setUserProgress({
+            totalXP: progressResponse.progress.totalXP || 0,
+            level: progressResponse.progress.level || 1,
+            streak: progressResponse.progress.streak || 0,
+            completedModules: progressResponse.progress.completedModules || 0,
+            totalModules: progressResponse.progress.totalModules || 0,
+          });
+        }
+      } catch (err) {
+        console.log('Could not load user progress:', err);
+        // Keep hardcoded fallback values if API fails
+      }
+
+      // Fetch modules with user progress - use user-facing API
+      const modulesResponse = await LearningAPIService.getModules();
+
+      if (modulesResponse.data || modulesResponse.modules) {
+        // API returns data in either "data" or "modules" field
+        const modules = modulesResponse.data || modulesResponse.modules;
+
+        // Transform API data to match frontend interface
+        const transformedModules = modules
+          .filter((m: any) => {
+            const hasProgress = (m.progress_percentage || 0) > 0;
+            const isPublished = m.is_published === 1 || m.is_published === true;
+            return hasProgress && isPublished;
+          })
+          .slice(0, 4) // Show 4 most recent in-progress modules
+          .map((m: any) => ({
+            id: m.id,
+            title: m.title,
+            description: m.description,
+            icon: m.icon || 'school',
+            progress: m.progress_percentage || 0,
+            totalLessons: m.total_lessons || 0,
+            completedLessons: Math.round((m.total_lessons || 0) * ((m.progress_percentage || 0) / 100)),
+            xpReward: m.xp_reward || 0,
+            difficulty: m.difficulty?.charAt(0).toUpperCase() + m.difficulty?.slice(1) || 'Beginner',
+            category: m.category || 'General',
+          }));
+
+        setFeaturedModules(transformedModules);
+
+        // Also fetch completed modules (100% progress)
+        const completedTransformed = modules
+          .filter((m: any) => {
+            const isCompleted = (m.progress_percentage || 0) === 100;
+            const isPublished = m.is_published === 1 || m.is_published === true;
+            return isCompleted && isPublished;
+          })
+          .slice(0, 4) // Show 4 most recent completed modules
+          .map((m: any) => ({
+            id: m.id,
+            title: m.title,
+            description: m.description,
+            icon: m.icon || 'school',
+            progress: 100,
+            totalLessons: m.total_lessons || 0,
+            completedLessons: m.total_lessons || 0,
+            xpReward: m.xp_reward || 0,
+            difficulty: m.difficulty?.charAt(0).toUpperCase() + m.difficulty?.slice(1) || 'Beginner',
+            category: m.category || 'General',
+          }));
+
+        setCompletedModules(completedTransformed);
+      }
+
+      // Fetch active challenges
+      try {
+        const challengesResponse = await fetch('http://localhost:3000/api/admin/learning/challenges?active=true');
+        const challengesData = await challengesResponse.json();
+
+        if (challengesData.success && challengesData.challenges) {
+          const transformedChallenges = challengesData.challenges
+            .filter((c: any) => c.task_count > 0) // Only show challenges with tasks
+            .slice(0, 3) // Show top 3 challenges
+            .map((c: any) => {
+              const timeLeft = calculateTimeLeft(c.end_date);
+              console.log('Challenge:', c.title, 'End Date:', c.end_date, 'Time Left:', timeLeft);
+              return {
+                id: c.id,
+                title: c.title,
+                description: c.description,
+                xpReward: c.xp_reward || 0,
+                participants: c.enrollment_count || 0,
+                timeLeft: timeLeft,
+                category: c.category || 'General',
+              };
+            });
+          setActiveChallenges(transformedChallenges);
+        }
+      } catch (err) {
+        console.log('Could not load challenges:', err);
+      }
+
+      // Fetch achievements
+      try {
+        const achievementsResponse = await LearningAPIService.getAchievements();
+
+        if (achievementsResponse.success && achievementsResponse.achievements) {
+          const transformedAchievements = achievementsResponse.achievements
+            .slice(0, 4) // Show top 4 achievements
+            .map((a: any) => ({
+              id: a.id,
+              title: a.title,
+              description: a.description,
+              icon: a.icon || 'emoji-events',
+              earned: false, // TODO: Get from user data
+              rarity: a.rarity || 'Common',
+            }));
+          setRecentAchievements(transformedAchievements);
+        }
+      } catch (err) {
+        console.log('Could not load achievements:', err);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load learning data');
+      setLoading(false);
+    }
+  };
 
   const onRefresh = async () => {
     try {
       setRefreshing(true);
       setError(null);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-
+      await loadData();
       setRefreshing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refresh data');
@@ -177,11 +238,7 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
   };
 
   const handleRetry = () => {
-    setError(null);
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    loadData();
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -193,23 +250,30 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
     }
   };
 
-  const renderModuleCard = ({ item }: { item: Module }) => (
-    <TouchableOpacity
-      style={styles.moduleCard}
-      onPress={() => navigation.navigate('ModuleDetail', { module: item })}
-    >
-      <View style={styles.moduleHeader}>
-        <View style={[styles.moduleIcon, { backgroundColor: getDifficultyColor(item.difficulty) + '20' }]}>
-          <MaterialIcons name={item.icon as any} size={24} color={getDifficultyColor(item.difficulty)} />
+  const renderModuleCard = ({ item }: { item: Module }) => {
+    const isImageUrl = item.icon.startsWith('http://') || item.icon.startsWith('https://');
+
+    return (
+      <TouchableOpacity
+        style={styles.moduleCard}
+        onPress={() => navigation.navigate('ModuleDetail', { module: item })}
+      >
+        <View style={styles.moduleHeader}>
+          <View style={[styles.moduleIcon, { backgroundColor: getDifficultyColor(item.difficulty) + '20' }]}>
+            {isImageUrl ? (
+              <Image source={{ uri: item.icon }} style={styles.moduleIconImage} />
+            ) : (
+              <Text style={styles.moduleIconEmoji}>{item.icon}</Text>
+            )}
+          </View>
+          <View style={styles.moduleInfo}>
+            <Text style={styles.moduleTitle}>{item.title}</Text>
+            <Text style={styles.moduleDescription}>{item.description}</Text>
+            <Text style={styles.moduleStats}>
+              {item.completedLessons}/{item.totalLessons} lessons • {item.xpReward} XP
+            </Text>
+          </View>
         </View>
-        <View style={styles.moduleInfo}>
-          <Text style={styles.moduleTitle}>{item.title}</Text>
-          <Text style={styles.moduleDescription}>{item.description}</Text>
-          <Text style={styles.moduleStats}>
-            {item.completedLessons}/{item.totalLessons} lessons • {item.xpReward} XP
-          </Text>
-        </View>
-      </View>
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${item.progress}%` }]} />
@@ -225,10 +289,14 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
         <Text style={styles.categoryText}>{item.category}</Text>
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   const renderChallengeCard = ({ item }: { item: Challenge }) => (
-    <View style={styles.challengeCard}>
+    <TouchableOpacity
+      style={styles.challengeCard}
+      onPress={() => navigation.navigate('ChallengeDetail', { challenge: item })}
+    >
       <View style={styles.challengeHeader}>
         <MaterialIcons name="emoji-events" size={24} color="#F59E0B" />
         <View style={styles.challengeInfo}>
@@ -239,9 +307,8 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
       </View>
       <View style={styles.challengeFooter}>
         <Text style={styles.challengeReward}>🏆 {item.xpReward} XP</Text>
-        <Text style={styles.challengeParticipants}>👥 {item.participants} joined</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderAchievementCard = ({ item }: { item: Achievement }) => (
@@ -273,14 +340,28 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
             <Text style={styles.headerTitle}>Learning Hub</Text>
             <Text style={styles.headerSubtitle}>Master civic engagement & democracy</Text>
           </View>
-          <TouchableOpacity style={styles.searchButton}>
-            <MaterialIcons name="notifications" size={24} color="#333" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.adminButton}
+              onPress={() => navigation.navigate('LearningAdminDashboard')}
+            >
+              <MaterialIcons name="admin-panel-settings" size={24} color="#EF4444" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => navigation.navigate('ProgressDashboard')}
+            >
+              <MaterialIcons name="insights" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Progress Overview Card */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.progressCard}>
+          <TouchableOpacity
+            style={styles.progressCard}
+            onPress={() => navigation.navigate('ProgressDashboard')}
+          >
             <LinearGradient
               colors={['#10B981', '#059669']}
               style={styles.progressGradient}
@@ -325,49 +406,68 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => navigation.navigate('Quiz', { quizId: 1, title: 'Quick Quiz' })}
+              onPress={() => navigation.navigate('LearningPath')}
             >
-              <MaterialIcons name="quiz" size={32} color="#3B82F6" />
-              <Text style={styles.actionTitle}>Take Quiz</Text>
-              <Text style={styles.actionSubtitle}>Test knowledge</Text>
+              <MaterialIcons name="route" size={32} color="#3B82F6" />
+              <Text style={styles.actionTitle}>Learning Paths</Text>
+              <Text style={styles.actionSubtitle}>Guided courses</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => navigation.navigate('ModuleDetail', { module: featuredModules[0] })}
+              onPress={() => navigation.navigate('Leaderboard')}
             >
-              <MaterialIcons name="school" size={32} color="#10B981" />
-              <Text style={styles.actionTitle}>Continue</Text>
-              <Text style={styles.actionSubtitle}>Last lesson</Text>
+              <MaterialIcons name="leaderboard" size={32} color="#10B981" />
+              <Text style={styles.actionTitle}>Leaderboard</Text>
+              <Text style={styles.actionSubtitle}>View rankings</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => navigation.navigate('StudyGroups')}
+              onPress={() => navigation.navigate('BrowseModules')}
             >
-              <MaterialIcons name="people" size={32} color="#8B5CF6" />
-              <Text style={styles.actionTitle}>Study Groups</Text>
-              <Text style={styles.actionSubtitle}>Join others</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionCard}>
-              <MaterialIcons name="emoji-events" size={32} color="#F59E0B" />
-              <Text style={styles.actionTitle}>Challenges</Text>
-              <Text style={styles.actionSubtitle}>Earn rewards</Text>
+              <MaterialIcons name="explore" size={32} color="#8B5CF6" />
+              <Text style={styles.actionTitle}>Browse Modules</Text>
+              <Text style={styles.actionSubtitle}>Explore content</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Featured Modules */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Continue Learning</Text>
-          <FlatList
-            data={featuredModules}
-            renderItem={renderModuleCard}
-            keyExtractor={(item) => item.id.toString()}
-            scrollEnabled={false}
-          />
-        </View>
+        {/* Continue Learning (In-Progress Modules) */}
+        {featuredModules.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Continue Learning</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('BrowseModules')}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={featuredModules}
+              renderItem={renderModuleCard}
+              keyExtractor={(item) => item.id.toString()}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
+
+        {/* Completed Modules */}
+        {completedModules.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Completed Modules</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('BrowseModules')}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={completedModules}
+              renderItem={renderModuleCard}
+              keyExtractor={(item) => item.id.toString()}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
 
         {/* Active Challenges */}
         <View style={styles.section}>
@@ -382,7 +482,12 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
 
         {/* Recent Achievements */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Achievements</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Achievements</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Achievements')}>
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
           <FlatList
             data={recentAchievements}
             renderItem={renderAchievementCard}
@@ -418,13 +523,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  searchButton: {
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  adminButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  headerButton: {
     width: 44,
     height: 44,
     borderRadius: 12,
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3B82F6',
   },
   section: {
     paddingHorizontal: 24,
@@ -557,6 +686,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+  },
+  moduleIconImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+  },
+  moduleIconEmoji: {
+    fontSize: 24,
   },
   moduleInfo: {
     flex: 1,

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { LearningStackParamList } from '../../navigation/LearningStackNavigator';
+import LearningAPIService from '../../services/LearningAPIService';
 
 const { width } = Dimensions.get('window');
 
@@ -32,168 +33,197 @@ interface LessonSection {
   completed: boolean;
 }
 
-interface QuizQuestion {
-  id: number;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
-}
-
 export const LessonScreen: React.FC<LessonScreenProps> = ({ navigation, route }) => {
-  const { lesson } = route.params;
+  // Safely extract params with defaults
+  const lesson = route.params?.lesson;
+  const lessonQuiz = route.params?.lessonQuiz;
+
+  // DEBUG: Log what we received
+  console.log('=== LessonScreen Mounted ===');
+  console.log('Lesson ID:', lesson?.id);
+  console.log('Lesson Title:', lesson?.title);
+  console.log('lessonQuiz received:', lessonQuiz);
+  console.log('lessonQuiz.id:', lessonQuiz?.id);
+
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const [lessonData, setLessonData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [currentSection, setCurrentSection] = useState(0);
   const [completedSections, setCompletedSections] = useState<number[]>([]);
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [quizCompleted, setQuizCompleted] = useState(false);
-  const [bookmarked, setBookmarked] = useState(false);
 
-  const lessonSections: LessonSection[] = [
+  // Early return if no lesson data
+  if (!lesson) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No lesson data available</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  useEffect(() => {
+    // For now, use the lesson content from params
+    // In a real scenario, you'd fetch full lesson details from API
+    setLessonData({
+      title: lesson.title,
+      content: lesson.content || 'Lesson content will be displayed here.',
+      duration: 15,
+      xp: 25,
+    });
+    setLoading(false);
+  }, [lesson.id]);
+
+  // Create a simple section from the lesson content
+  const lessonSections: LessonSection[] = lessonData ? [
     {
       id: 1,
       type: 'text',
-      title: 'Introduction to the Constitution',
-      content: `The Constitution of Kenya is the supreme law of our country. It was promulgated on August 27, 2010, replacing the old constitution from 1963.
-
-The Constitution establishes the framework for governance and defines the fundamental rights and freedoms of all Kenyan citizens. It creates three arms of government:
-
-• **Executive**: Led by the President, implements and enforces laws
-• **Legislature**: Parliament makes laws for the country
-• **Judiciary**: Courts interpret laws and settle disputes
-
-The Constitution also establishes devolved government through 47 counties, bringing government closer to the people and ensuring local participation in governance.`,
-      duration: 5,
+      title: lessonData.title,
+      content: lessonData.content,
+      duration: lessonData.duration,
       completed: false,
     },
-    {
-      id: 2,
-      type: 'interactive',
-      title: 'Key Constitutional Principles',
-      content: `The Constitution is built on several key principles that guide how our country is governed:
+  ] : [];
 
-**1. Rule of Law**
-All people, including leaders, are subject to the law. No one is above the law.
-
-**2. Separation of Powers**
-The three arms of government have distinct roles and check each other's power.
-
-**3. Public Participation**
-Citizens have the right to participate in governance and decision-making.
-
-**4. Transparency and Accountability**
-Government must be open about its actions and answer to the people.
-
-**5. Protection of Human Rights**
-The Constitution guarantees fundamental rights and freedoms for all.`,
-      duration: 7,
-      completed: false,
-    },
-    {
-      id: 3,
-      type: 'video',
-      title: 'How Laws Are Made',
-      content: `Understanding the legislative process in Kenya:
-
-The process of making laws in Kenya involves several steps:
-
-1. **Bill Introduction**: A bill can be introduced by Members of Parliament or the Executive
-2. **First Reading**: The bill is formally presented to Parliament
-3. **Second Reading**: Members debate the general principles of the bill
-4. **Committee Stage**: The bill is examined in detail by a parliamentary committee
-5. **Third Reading**: Final vote on the bill
-6. **Presidential Assent**: The President signs the bill into law
-
-This process ensures thorough consideration and public input before laws are enacted.`,
-      duration: 8,
-      completed: false,
-    },
-  ];
-
-  const quizQuestions: QuizQuestion[] = [
-    {
-      id: 1,
-      question: 'When was the current Constitution of Kenya promulgated?',
-      options: ['August 27, 2008', 'August 27, 2010', 'December 12, 2010', 'June 1, 2010'],
-      correctAnswer: 1,
-      explanation: 'The Constitution of Kenya was promulgated on August 27, 2010, after a successful referendum.',
-    },
-    {
-      id: 2,
-      question: 'How many counties does Kenya have under the current Constitution?',
-      options: ['45', '46', '47', '48'],
-      correctAnswer: 2,
-      explanation: 'Kenya has 47 counties as established by the Constitution for devolved governance.',
-    },
-    {
-      id: 3,
-      question: 'Which principle ensures that no one, including leaders, is above the law?',
-      options: ['Separation of Powers', 'Rule of Law', 'Public Participation', 'Transparency'],
-      correctAnswer: 1,
-      explanation: 'The Rule of Law principle ensures that all people, including government officials, are subject to the law.',
-    },
-  ];
+  if (loading || !lessonData) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Loading lesson...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const currentLessonSection = lessonSections[currentSection];
 
-  const handleSectionComplete = () => {
+  const handleSectionComplete = async () => {
+    console.log('=== handleSectionComplete called ===');
+    console.log('Current section:', currentSection);
+    console.log('Lesson sections length:', lessonSections.length);
+    console.log('Lesson ID:', lesson.id);
+    console.log('Is last lesson?', lesson.isLastLesson);
+    console.log('Next lesson ID:', lesson.nextLessonId);
+
     if (!completedSections.includes(currentSection)) {
       setCompletedSections([...completedSections, currentSection]);
     }
 
     if (currentSection < lessonSections.length - 1) {
+      console.log('Not last section, moving to next section');
       setCurrentSection(currentSection + 1);
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     } else {
-      setShowQuiz(true);
+      console.log('Last section! Completing lesson...');
+      // Last section complete - call backend to complete lesson
+      try {
+        const response = await LearningAPIService.completeLesson(lesson.id);
+        console.log('Lesson completed response:', response);
+
+        // Check if this is the last lesson in the module
+        const isLastLesson = lesson.isLastLesson || false;
+        console.log('isLastLesson:', isLastLesson);
+
+        if (isLastLesson) {
+          console.log('Last lesson complete - fetching module quiz...');
+          // Last lesson in module - fetch quiz and navigate directly to it
+          try {
+            const moduleResponse = await LearningAPIService.getModuleById(lesson.moduleId);
+            console.log('Module response for quiz:', moduleResponse);
+
+            if (moduleResponse.success && moduleResponse.module && moduleResponse.module.moduleQuiz) {
+              const moduleQuiz = moduleResponse.module.moduleQuiz;
+              console.log('Found module quiz:', moduleQuiz.id, moduleQuiz.title);
+              console.log('Navigating directly to quiz...');
+
+              // Navigate directly to quiz
+              navigation.replace('Quiz', {
+                quizId: moduleQuiz.id,
+                moduleId: lesson.moduleId,
+                title: moduleQuiz.title
+              });
+            } else {
+              console.log('No quiz found, going back to module');
+              // No quiz found, go back to module screen
+              navigation.goBack();
+            }
+          } catch (error) {
+            console.error('Error fetching module quiz:', error);
+            navigation.goBack();
+          }
+        } else {
+          console.log('Not last lesson, fetching next lesson data...');
+          // Not the last lesson - fetch next lesson data and navigate to it
+          if (lesson.nextLessonId) {
+            console.log('Has next lesson ID, fetching module data...');
+            try {
+              // Fetch the full module data to get the next lesson's complete information
+              const moduleResponse = await LearningAPIService.getModuleById(lesson.moduleId);
+              console.log('Module response:', moduleResponse);
+
+              if (moduleResponse.success && moduleResponse.module) {
+                const lessons = moduleResponse.module.lessons || [];
+                const nextLessonIndex = lessons.findIndex((l: any) => l.id === lesson.nextLessonId);
+                console.log('Next lesson index:', nextLessonIndex);
+
+                if (nextLessonIndex !== -1) {
+                  const nextLesson = lessons[nextLessonIndex];
+                  const isNextLessonLast = nextLessonIndex === lessons.length - 1;
+                  const nextNextLessonId = nextLessonIndex < lessons.length - 1 ? lessons[nextLessonIndex + 1].id : null;
+                  console.log('Found next lesson:', nextLesson);
+                  console.log('Navigating to next lesson directly...');
+
+                  // Navigate directly to next lesson without alert (Alert doesn't work well on web)
+                  navigation.replace('Lesson', {
+                    lesson: {
+                      id: nextLesson.id,
+                      title: nextLesson.title,
+                      moduleId: lesson.moduleId,
+                      content: nextLesson.content || nextLesson.description,
+                      description: nextLesson.description,
+                      duration: nextLesson.duration_minutes,
+                      xp: nextLesson.xp_reward,
+                      videoUrl: nextLesson.video_url,
+                      isLastLesson: isNextLessonLast,
+                      nextLessonId: nextNextLessonId
+                    }
+                  });
+                  console.log('Navigation.replace completed');
+                } else {
+                  // Couldn't find next lesson, go back to module
+                  navigation.goBack();
+                }
+              } else {
+                // Failed to fetch module data, go back
+                navigation.goBack();
+              }
+            } catch (error) {
+              console.error('Error fetching next lesson:', error);
+              navigation.goBack();
+            }
+          } else {
+            // No next lesson, go back to module
+            navigation.goBack();
+          }
+        }
+      } catch (error) {
+        console.error('Error completing lesson:', error);
+        Alert.alert(
+          'Error',
+          'Failed to complete lesson. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
     }
   };
 
-  const handleQuizAnswer = (answerIndex: number) => {
-    setSelectedAnswer(answerIndex);
-  };
-
-  const handleQuizSubmit = () => {
-    if (selectedAnswer === null) return;
-
-    const currentQuestion = quizQuestions[0]; // Simplified for demo
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-
-    Alert.alert(
-      isCorrect ? 'Correct!' : 'Incorrect',
-      currentQuestion.explanation,
-      [
-        {
-          text: 'Continue',
-          onPress: () => {
-            setQuizCompleted(true);
-            if (isCorrect) {
-              Alert.alert(
-                'Lesson Complete!',
-                'Congratulations! You have completed this lesson and earned 50 XP.',
-                [{ text: 'OK', onPress: () => navigation.goBack() }]
-              );
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleBookmark = () => {
-    setBookmarked(!bookmarked);
-    Alert.alert(
-      bookmarked ? 'Bookmark Removed' : 'Lesson Bookmarked',
-      bookmarked
-        ? 'This lesson has been removed from your bookmarks.'
-        : 'This lesson has been added to your bookmarks for easy access later.'
-    );
-  };
-
   const renderProgressBar = () => {
-    const progress = ((completedSections.length + (showQuiz && quizCompleted ? 1 : 0)) / (lessonSections.length + 1)) * 100;
+    const progress = (completedSections.length / lessonSections.length) * 100;
 
     return (
       <View style={styles.progressContainer}>
@@ -216,89 +246,173 @@ This process ensures thorough consideration and public input before laws are ena
       }
     };
 
+    const getSectionColor = () => {
+      switch (section.type) {
+        case 'text': return '#3B82F6';
+        case 'video': return '#EF4444';
+        case 'interactive': return '#F59E0B';
+        case 'quiz': return '#8B5CF6';
+        default: return '#3B82F6';
+      }
+    };
+
+    // Format content with better structure
+    const formatContent = (content: string) => {
+      const lines = content.split('\n');
+      const formattedContent: JSX.Element[] = [];
+      let key = 0;
+      let bulletGroup: JSX.Element[] = [];
+      let inBulletGroup = false;
+
+      const flushBulletGroup = () => {
+        if (bulletGroup.length > 0) {
+          formattedContent.push(
+            <View key={`bullet-group-${key++}`} style={styles.bulletGroup}>
+              {bulletGroup}
+            </View>
+          );
+          bulletGroup = [];
+          inBulletGroup = false;
+        }
+      };
+
+      lines.forEach((line, index) => {
+        if (line.trim() === '') {
+          flushBulletGroup();
+          formattedContent.push(<View key={key++} style={{ height: 8 }} />);
+        } else if (line.startsWith('•')) {
+          inBulletGroup = true;
+          bulletGroup.push(
+            <View key={key++} style={styles.bulletPoint}>
+              <View style={styles.bulletDot} />
+              <Text style={styles.bulletText}>{line.substring(1).trim()}</Text>
+            </View>
+          );
+        } else if (line.match(/^\d+\./)) {
+          flushBulletGroup();
+          const match = line.match(/^(\d+)\.\s*\*\*(.*?)\*\*:\s*(.*)/);
+          if (match) {
+            formattedContent.push(
+              <View key={key++} style={styles.stepCard}>
+                <View style={styles.stepHeader}>
+                  <LinearGradient
+                    colors={['#3B82F6', '#2563EB']}
+                    style={styles.stepNumber}
+                  >
+                    <Text style={styles.stepNumberText}>{match[1]}</Text>
+                  </LinearGradient>
+                  <Text style={styles.stepTitle}>{match[2]}</Text>
+                </View>
+                <Text style={styles.stepDescription}>{match[3]}</Text>
+              </View>
+            );
+          } else {
+            formattedContent.push(
+              <Text key={key++} style={styles.contentText}>{line}</Text>
+            );
+          }
+        } else if (line.startsWith('**') && line.endsWith('**')) {
+          flushBulletGroup();
+          formattedContent.push(
+            <View key={key++} style={styles.sectionHeading}>
+              <View style={styles.headingAccent} />
+              <Text style={styles.headingText}>{line.replace(/\*\*/g, '')}</Text>
+            </View>
+          );
+        } else {
+          flushBulletGroup();
+          const parts = line.split(/(\*\*.*?\*\*)/g);
+          formattedContent.push(
+            <Text key={key++} style={styles.paragraphText}>
+              {parts.map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  return <Text key={i} style={styles.inlineBold}>{part.replace(/\*\*/g, '')}</Text>;
+                }
+                return part;
+              })}
+            </Text>
+          );
+        }
+      });
+
+      flushBulletGroup();
+      return formattedContent;
+    };
+
     return (
       <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionIcon}>
-            <MaterialIcons name={getSectionIcon() as any} size={24} color="#3B82F6" />
-          </View>
-          <View style={styles.sectionTitleContainer}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            {section.duration && (
-              <Text style={styles.sectionDuration}>{section.duration} min read</Text>
+        {/* Enhanced Header with Gradient Background */}
+        <LinearGradient
+          colors={[getSectionColor() + '15', getSectionColor() + '05']}
+          style={styles.sectionHeaderCard}
+        >
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconWrapper, { backgroundColor: getSectionColor() }]}>
+              <MaterialIcons name={getSectionIcon() as any} size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              <View style={styles.sectionMeta}>
+                {section.duration && (
+                  <View style={styles.metaItem}>
+                    <MaterialIcons name="schedule" size={14} color="#666" />
+                    <Text style={styles.sectionDuration}>{section.duration} min read</Text>
+                  </View>
+                )}
+                <View style={[styles.typeBadge, { backgroundColor: getSectionColor() }]}>
+                  <Text style={styles.typeText}>
+                    {section.type.charAt(0).toUpperCase() + section.type.slice(1)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            {completedSections.includes(currentSection) && (
+              <View style={styles.completedBadge}>
+                <MaterialIcons name="check-circle" size={32} color="#10B981" />
+              </View>
             )}
           </View>
-          {completedSections.includes(currentSection) && (
-            <MaterialIcons name="check-circle" size={24} color="#10B981" />
-          )}
-        </View>
+        </LinearGradient>
 
-        <View style={styles.contentContainer}>
-          <Text style={styles.contentText}>{section.content}</Text>
+        {/* Main Content with Better Spacing */}
+        <View style={styles.contentWrapper}>
+          {formatContent(section.content)}
         </View>
 
         {section.type === 'interactive' && (
           <View style={styles.interactiveSection}>
-            <TouchableOpacity style={styles.interactiveButton}>
-              <MaterialIcons name="lightbulb" size={20} color="#F59E0B" />
-              <Text style={styles.interactiveButtonText}>Try Interactive Example</Text>
-            </TouchableOpacity>
+            <LinearGradient
+              colors={['#FEF3C7', '#FDE68A']}
+              style={styles.interactiveCard}
+            >
+              <MaterialIcons name="lightbulb" size={32} color="#F59E0B" />
+              <View style={styles.interactiveContent}>
+                <Text style={styles.interactiveTitle}>Interactive Learning</Text>
+                <Text style={styles.interactiveDescription}>
+                  Explore this concept with our interactive tool
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.interactiveButton}>
+                <MaterialIcons name="play-arrow" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </LinearGradient>
           </View>
         )}
 
         {section.type === 'video' && (
           <View style={styles.videoSection}>
             <TouchableOpacity style={styles.videoPlaceholder}>
-              <MaterialIcons name="play-circle-filled" size={48} color="#3B82F6" />
-              <Text style={styles.videoText}>Play Video Lesson</Text>
+              <LinearGradient
+                colors={['#EF4444', '#DC2626']}
+                style={styles.playButton}
+              >
+                <MaterialIcons name="play-arrow" size={40} color="#FFFFFF" />
+              </LinearGradient>
+              <Text style={styles.videoTitle}>Watch Video Lesson</Text>
+              <Text style={styles.videoDuration}>{section.duration} minutes</Text>
             </TouchableOpacity>
           </View>
         )}
-      </View>
-    );
-  };
-
-  const renderQuiz = () => {
-    const question = quizQuestions[0]; // Simplified for demo
-
-    return (
-      <View style={styles.quizContainer}>
-        <View style={styles.quizHeader}>
-          <MaterialIcons name="quiz" size={32} color="#8B5CF6" />
-          <Text style={styles.quizTitle}>Knowledge Check</Text>
-        </View>
-
-        <Text style={styles.questionText}>{question.question}</Text>
-
-        <View style={styles.optionsContainer}>
-          {question.options.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.optionButton,
-                selectedAnswer === index && styles.selectedOption,
-              ]}
-              onPress={() => handleQuizAnswer(index)}
-            >
-              <Text style={[
-                styles.optionText,
-                selectedAnswer === index && styles.selectedOptionText,
-              ]}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity
-          style={[styles.submitButton, selectedAnswer === null && styles.submitButtonDisabled]}
-          onPress={handleQuizSubmit}
-          disabled={selectedAnswer === null}
-        >
-          <Text style={[styles.submitButtonText, selectedAnswer === null && styles.submitButtonTextDisabled]}>
-            Submit Answer
-          </Text>
-        </TouchableOpacity>
       </View>
     );
   };
@@ -319,16 +433,6 @@ This process ensures thorough consideration and public input before laws are ena
           <Text style={styles.headerTitle}>{lesson.title}</Text>
           <Text style={styles.headerSubtitle}>Module {lesson.moduleId} • Lesson {lesson.id}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.bookmarkButton}
-          onPress={handleBookmark}
-        >
-          <MaterialIcons
-            name={bookmarked ? "bookmark" : "bookmark-border"}
-            size={24}
-            color={bookmarked ? "#F59E0B" : "#333"}
-          />
-        </TouchableOpacity>
       </View>
 
       {renderProgressBar()}
@@ -338,7 +442,7 @@ This process ensures thorough consideration and public input before laws are ena
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {!showQuiz ? renderSection(currentLessonSection) : renderQuiz()}
+        {renderSection(currentLessonSection)}
       </ScrollView>
 
       {/* Navigation Footer */}
@@ -361,7 +465,7 @@ This process ensures thorough consideration and public input before laws are ena
 
         <View style={styles.sectionIndicator}>
           <Text style={styles.sectionIndicatorText}>
-            {!showQuiz ? `${currentSection + 1} of ${lessonSections.length}` : 'Quiz'}
+            {`${currentSection + 1} of ${lessonSections.length}`}
           </Text>
         </View>
 
@@ -370,7 +474,7 @@ This process ensures thorough consideration and public input before laws are ena
           onPress={handleSectionComplete}
         >
           <Text style={styles.navButtonText}>
-            {currentSection === lessonSections.length - 1 ? 'Take Quiz' : 'Next'}
+            {currentSection === lessonSections.length - 1 ? 'Complete' : 'Next'}
           </Text>
           <MaterialIcons name="chevron-right" size={20} color="#3B82F6" />
         </TouchableOpacity>
@@ -383,6 +487,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#EF4444',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  backButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
@@ -448,148 +569,262 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sectionContainer: {
-    padding: 24,
+    paddingBottom: 24,
+  },
+  sectionHeaderCard: {
+    borderRadius: 20,
+    marginHorizontal: 20,
+    marginBottom: 24,
+    overflow: 'hidden',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
   },
-  sectionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#f0f7ff',
+  sectionIconWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   sectionTitleContainer: {
     flex: 1,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    color: '#1F2937',
+    marginBottom: 8,
+    lineHeight: 28,
+  },
+  sectionMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   sectionDuration: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
-  },
-  contentContainer: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  contentText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
-  },
-  interactiveSection: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  interactiveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    gap: 8,
-  },
-  interactiveButtonText: {
-    fontSize: 16,
     fontWeight: '600',
-    color: '#d97706',
   },
-  videoSection: {
-    alignItems: 'center',
-    marginTop: 20,
+  typeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  videoPlaceholder: {
-    width: width - 48,
-    height: 200,
-    backgroundColor: '#f0f7ff',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#3B82F6',
-    borderStyle: 'dashed',
-  },
-  videoText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3B82F6',
-    marginTop: 8,
-  },
-  quizContainer: {
-    padding: 24,
-  },
-  quizHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    justifyContent: 'center',
-  },
-  quizTitle: {
-    fontSize: 24,
+  typeText: {
+    fontSize: 11,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFFFFF',
+  },
+  completedBadge: {
     marginLeft: 12,
   },
-  questionText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 24,
-    textAlign: 'center',
-    lineHeight: 26,
+  contentWrapper: {
+    paddingHorizontal: 20,
   },
-  optionsContainer: {
-    gap: 12,
-    marginBottom: 32,
+  paragraphText: {
+    fontSize: 17,
+    lineHeight: 28,
+    color: '#374151',
+    marginBottom: 16,
+    letterSpacing: 0.2,
   },
-  optionButton: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-  },
-  selectedOption: {
-    backgroundColor: '#dbeafe',
-    borderColor: '#3B82F6',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-  },
-  selectedOptionText: {
-    fontWeight: '600',
-    color: '#1d4ed8',
-  },
-  submitButton: {
-    backgroundColor: '#3B82F6',
-    paddingVertical: 16,
-    borderRadius: 12,
+  sectionHeading: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 16,
   },
-  submitButtonDisabled: {
-    backgroundColor: '#e9ecef',
+  headingAccent: {
+    width: 4,
+    height: 24,
+    backgroundColor: '#3B82F6',
+    borderRadius: 2,
+    marginRight: 12,
   },
-  submitButtonText: {
+  headingText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    flex: 1,
+  },
+  inlineBold: {
+    fontWeight: '700',
+    color: '#1E40AF',
+  },
+  bulletGroup: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3B82F6',
+  },
+  bulletPoint: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
+  bulletDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#3B82F6',
+    marginTop: 10,
+    marginRight: 14,
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 16,
+    lineHeight: 26,
+    color: '#374151',
+  },
+  stepCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  stepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  stepNumber: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  stepNumberText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFFFFF',
   },
-  submitButtonTextDisabled: {
-    color: '#666',
+  stepTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    lineHeight: 24,
+  },
+  stepDescription: {
+    fontSize: 15,
+    color: '#6B7280',
+    lineHeight: 24,
+    paddingLeft: 50,
+  },
+  interactiveSection: {
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  interactiveCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    gap: 12,
+  },
+  interactiveContent: {
+    flex: 1,
+  },
+  interactiveTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#92400E',
+    marginBottom: 4,
+  },
+  interactiveDescription: {
+    fontSize: 13,
+    color: '#B45309',
+  },
+  interactiveButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F59E0B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoSection: {
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  videoPlaceholder: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#1F2937',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  playButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  videoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  videoDuration: {
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
+  markCompleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10B981',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginTop: 8,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  markCompleteText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   footer: {
     flexDirection: 'row',

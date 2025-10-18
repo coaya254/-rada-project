@@ -8,6 +8,8 @@ import {
   StatusBar,
   TextInput,
   Alert,
+  Modal,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -57,8 +59,15 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
     documents: 0,
     promises: 0,
     news: 0,
+    career: 1, // Career info is part of the politician profile
   });
   const [isDraft, setIsDraft] = useState(true);
+  const [partyHistoryModalVisible, setPartyHistoryModalVisible] = useState(false);
+  const [newPartyName, setNewPartyName] = useState('');
+  const [educationModalVisible, setEducationModalVisible] = useState(false);
+  const [newEducation, setNewEducation] = useState('');
+  const [achievementModalVisible, setAchievementModalVisible] = useState(false);
+  const [newAchievement, setNewAchievement] = useState('');
 
   // Smart suggestions data
   const kenyanParties = [
@@ -81,8 +90,8 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
       try {
         const response = await adminAPI.getPolitician(politicianId);
 
-        if (response.success && response.data?.data) {
-          const politician = response.data.data;
+        if (response.success && response.data) {
+          const politician = response.data;
 
           // Map database fields to Politician interface
           const mappedData: Politician = {
@@ -116,6 +125,50 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
     };
 
     loadPolitician();
+  }, [politicianId]);
+
+  // Load content counts
+  useEffect(() => {
+    const loadContentCounts = async () => {
+      try {
+        // Fetch timeline events count
+        const timelineResponse = await adminAPI.getTimelineEvents(politicianId);
+        const timelineCount = timelineResponse.success && timelineResponse.data?.data
+          ? timelineResponse.data.data.length
+          : 0;
+
+        // Fetch voting records count
+        const votingResponse = await adminAPI.getVotingRecords({ politicianId });
+        const votingCount = votingResponse.success && votingResponse.data?.data
+          ? votingResponse.data.data.length
+          : 0;
+
+        // Fetch documents count
+        const documentsResponse = await adminAPI.getDocuments({ politicianId });
+        const documentsCount = documentsResponse.success && documentsResponse.data?.data
+          ? documentsResponse.data.data.length
+          : 0;
+
+        // Fetch commitments count
+        const commitmentsResponse = await adminAPI.getCommitments({ politicianId });
+        const commitmentsCount = commitmentsResponse.success && commitmentsResponse.data?.data
+          ? commitmentsResponse.data.data.length
+          : 0;
+
+        // Update content counts
+        setContentCounts(prev => ({
+          ...prev,
+          timeline: timelineCount,
+          voting: votingCount,
+          documents: documentsCount,
+          promises: commitmentsCount,
+        }));
+      } catch (error) {
+        console.error('Error loading content counts:', error);
+      }
+    };
+
+    loadContentCounts();
   }, [politicianId]);
 
   // Auto-generate slug from name
@@ -159,7 +212,7 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
     setHasChanges(hasChanges);
   }, [formData, originalData]);
 
-  // Validation functions
+  // Validation functions - relaxed for edit mode
   const validateCurrentStep = () => {
     const errors: Record<string, string> = {};
 
@@ -168,17 +221,14 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
         if (!formData.name.trim()) errors.name = 'Name is required';
         if (!formData.title.trim()) errors.title = 'Title is required';
         if (!formData.party.trim()) errors.party = 'Party is required';
-        if (!formData.constituency.trim()) errors.constituency = 'Constituency is required';
         break;
 
       case 2: // Position & Role
-        if (!formData.current_position.trim()) errors.current_position = 'Current position is required';
-        if (!formData.education.trim()) errors.education = 'Education is required';
+        // No validation - allow proceeding even if empty
         break;
 
       case 3: // Achievements & Summary
-        if (!formData.wikipedia_summary?.trim()) errors.wikipedia_summary = 'Summary is required';
-        if (formData.key_achievements.length === 0) errors.key_achievements = 'At least one achievement is required';
+        // No validation - allow proceeding even if empty
         break;
     }
 
@@ -224,12 +274,19 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
   };
 
   const nextStep = () => {
-    if (validateCurrentStep()) {
+    console.log('nextStep called, currentStep:', currentStep);
+    const isValid = validateCurrentStep();
+    console.log('Validation result:', isValid, 'Errors:', validationErrors);
+
+    if (isValid) {
       if (currentStep < 3) {
         setCurrentStep(currentStep + 1);
       } else {
+        console.log('Calling handleSave...');
         handleSave();
       }
+    } else {
+      console.log('Validation failed, not proceeding');
     }
   };
 
@@ -239,28 +296,45 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
     }
   };
 
-  const handleSave = () => {
-    if (!validateCurrentStep()) return;
+  const handleSave = async () => {
+    console.log('handleSave called');
+    if (!validateCurrentStep()) {
+      console.log('Validation failed in handleSave');
+      return;
+    }
 
-    Alert.alert(
-      'Save Changes',
-      `Are you sure you want to save changes to ${formData.name}'s profile?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Save',
-          onPress: () => {
-            // In real app, this would call the API
-            Alert.alert('Success', 'Politician profile updated successfully!', [
-              { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
-          }
+    console.log('About to call API with formData:', formData);
+    console.log('Constituency value being sent:', formData.constituency);
+
+    try {
+      const response = await adminAPI.updatePolitician(politicianId, formData);
+      console.log('API response:', response);
+
+      if (response.success) {
+        if (Platform.OS === 'web') {
+          alert('Success! Politician profile updated successfully!');
+          navigation.goBack();
+        } else {
+          Alert.alert('Success', 'Politician profile updated successfully!', [
+            { text: 'OK', onPress: () => navigation.goBack() }
+          ]);
         }
-      ]
-    );
+      } else {
+        if (Platform.OS === 'web') {
+          alert('Error: ' + (response.error || 'Failed to update politician'));
+        } else {
+          Alert.alert('Error', response.error || 'Failed to update politician');
+        }
+      }
+    } catch (error: any) {
+      console.error('Error updating politician:', error);
+      Alert.alert('Error', 'Failed to update politician');
+    }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
+    console.log('handlePublish called for politician:', politicianId);
+
     // Check content completeness
     const missingContent = [];
     if (contentCounts.timeline === 0) missingContent.push('Timeline events');
@@ -269,43 +343,26 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
     if (contentCounts.promises === 0) missingContent.push('Promises/Commitments');
 
     if (missingContent.length > 0) {
-      Alert.alert(
-        'Incomplete Content',
-        `This politician profile is missing:\n\n${missingContent.map(item => `• ${item}`).join('\n')}\n\nAre you sure you want to publish?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Publish Anyway',
-            style: 'destructive',
-            onPress: publishPolitician
-          }
-        ]
-      );
-    } else {
-      Alert.alert(
-        'Publish Profile',
-        `Publish ${formData.name}'s profile to make it visible to all users?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Publish', onPress: publishPolitician }
-        ]
-      );
+      console.warn('Publishing with missing content:', missingContent);
     }
-  };
 
-  const publishPolitician = async () => {
+    console.log('Calling publishPolitician API...');
+
     try {
       const response = await adminAPI.publishPolitician(politicianId);
+      console.log('Publish API response:', response);
 
       if (response.success) {
         setIsDraft(false);
-        Alert.alert('Success', `${formData.name}'s profile has been published and is now visible to all users!`);
+        console.log('✅ Politician published successfully!');
+        alert(`Success: ${formData.name}'s profile has been published and is now visible to all users!`);
       } else {
-        Alert.alert('Error', response.error || 'Failed to publish politician');
+        console.error('❌ Publish failed:', response.error);
+        alert(`Error: ${response.error || 'Failed to publish politician'}`);
       }
     } catch (error: any) {
-      console.error('Error publishing politician:', error);
-      Alert.alert('Error', 'Failed to publish politician');
+      console.error('❌ Error publishing politician:', error);
+      alert('Error: Failed to publish politician');
     }
   };
 
@@ -449,14 +506,32 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Education Background *</Text>
-        <TextInput
-          style={[styles.textInput, validationErrors.education && styles.inputError]}
-          value={formData.education}
-          onChangeText={(value) => updateField('education', value)}
-          placeholder="e.g., PhD in Plant Ecology, University of Nairobi"
-          multiline
-          numberOfLines={3}
-        />
+        {formData.education ? (
+          <View style={styles.educationContainer}>
+            <Text style={styles.educationText}>{formData.education}</Text>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => {
+                setNewEducation(formData.education);
+                setEducationModalVisible(true);
+              }}
+            >
+              <MaterialIcons name="edit" size={16} color="#3B82F6" />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.addEducationButton}
+            onPress={() => {
+              setNewEducation('');
+              setEducationModalVisible(true);
+            }}
+          >
+            <MaterialIcons name="add" size={16} color="#3B82F6" />
+            <Text style={styles.addEducationText}>Add Education Background</Text>
+          </TouchableOpacity>
+        )}
         {validationErrors.education && <Text style={styles.errorText}>{validationErrors.education}</Text>}
       </View>
 
@@ -479,9 +554,8 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
           <TouchableOpacity
             style={styles.addPartyButton}
             onPress={() => {
-              // TODO: Implement cross-platform text input modal
-              Alert.alert('Add Party', 'This feature requires a text input modal for cross-platform support.');
-              // Alert.prompt is iOS-only and doesn't work on web/Android
+              setNewPartyName('');
+              setPartyHistoryModalVisible(true);
             }}
           >
             <MaterialIcons name="add" size={16} color="#3B82F6" />
@@ -523,9 +597,8 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
           <TouchableOpacity
             style={styles.addAchievementButton}
             onPress={() => {
-              // TODO: Implement cross-platform text input modal
-              Alert.alert('Add Achievement', 'This feature requires a text input modal for cross-platform support.');
-              // Alert.prompt is iOS-only and doesn't work on web/Android
+              setNewAchievement('');
+              setAchievementModalVisible(true);
             }}
           >
             <MaterialIcons name="add" size={16} color="#3B82F6" />
@@ -561,7 +634,7 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
         {/* Timeline Events Card */}
         <TouchableOpacity
           style={styles.contentCard}
-          onPress={() => Alert.alert('Coming Soon', 'Timeline Events management screen is coming soon!')}
+          onPress={() => navigation.navigate('TimelineEvents', { politicianId })}
         >
           <View style={[styles.contentCardIcon, { backgroundColor: '#EFF6FF' }]}>
             <MaterialIcons name="timeline" size={24} color="#3B82F6" />
@@ -578,7 +651,7 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
         {/* Voting Records Card */}
         <TouchableOpacity
           style={styles.contentCard}
-          onPress={() => Alert.alert('Coming Soon', 'Voting Records management screen is coming soon!')}
+          onPress={() => navigation.navigate('VotingRecordsAdmin', { politicianId })}
         >
           <View style={[styles.contentCardIcon, { backgroundColor: '#FEF3C7' }]}>
             <MaterialIcons name="how-to-vote" size={24} color="#F59E0B" />
@@ -595,7 +668,7 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
         {/* Documents Card */}
         <TouchableOpacity
           style={styles.contentCard}
-          onPress={() => Alert.alert('Coming Soon', 'Document Management screen is coming soon!')}
+          onPress={() => navigation.navigate('DocumentManagement', { politicianId })}
         >
           <View style={[styles.contentCardIcon, { backgroundColor: '#F3E8FF' }]}>
             <MaterialIcons name="description" size={24} color="#A855F7" />
@@ -612,7 +685,7 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
         {/* Promises/Commitments Card */}
         <TouchableOpacity
           style={styles.contentCard}
-          onPress={() => Alert.alert('Coming Soon', 'Commitment Tracking screen is coming soon!')}
+          onPress={() => navigation.navigate('CommitmentTracking', { politicianId })}
         >
           <View style={[styles.contentCardIcon, { backgroundColor: '#DCFCE7' }]}>
             <MaterialIcons name="task-alt" size={24} color="#10B981" />
@@ -621,6 +694,40 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
             <Text style={styles.contentCardTitle}>Promises & Commitments</Text>
             <Text style={styles.contentCardCount}>
               {contentCounts.promises} {contentCounts.promises === 1 ? 'promise' : 'promises'}
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={24} color="#999" />
+        </TouchableOpacity>
+
+        {/* News Card */}
+        <TouchableOpacity
+          style={styles.contentCard}
+          onPress={() => navigation.navigate('NewsManagement', { politicianId })}
+        >
+          <View style={[styles.contentCardIcon, { backgroundColor: '#FEE2E2' }]}>
+            <MaterialIcons name="article" size={24} color="#EF4444" />
+          </View>
+          <View style={styles.contentCardInfo}>
+            <Text style={styles.contentCardTitle}>News & Articles</Text>
+            <Text style={styles.contentCardCount}>
+              {contentCounts.news} {contentCounts.news === 1 ? 'article' : 'articles'}
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={24} color="#999" />
+        </TouchableOpacity>
+
+        {/* Career Card */}
+        <TouchableOpacity
+          style={styles.contentCard}
+          onPress={() => navigation.navigate('CareerManagement', { politicianId })}
+        >
+          <View style={[styles.contentCardIcon, { backgroundColor: '#E0E7FF' }]}>
+            <MaterialIcons name="work" size={24} color="#6366F1" />
+          </View>
+          <View style={styles.contentCardInfo}>
+            <Text style={styles.contentCardTitle}>Career Information</Text>
+            <Text style={styles.contentCardCount}>
+              {formData.education || formData.wikipedia_summary || formData.bio ? 'Configured' : 'Not set'}
             </Text>
           </View>
           <MaterialIcons name="chevron-right" size={24} color="#999" />
@@ -702,16 +809,155 @@ export const EditPoliticianScreen: React.FC<EditPoliticianScreenProps> = ({ navi
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={[styles.nextButton, !hasChanges && styles.nextButtonDisabled]}
+            style={[
+              styles.nextButton,
+              (currentStep === 3 && !hasChanges) && styles.nextButtonDisabled
+            ]}
             onPress={nextStep}
-            disabled={!hasChanges}
+            disabled={currentStep === 3 && !hasChanges}
           >
-            <Text style={[styles.nextButtonText, !hasChanges && styles.nextButtonTextDisabled]}>
+            <Text style={[
+              styles.nextButtonText,
+              (currentStep === 3 && !hasChanges) && styles.nextButtonTextDisabled
+            ]}>
               {currentStep === 3 ? 'Save Changes' : 'Next'}
             </Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Party History Modal */}
+      <Modal
+        visible={partyHistoryModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPartyHistoryModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Party to History</Text>
+
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter party name..."
+              value={newPartyName}
+              onChangeText={setNewPartyName}
+              autoFocus
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setPartyHistoryModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalSaveButton]}
+                onPress={() => {
+                  if (newPartyName.trim()) {
+                    addPartyHistory(newPartyName.trim());
+                    setPartyHistoryModalVisible(false);
+                  }
+                }}
+              >
+                <Text style={styles.modalSaveText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Education Modal */}
+      <Modal
+        visible={educationModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEducationModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Education Background</Text>
+
+            <TextInput
+              style={[styles.modalInput, styles.modalTextArea]}
+              placeholder="e.g., PhD in Plant Ecology, University of Nairobi"
+              value={newEducation}
+              onChangeText={setNewEducation}
+              multiline
+              numberOfLines={4}
+              autoFocus
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setEducationModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalSaveButton]}
+                onPress={() => {
+                  if (newEducation.trim()) {
+                    updateField('education', newEducation.trim());
+                    setEducationModalVisible(false);
+                  }
+                }}
+              >
+                <Text style={styles.modalSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Achievement Modal */}
+      <Modal
+        visible={achievementModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAchievementModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Achievement</Text>
+
+            <TextInput
+              style={[styles.modalInput, styles.modalTextArea]}
+              placeholder="Enter achievement..."
+              value={newAchievement}
+              onChangeText={setNewAchievement}
+              multiline
+              numberOfLines={3}
+              autoFocus
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setAchievementModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalSaveButton]}
+                onPress={() => {
+                  if (newAchievement.trim()) {
+                    addAchievement(newAchievement.trim());
+                    setAchievementModalVisible(false);
+                  }
+                }}
+              >
+                <Text style={styles.modalSaveText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1092,5 +1338,100 @@ const styles = StyleSheet.create({
   contentCardCount: {
     fontSize: 14,
     color: '#666',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  modalTextArea: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  modalCancelButton: {
+    backgroundColor: '#F3F4F6',
+  },
+  modalSaveButton: {
+    backgroundColor: '#3B82F6',
+  },
+  modalCancelText: {
+    color: '#666',
+    fontWeight: '500',
+  },
+  modalSaveText: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  educationContainer: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  educationText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#f0f4ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    gap: 4,
+  },
+  editButtonText: {
+    fontSize: 12,
+    color: '#3B82F6',
+    fontWeight: '500',
+  },
+  addEducationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f4ff',
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  addEducationText: {
+    fontSize: 14,
+    color: '#3B82F6',
+    fontWeight: '500',
   },
 });

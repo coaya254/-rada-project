@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { CommunityHome } from '../screens/community/CommunityHome';
 import { DiscussionDetailScreen } from '../screens/community/DiscussionDetailScreen';
 import { CreatePostScreen } from '../screens/community/CreatePostScreen';
-import { UserProfileScreen } from '../screens/community/UserProfileScreen';
+import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 
 export type CommunityStackParamList = {
   CommunityHome: undefined;
@@ -20,8 +20,8 @@ export type CommunityStackParamList = {
     category?: string;
   };
   UserProfile: {
-    userId: number;
-    username: string;
+    userId: string; // UUID
+    userName: string;
     avatar?: string;
   };
 };

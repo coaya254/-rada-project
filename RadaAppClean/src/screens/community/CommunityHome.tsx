@@ -16,13 +16,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { CommunityStackParamList } from '../../navigation/CommunityStackNavigator';
 import { LoadingSpinner, LoadingCard, ErrorDisplay } from '../../components/ui';
+import { communityApi, Discussion } from '../../services/communityApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface CommunityHomeProps {
   navigation: NativeStackNavigationProp<CommunityStackParamList, 'CommunityHome'>;
 }
 
-interface Discussion {
+interface LocalDiscussion {
   id: number;
+  uuid: string; // Author's UUID
   title: string;
   author: string;
   timestamp: string;
@@ -30,6 +33,7 @@ interface Discussion {
   likes: number;
   category: string;
   preview: string;
+  isLiked?: boolean;
 }
 
 export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
@@ -38,79 +42,105 @@ export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [discussions, setDiscussions] = useState<Discussion[]>([
-    {
-      id: 1,
-      title: 'What do you think about the new education reform proposal?',
-      author: 'Sarah Chen',
-      timestamp: '2h ago',
-      replies: 24,
-      likes: 18,
-      category: 'Education',
-      preview: 'I wanted to get everyone\'s thoughts on the recent education reform proposal that was announced...',
-    },
-    {
-      id: 2,
-      title: 'Local infrastructure improvements - your priorities?',
-      author: 'Mike Johnson',
-      timestamp: '4h ago',
-      replies: 15,
-      likes: 22,
-      category: 'Infrastructure',
-      preview: 'Our city council is asking for community input on infrastructure priorities. What should we focus on?',
-    },
-    {
-      id: 3,
-      title: 'Climate action at the community level',
-      author: 'Lisa Rodriguez',
-      timestamp: '6h ago',
-      replies: 31,
-      likes: 45,
-      category: 'Environment',
-      preview: 'What are some practical steps our community can take to address climate change locally?',
-    },
-    {
-      id: 4,
-      title: 'Healthcare accessibility in our district',
-      author: 'David Park',
-      timestamp: '1d ago',
-      replies: 12,
-      likes: 16,
-      category: 'Healthcare',
-      preview: 'Has anyone else noticed issues with healthcare accessibility in our area? Let\'s discuss solutions.',
-    },
-  ]);
+  const [discussions, setDiscussions] = useState<LocalDiscussion[]>([]);
+  const [userStats, setUserStats] = useState({
+    posts: 0,
+    replies: 0,
+    likes: 0,
+  });
 
   useEffect(() => {
     loadDiscussions();
+    loadUserStats();
   }, []);
+
+  const loadUserStats = async () => {
+    try {
+      const userUuid = 'bdcc72dc-d14a-461b-bbe8-c1407a06f14d';
+
+      // Get all discussions by this user
+      const allDiscussions = await communityApi.getDiscussions({ limit: 1000 });
+      const userPosts = allDiscussions.filter(d => d.uuid === userUuid);
+
+      // Count total replies by this user across all discussions
+      let totalReplies = 0;
+      let totalLikes = 0;
+
+      for (const discussion of allDiscussions) {
+        const replies = await communityApi.getReplies(discussion.id);
+        totalReplies += replies.filter(r => r.uuid === userUuid).length;
+      }
+
+      // Count likes on user's posts
+      userPosts.forEach(post => {
+        totalLikes += post.likes_count || 0;
+      });
+
+      setUserStats({
+        posts: userPosts.length,
+        replies: totalReplies,
+        likes: totalLikes,
+      });
+    } catch (error) {
+      console.error('Error loading user stats:', error);
+    }
+  };
 
   const loadDiscussions = async () => {
     try {
       setError(null);
       setLoading(true);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Simulate random error (10% chance)
-      if (Math.random() < 0.1) {
-        throw new Error('Failed to load discussions. Please try again.');
-      }
-
+  
+      // Get real data from API
+      const data = await communityApi.getDiscussions({
+        category: selectedCategory === 'all' ? undefined : selectedCategory,
+        search: searchQuery || undefined,
+        limit: 20,
+        offset: 0
+      });
+  
+      // Transform API data to match your interface
+      const transformedData = data.map(discussion => ({
+        id: discussion.id,
+        uuid: discussion.uuid, // Author's UUID
+        title: discussion.title,
+        author: discussion.is_anonymous ? 'Anonymous' : discussion.nickname,
+        timestamp: formatTimestamp(discussion.created_at),
+        replies: discussion.replies_count,
+        likes: discussion.likes_count,
+        category: discussion.category,
+        preview: discussion.content.substring(0, 150) + '...',
+        isLiked: false, // TODO: Check if user has liked this discussion from backend
+      }));
+  
+      setDiscussions(transformedData);
       setLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      console.error('Error loading discussions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load discussions');
       setLoading(false);
     }
+  };
+  
+  // Helper function to format timestamp
+  const formatTimestamp = (timestamp: string) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const diffMs = now.getTime() - then.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+  
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return then.toLocaleDateString();
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      setError(null);
-      // Simulate refresh
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await loadDiscussions();
       setRefreshing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refresh');
@@ -143,6 +173,28 @@ export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
 
   const filteredDiscussions = getFilteredDiscussions();
 
+  const handleLike = async (discussionId: number, e: any) => {
+    e.stopPropagation(); // Prevent navigation when clicking like
+
+    try {
+      const userUuid = 'bdcc72dc-d14a-461b-bbe8-c1407a06f14d';
+      await communityApi.likeDiscussion(discussionId, userUuid);
+
+      // Update local state
+      setDiscussions(discussions.map(disc =>
+        disc.id === discussionId
+          ? {
+              ...disc,
+              isLiked: !disc.isLiked,
+              likes: disc.isLiked ? disc.likes - 1 : disc.likes + 1
+            }
+          : disc
+      ));
+    } catch (error) {
+      console.error('Error liking discussion:', error);
+    }
+  };
+
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
       'Education': '#10B981',
@@ -154,7 +206,7 @@ export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
     return colors[category] || '#6B7280';
   };
 
-  const renderDiscussionCard = ({ item }: { item: Discussion }) => (
+  const renderDiscussionCard = ({ item }: { item: LocalDiscussion }) => (
     <TouchableOpacity
       style={styles.discussionCard}
       onPress={() => navigation.navigate('DiscussionDetail', {
@@ -184,24 +236,43 @@ export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => navigation.navigate('UserProfile', {
-              userId: item.id,
-              username: item.author,
-            })}
+            onPress={(e) => {
+              e.stopPropagation();
+              navigation.navigate('UserProfile', {
+                userId: item.uuid,
+                userName: item.author,
+              });
+            }}
           >
             <Text style={styles.authorName}>{item.author}</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.discussionStats}>
-          <View style={styles.statItem}>
-            <MaterialIcons name="forum" size={16} color="#666" />
-            <Text style={styles.statText}>{item.replies}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <MaterialIcons name="favorite" size={16} color="#666" />
-            <Text style={styles.statText}>{item.likes}</Text>
-          </View>
+        <View style={styles.discussionActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              navigation.navigate('DiscussionDetail', { discussionId: item.id });
+            }}
+          >
+            <MaterialIcons name="chat-bubble-outline" size={18} color="#666" />
+            <Text style={styles.actionText}>{item.replies}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, item.isLiked && styles.actionButtonLiked]}
+            onPress={(e) => handleLike(item.id, e)}
+          >
+            <MaterialIcons
+              name={item.isLiked ? "favorite" : "favorite-border"}
+              size={18}
+              color={item.isLiked ? "#EF4444" : "#666"}
+            />
+            <Text style={[styles.actionText, item.isLiked && styles.actionTextLiked]}>
+              {item.likes}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -245,17 +316,6 @@ export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
             <Text style={styles.headerTitle}>Community</Text>
             <Text style={styles.headerSubtitle}>Connect, discuss, and engage with others</Text>
           </View>
-          <TouchableOpacity
-            style={styles.notificationButton}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-            accessibilityHint="View your notifications, you have 3 unread notifications"
-          >
-            <MaterialIcons name="notifications" size={24} color="#333" />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>3</Text>
-            </View>
-          </TouchableOpacity>
         </View>
 
         {/* Quick Stats Card */}
@@ -273,17 +333,17 @@ export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
 
                 <View style={styles.statsGrid}>
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>12</Text>
+                    <Text style={styles.statValue}>{userStats.posts}</Text>
                     <Text style={styles.statLabel}>POSTS</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>34</Text>
+                    <Text style={styles.statValue}>{userStats.replies}</Text>
                     <Text style={styles.statLabel}>REPLIES</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
-                    <Text style={styles.statValue}>89</Text>
+                    <Text style={styles.statValue}>{userStats.likes}</Text>
                     <Text style={styles.statLabel}>LIKES</Text>
                   </View>
                 </View>
@@ -343,39 +403,6 @@ export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
           </ScrollView>
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={() => navigation.navigate('CreatePost')}
-            >
-              <MaterialIcons name="create" size={32} color="#3B82F6" />
-              <Text style={styles.actionTitle}>Create Post</Text>
-              <Text style={styles.actionSubtitle}>Start discussion</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionCard}>
-              <MaterialIcons name="event" size={32} color="#10B981" />
-              <Text style={styles.actionTitle}>Events</Text>
-              <Text style={styles.actionSubtitle}>Town halls</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionCard}>
-              <MaterialIcons name="groups" size={32} color="#8B5CF6" />
-              <Text style={styles.actionTitle}>Groups</Text>
-              <Text style={styles.actionSubtitle}>Join interests</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionCard}>
-              <MaterialIcons name="trending-up" size={32} color="#F59E0B" />
-              <Text style={styles.actionTitle}>Trending</Text>
-              <Text style={styles.actionSubtitle}>Hot topics</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Recent Discussions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -389,13 +416,6 @@ export const CommunityHome: React.FC<CommunityHomeProps> = ({ navigation }) => {
             renderItem={renderDiscussionCard}
             keyExtractor={(item) => item.id.toString()}
             scrollEnabled={false}
-            ListHeaderComponent={
-              filteredDiscussions.length !== discussions.length ? (
-                <Text style={styles.filterResult}>
-                  Showing {filteredDiscussions.length} of {discussions.length} discussions
-                </Text>
-              ) : null
-            }
           />
         </View>
       </ScrollView>
@@ -432,31 +452,6 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     color: '#666',
-  },
-  notificationButton: {
-    position: 'relative',
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    backgroundColor: '#EF4444',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
   },
   section: {
     paddingHorizontal: 24,
@@ -529,32 +524,6 @@ const styles = StyleSheet.create({
     height: 30,
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  actionCard: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  actionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 8,
-  },
-  actionSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
   discussionCard: {
     backgroundColor: '#f8f9fa',
     padding: 16,
@@ -625,14 +594,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  discussionStats: {
+  discussionActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
-  statText: {
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#f8f9fa',
+  },
+  actionButtonLiked: {
+    backgroundColor: '#FEE2E2',
+  },
+  actionText: {
     fontSize: 12,
+    fontWeight: '600',
     color: '#666',
-    marginLeft: 4,
+  },
+  actionTextLiked: {
+    color: '#EF4444',
   },
   fab: {
     position: 'absolute',

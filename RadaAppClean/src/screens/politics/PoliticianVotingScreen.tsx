@@ -328,31 +328,28 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
     fetchVotingRecords(true);
   };
 
-  const getVoteColor = (vote: VotingRecord['vote']) => {
-    switch (vote) {
-      case 'yes': return colors.success[500];
-      case 'no': return colors.error[500];
-      case 'abstain': return colors.warning[500];
-      default: return colors.neutral[400];
-    }
+  const getVoteColor = (vote: string) => {
+    const v = vote?.toLowerCase();
+    if (v === 'yes' || v === 'for') return colors.success[500];
+    if (v === 'no' || v === 'against') return colors.error[500];
+    if (v === 'abstain') return colors.warning[500];
+    return colors.neutral[400];
   };
 
-  const getVoteIcon = (vote: VotingRecord['vote']) => {
-    switch (vote) {
-      case 'yes': return 'thumb-up';
-      case 'no': return 'thumb-down';
-      case 'abstain': return 'remove';
-      default: return 'help';
-    }
+  const getVoteIcon = (vote: string) => {
+    const v = vote?.toLowerCase();
+    if (v === 'yes' || v === 'for') return 'thumb-up';
+    if (v === 'no' || v === 'against') return 'thumb-down';
+    if (v === 'abstain') return 'remove';
+    return 'help';
   };
 
-  const getVoteLabel = (vote: VotingRecord['vote']) => {
-    switch (vote) {
-      case 'yes': return 'YES';
-      case 'no': return 'NO';
-      case 'abstain': return 'ABSTAIN';
-      default: return 'ABSENT';
-    }
+  const getVoteLabel = (vote: string) => {
+    const v = vote?.toLowerCase();
+    if (v === 'yes' || v === 'for') return 'FOR';
+    if (v === 'no' || v === 'against') return 'AGAINST';
+    if (v === 'abstain') return 'ABSTAIN';
+    return 'ABSENT';
   };
 
   const filteredRecords = votingRecords.filter(record =>
@@ -366,6 +363,21 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
     abstain: votingRecords.filter(r => r.vote === 'abstain').length,
   };
 
+  const getCategoryColor = (category: string) => {
+    const cat = category?.toLowerCase() || '';
+    if (cat.includes('health')) return '#EF4444'; // Red
+    if (cat.includes('environment') || cat.includes('climate')) return '#10B981'; // Green
+    if (cat.includes('finance') || cat.includes('tax') || cat.includes('budget')) return '#F59E0B'; // Amber
+    if (cat.includes('education')) return '#3B82F6'; // Blue
+    if (cat.includes('infrastructure')) return '#6366F1'; // Indigo
+    if (cat.includes('economy')) return '#8B5CF6'; // Purple
+    if (cat.includes('security') || cat.includes('defense')) return '#EC4899'; // Pink
+    if (cat.includes('agriculture')) return '#14B8A6'; // Teal
+    if (cat.includes('technology')) return '#06B6D4'; // Cyan
+    if (cat.includes('transport')) return '#F97316'; // Orange
+    return '#6B7280'; // Gray
+  };
+
   const renderVotingCard = (record: VotingRecord) => (
     <TouchableOpacity
       key={record.id}
@@ -373,96 +385,88 @@ export const PoliticianVotingScreen: React.FC<PoliticianVotingScreenProps> = ({
       activeOpacity={0.7}
     >
       <Card variant="elevated" style={styles.votingCard}>
-      <View style={styles.votingHeader}>
-        <View style={styles.billInfo}>
-          <Text style={styles.billNumber}>{record.bill_number}</Text>
-          <Text style={styles.sessionInfo}>
-            {record.session} • {new Date(record.date).toLocaleDateString()}
-          </Text>
-        </View>
-        <View style={[styles.voteBadge, { backgroundColor: getVoteColor(record.vote) }]}>
-          <MaterialIcons
-            name={getVoteIcon(record.vote) as any}
-            size={16}
-            color="#FFFFFF"
-          />
-          <Text style={styles.voteText}>{getVoteLabel(record.vote)}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.billTitle} numberOfLines={2}>
-        {record.bill_title}
-      </Text>
-
-      <Text style={styles.billSummary} numberOfLines={3}>
-        {record.bill_summary}
-      </Text>
-
-      <View style={styles.votingFooter}>
-        <View style={styles.categoryRow}>
-          <MaterialIcons name="category" size={16} color={colors.neutral[500]} />
-          <Text style={styles.categoryText}>{record.category}</Text>
-        </View>
-        <View style={styles.resultRow}>
-          <Text style={styles.resultLabel}>Result:</Text>
-          <Text style={[
-            styles.resultText,
-            { color: record.bill_passed ? colors.success[600] : colors.error[600] }
-          ]}>
-            {record.bill_passed ? 'PASSED' : 'FAILED'}
-          </Text>
-        </View>
-      </View>
-
-      {record.notes && (
-        <View style={styles.notesSection}>
-          <MaterialIcons name="note" size={16} color={colors.neutral[500]} />
-          <Text style={styles.notesText}>{record.notes}</Text>
-        </View>
-      )}
-
-      {/* Source Buttons */}
-      {((record.source_links && record.source_links.length > 0) || (record.verification_links && record.verification_links.length > 0)) && (
-        <View style={styles.actionButtons}>
-          {record.source_links && record.source_links.length > 0 && (
-            <TouchableOpacity
-              style={styles.sourceButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                setSelectedRecord(record);
-                setShowDetailModal(true);
-                setShowSources(true);
-                setShowVerification(false);
-              }}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="link" size={14} color="#3B82F6" />
-              <Text style={styles.sourceButtonText}>
-                Sources ({record.source_links.length})
+        <View style={styles.cardContent}>
+          <View style={styles.recordHeader}>
+            <View style={styles.recordTitleContainer}>
+              <Text style={styles.billTitle} numberOfLines={2}>
+                {record.bill_title}
               </Text>
-            </TouchableOpacity>
+              <View style={styles.billNumberRow}>
+                <Text style={styles.billNumber}>{record.bill_number}</Text>
+                <Text style={styles.sessionDot}>•</Text>
+                <Text style={styles.dateText}>
+                  {new Date(record.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.voteBadge, { backgroundColor: getVoteColor(record.vote) + '15', borderColor: getVoteColor(record.vote) }]}>
+              <MaterialIcons
+                name={getVoteIcon(record.vote) as any}
+                size={16}
+                color={getVoteColor(record.vote)}
+              />
+              <Text style={[styles.voteText, { color: getVoteColor(record.vote) }]}>
+                {getVoteLabel(record.vote)}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.recordDetails}>
+            <View style={[
+              styles.categoryBadge,
+              {
+                backgroundColor: getCategoryColor(record.category) + '15',
+                borderColor: getCategoryColor(record.category) + '50'
+              }
+            ]}>
+              <MaterialIcons name="folder" size={14} color={getCategoryColor(record.category)} />
+              <Text style={[styles.categoryText, { color: getCategoryColor(record.category) }]}>
+                {record.category}
+              </Text>
+            </View>
+
+            {record.bill_passed !== null && (
+              <View style={[
+                styles.resultBadge,
+                { backgroundColor: record.bill_passed ? colors.success[50] : colors.error[50] }
+              ]}>
+                <MaterialIcons
+                  name={record.bill_passed ? 'check-circle' : 'cancel'}
+                  size={14}
+                  color={record.bill_passed ? colors.success[600] : colors.error[600]}
+                />
+                <Text style={[
+                  styles.resultText,
+                  { color: record.bill_passed ? colors.success[700] : colors.error[700] }
+                ]}>
+                  {record.bill_passed ? 'Passed' : 'Failed'}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {record.bill_summary && (
+            <Text style={styles.billSummary} numberOfLines={3}>
+              {record.bill_summary}
+            </Text>
           )}
-          {record.verification_links && record.verification_links.length > 0 && (
-            <TouchableOpacity
-              style={styles.verificationButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                setSelectedRecord(record);
-                setShowDetailModal(true);
-                setShowSources(false);
-                setShowVerification(true);
-              }}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="verified" size={14} color="#10B981" />
-              <Text style={styles.verificationButtonText}>
-                Verification ({record.verification_links.length})
-              </Text>
-            </TouchableOpacity>
+
+          {record.notes && (
+            <View style={styles.reasoningContainer}>
+              <View style={styles.reasoningHeader}>
+                <MaterialIcons name="comment" size={14} color={colors.primary[600]} />
+                <Text style={styles.reasoningLabel}>Position</Text>
+              </View>
+              <Text style={styles.reasoningText} numberOfLines={2}>{record.notes}</Text>
+            </View>
           )}
         </View>
-      )}
-    </Card>
+      </Card>
     </TouchableOpacity>
   );
 
@@ -878,95 +882,160 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   votingCard: {
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: 12,
+    padding: 12,
   },
-  votingHeader: {
+  cardContent: {
+  },
+  recordHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  billInfo: {
+  recordTitleContainer: {
     flex: 1,
   },
-  billNumber: {
-    fontSize: 14,
+  billTitle: {
+    fontSize: 17,
     fontWeight: '700',
-    color: colors.primary[600],
-    marginBottom: 2,
+    color: '#111827',
+    lineHeight: 24,
+    marginBottom: 8,
   },
-  sessionInfo: {
-    fontSize: 12,
-    color: colors.neutral[500],
+  billNumberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  billNumber: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.primary[600],
+    letterSpacing: 0.3,
+  },
+  sessionDot: {
+    fontSize: 11,
+    color: colors.neutral[300],
+  },
+  dateText: {
+    fontSize: 11,
+    color: colors.neutral[400],
+    fontWeight: '400',
+  },
+  recordDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
   },
   voteBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
+    borderRadius: 12,
+    gap: 5,
+    borderWidth: 1.5,
   },
   voteText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  categoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+    borderWidth: 1,
+  },
+  categoryText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
-  billTitle: {
-    fontSize: 16,
+  resultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  resultText: {
+    fontSize: 11,
     fontWeight: '700',
-    color: colors.neutral[900],
-    lineHeight: 22,
-    marginBottom: 8,
+    letterSpacing: 0.3,
   },
   billSummary: {
     fontSize: 14,
     color: colors.neutral[600],
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: 21,
+    marginBottom: 14,
   },
-  votingFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  reasoningContainer: {
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 10,
     marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary[400],
   },
-  categoryRow: {
+  reasoningHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
+    marginBottom: 6,
   },
-  categoryText: {
+  reasoningLabel: {
     fontSize: 12,
-    color: colors.neutral[500],
+    fontWeight: '600',
+    color: colors.neutral[700],
   },
-  resultRow: {
+  reasoningText: {
+    fontSize: 13,
+    color: colors.neutral[600],
+    lineHeight: 19,
+    fontStyle: 'italic',
+  },
+  actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 10,
+    marginTop: 4,
   },
-  resultLabel: {
-    fontSize: 12,
-    color: colors.neutral[500],
+  sourceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#3B82F6',
+    borderRadius: 20,
+    gap: 5,
+    ...shadows.md,
   },
-  resultText: {
+  sourceButtonText: {
     fontSize: 12,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
-  notesSection: {
+  verificationButton: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: colors.neutral[50],
-    padding: 12,
-    borderRadius: 8,
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#10B981',
+    borderRadius: 20,
+    gap: 5,
+    ...shadows.md,
   },
-  notesText: {
+  verificationButtonText: {
     fontSize: 12,
-    color: colors.neutral[600],
-    flex: 1,
-    lineHeight: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   emptyState: {
     flex: 1,

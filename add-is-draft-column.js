@@ -17,22 +17,26 @@ db.connect((err) => {
   console.log('✅ Connected to MySQL Database');
 
   // Add is_draft column to politicians table
-  const query = `
+  const addColumnQuery = `
     ALTER TABLE politicians
-    ADD COLUMN is_draft TINYINT(1) DEFAULT 0 AFTER image_url
+    ADD COLUMN is_draft TINYINT(1) DEFAULT 0
+    COMMENT '0 = published, 1 = draft'
   `;
 
-  db.query(query, (err, result) => {
+  console.log('📝 Adding is_draft column to politicians table...');
+
+  db.query(addColumnQuery, (err) => {
     if (err) {
+      // Check if error is because column already exists
       if (err.code === 'ER_DUP_FIELDNAME') {
-        console.log('⚠️  Column is_draft already exists');
+        console.log('✅ Column is_draft already exists');
       } else {
-        console.error('❌ Error adding column:', err);
+        console.error('❌ Error adding is_draft column:', err);
         db.end();
         process.exit(1);
       }
     } else {
-      console.log('✅ Successfully added is_draft column to politicians table');
+      console.log('✅ Successfully added is_draft column');
     }
 
     // Verify the column was added
@@ -45,7 +49,7 @@ db.connect((err) => {
       }
 
       db.end();
-      console.log('\n✅ Database migration complete');
+      console.log('\n✅ Migration complete!');
     });
   });
 });

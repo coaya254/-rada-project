@@ -317,16 +317,20 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
           {/* Key Stats */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>95%</Text>
+              <Text style={styles.statValue}>
+                {votingData.length > 0
+                  ? `${Math.round((votingData.filter(v => v.vote !== 'absent').length / votingData.length) * 100)}%`
+                  : 'N/A'}
+              </Text>
               <Text style={styles.statLabel}>Attendance</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{politician.rating || 0}</Text>
+              <Text style={styles.statValue}>{politician.rating || 'N/A'}</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{politician.bio ? '1' : '0'}</Text>
-              <Text style={styles.statLabel}>Profile</Text>
+              <Text style={styles.statValue}>{politician.years_in_office || 0}</Text>
+              <Text style={styles.statLabel}>Years</Text>
             </View>
           </View>
         </LinearGradient>
@@ -386,7 +390,7 @@ export const PoliticianDetailScreen: React.FC<PoliticianDetailProps> = ({
             'Professional background',
             'work',
             ['#06B6D4', '#0891B2'],
-            { main: '15', sub: 'years' },
+            { main: politician.years_in_office?.toString() || '0', sub: 'years' },
             () => setActiveView('career')
           )}
           {renderBentoCard(

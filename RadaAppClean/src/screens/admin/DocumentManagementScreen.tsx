@@ -16,6 +16,7 @@ import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { PoliticsStackParamList } from '../../navigation/PoliticsStackNavigator';
 import { Document, Politician } from '../../types/politician';
+import { adminAPI } from '../../services/AdminAPIService';
 
 const { width } = Dimensions.get('window');
 
@@ -57,8 +58,8 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<DocumentType | 'All'>('All');
   const [selectedStatus, setSelectedStatus] = useState<DocumentStatus | 'All'>('All');
-  const [bulkUploadVisible, setBulkUploadVisible] = useState(false);
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
+  const [politician, setPolitician] = useState<any>(null);
 
   const [formData, setFormData] = useState<DocumentForm>({
     title: '',
@@ -66,6 +67,8 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
     description: '',
     content: '',
     date_published: new Date().toISOString().split('T')[0],
+    source_url: '',
+    file_url: '',
     status: 'draft',
     tags: [],
     politician_ids: [],
@@ -92,79 +95,63 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
   useEffect(() => {
     loadDocuments();
     loadPoliticians();
+
+    // If politicianId is provided in route params, pre-select it
+    const politicianId = route.params?.politicianId;
+    if (politicianId) {
+      setFormData(prev => ({
+        ...prev,
+        politician_ids: [politicianId]
+      }));
+    }
   }, []);
 
-  const loadDocuments = async () => {
-    const mockDocuments: Document[] = [
-      {
-        id: 1,
-        politician_id: 1,
-        title: 'State of the Nation Address on Economic Recovery',
-        type: 'speech',
-        description: 'Comprehensive address outlining Kenya\'s economic recovery plan post-COVID.',
-        content: 'Fellow Kenyans, today I stand before you to address the state of our nation and our path forward...',
-        date_published: '2024-03-15',
-        source_url: 'https://presidency.go.ke/speeches/state-of-nation-2024',
-        file_url: 'https://docs.presidency.go.ke/speeches/2024/state-of-nation.pdf',
-        status: 'published',
-        tags: ['Economy', 'Development', 'Healthcare'],
-        language: 'en',
-        is_featured: true,
-        transcript_available: true,
-        summary: 'President outlines ambitious economic recovery plan focusing on job creation, healthcare improvements, and infrastructure development.',
-        key_points: [
-          'Create 2 million jobs within 5 years',
-          'Increase healthcare budget by 30%',
-          'Complete major infrastructure projects',
-          'Support SMEs with low-interest loans'
-        ]
-      },
-      {
-        id: 2,
-        politician_id: 1,
-        title: 'Climate Action Policy Framework 2024',
-        type: 'policy',
-        description: 'Comprehensive policy document outlining Kenya\'s climate action strategy.',
-        content: 'Kenya commits to achieving carbon neutrality by 2050 through renewable energy transition...',
-        date_published: '2024-02-28',
-        source_url: 'https://environment.go.ke/climate-policy-2024',
-        status: 'published',
-        tags: ['Environment', 'Climate', 'Policy'],
-        language: 'en',
-        is_featured: false,
-        transcript_available: false,
-        summary: 'National climate policy emphasizing renewable energy, forest conservation, and green economy transition.',
-        key_points: [
-          'Carbon neutrality by 2050',
-          '60% renewable energy by 2030',
-          'Plant 15 billion trees',
-          'Green jobs creation program'
-        ]
+  useEffect(() => {
+    const politicianId = route.params?.politicianId;
+    if (politicianId) {
+      loadPoliticianDetails(politicianId);
+    }
+  }, [route.params?.politicianId]);
+
+  const loadPoliticianDetails = async (politicianId: number) => {
+    try {
+      const response = await adminAPI.getPolitician(politicianId);
+      if (response.success && response.data) {
+        setPolitician(response.data);
       }
-    ];
-    setDocuments(mockDocuments);
+    } catch (error) {
+      console.error('Error loading politician:', error);
+    }
+  };
+
+  const loadDocuments = async () => {
+    try {
+      const politicianId = route.params?.politicianId;
+      const response = await adminAPI.getDocuments(
+        politicianId ? { politicianId } : undefined
+      );
+
+      if (response.success && response.data) {
+        setDocuments(response.data);
+      } else {
+        console.error('Failed to load documents:', response.error);
+        Alert.alert('Error', 'Failed to load documents');
+      }
+    } catch (error) {
+      console.error('Error loading documents:', error);
+      Alert.alert('Error', 'Failed to load documents');
+    }
   };
 
   const loadPoliticians = async () => {
-    const mockPoliticians: Politician[] = [
-      {
-        id: 1,
-        name: 'Hon. Sarah Mwangi',
-        title: 'Member of Parliament',
-        party: 'Progressive Alliance',
-        constituency: 'Nairobi Central',
-        image_url: 'https://example.com/sarah-mwangi.jpg'
-      },
-      {
-        id: 2,
-        name: 'Hon. David Kimani',
-        title: 'Senator',
-        party: 'Unity Party',
-        constituency: 'Kiambu County',
-        image_url: 'https://example.com/david-kimani.jpg'
+    try {
+      const response = await adminAPI.searchPoliticians('', { include_drafts: true });
+      if (response.success && response.data) {
+        setPoliticians(response.data);
       }
-    ];
-    setPoliticians(mockPoliticians);
+    } catch (error) {
+      console.error('Error loading politicians:', error);
+    }
   };
 
   const resetForm = () => {
@@ -174,6 +161,8 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
       description: '',
       content: '',
       date_published: new Date().toISOString().split('T')[0],
+      source_url: '',
+      file_url: '',
       status: 'draft',
       tags: [],
       politician_ids: [],
@@ -187,33 +176,68 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
   };
 
   const handleSave = async () => {
+    console.log('handleSave called');
+    console.log('formData:', formData);
+    console.log('politician_ids:', formData.politician_ids);
+    console.log('politician_ids length:', formData.politician_ids?.length);
+
     if (!formData.title.trim() || !formData.description.trim()) {
+      console.log('Validation failed: title or description empty');
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
+    if (!formData.politician_ids || formData.politician_ids.length === 0) {
+      console.log('Validation failed: no politician selected');
+      Alert.alert('Error', 'Please select a politician');
+      return;
+    }
+
+    console.log('Validation passed, preparing to save...');
+
     try {
+      const documentData = {
+        politician_id: formData.politician_ids[0],
+        title: formData.title,
+        type: formData.type,
+        description: formData.description,
+        content: formData.content,
+        date_published: formData.date_published,
+        source_url: formData.source_url || null,
+        file_url: formData.file_url || null,
+        status: formData.status,
+        tags: formData.tags,
+        language: formData.language,
+        is_featured: formData.is_featured,
+        transcript_available: formData.transcript_available,
+        summary: formData.summary,
+        key_points: formData.key_points.filter(p => p.trim() !== '')
+      };
+
       if (editingDocument) {
-        const updatedDocs = documents.map(doc =>
-          doc.id === editingDocument.id
-            ? { ...formData, id: editingDocument.id } as Document
-            : doc
-        );
-        setDocuments(updatedDocs);
-        Alert.alert('Success', 'Document updated successfully');
+        const response = await adminAPI.updateDocument(editingDocument.id, documentData);
+        if (response.success) {
+          Alert.alert('Success', 'Document updated successfully');
+          await loadDocuments();
+        } else {
+          Alert.alert('Error', response.error || 'Failed to update document');
+          return;
+        }
       } else {
-        const newDocument: Document = {
-          ...formData,
-          id: Date.now(),
-          politician_id: formData.politician_ids[0] || 1,
-        } as Document;
-        setDocuments([...documents, newDocument]);
-        Alert.alert('Success', 'Document created successfully');
+        const response = await adminAPI.createDocument(documentData);
+        if (response.success) {
+          Alert.alert('Success', 'Document created successfully');
+          await loadDocuments();
+        } else {
+          Alert.alert('Error', response.error || 'Failed to create document');
+          return;
+        }
       }
 
       setModalVisible(false);
       resetForm();
     } catch (error) {
+      console.error('Error saving document:', error);
       Alert.alert('Error', 'Failed to save document');
     }
   };
@@ -221,6 +245,8 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
   const handleEdit = (document: Document) => {
     setFormData({
       ...document,
+      source_url: document.source_url || '',
+      file_url: document.file_url || '',
       politician_ids: [document.politician_id],
       key_points: document.key_points || [''],
     });
@@ -237,8 +263,19 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setDocuments(documents.filter(d => d.id !== documentId));
+          onPress: async () => {
+            try {
+              const response = await adminAPI.deleteDocument(documentId);
+              if (response.success) {
+                Alert.alert('Success', 'Document deleted successfully');
+                await loadDocuments();
+              } else {
+                Alert.alert('Error', response.error || 'Failed to delete document');
+              }
+            } catch (error) {
+              console.error('Error deleting document:', error);
+              Alert.alert('Error', 'Failed to delete document');
+            }
           },
         },
       ]
@@ -272,15 +309,15 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
     }
   };
 
-  const filteredDocuments = documents.filter(doc => {
+  const filteredDocuments = Array.isArray(documents) ? documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          doc.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+                         (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
     const matchesType = selectedType === 'All' || doc.type === selectedType;
     const matchesStatus = selectedStatus === 'All' || doc.status === selectedStatus;
 
     return matchesSearch && matchesType && matchesStatus;
-  });
+  }) : [];
 
   const getTypeIcon = (type: DocumentType) => {
     switch (type) {
@@ -342,6 +379,29 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
         </TouchableOpacity>
       </View>
 
+      {/* Politician Banner */}
+      {politician && (
+        <View style={styles.politicianBanner}>
+          <View style={styles.politicianInfo}>
+            <Ionicons name="person" size={20} color="#6366F1" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.politicianName}>{politician.name}</Text>
+              <Text style={styles.politicianPosition}>{politician.current_position || 'Politician'}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.changePoliticianButton}
+            onPress={() => navigation.navigate('PoliticianSelector', {
+              targetScreen: 'DocumentManagement',
+              title: 'Document Management',
+              allowViewAll: true,
+            })}
+          >
+            <Text style={styles.changePoliticianText}>Change</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.controls}>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#6B7280" style={styles.searchIcon} />
@@ -376,15 +436,6 @@ export const DocumentManagementScreen: React.FC<Props> = ({ route, navigation })
           ))}
         </ScrollView>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.bulkButton}
-            onPress={() => setBulkUploadVisible(true)}
-          >
-            <Ionicons name="cloud-upload" size={16} color="#FFFFFF" />
-            <Text style={styles.bulkButtonText}>Bulk Upload</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       <ScrollView style={styles.content}>
@@ -887,24 +938,6 @@ const styles = StyleSheet.create({
   filterChipTextActive: {
     color: '#FFFFFF',
   },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  bulkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#059669',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  bulkButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
   content: {
     flex: 1,
     padding: 16,
@@ -1305,5 +1338,44 @@ const styles = StyleSheet.create({
     color: '#374151',
     flex: 1,
     lineHeight: 18,
+  },
+  politicianBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  politicianInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  politicianName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  politicianPosition: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  changePoliticianButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  changePoliticianText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
   },
 });

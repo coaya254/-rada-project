@@ -71,6 +71,24 @@ const enhancedApiRoutes = require('./enhanced_api_routes');
 const contentApiRoutes = require('./content_api_routes_new');
 const politicsApiRoutes = require('./politics-api-routes');
 const adminApiRoutes = require('./admin-api-routes');
+const authApiRoutes = require('./auth-api-routes');
+const commitmentApiRoutes = require('./commitment-api-routes');
+const timelineApiRoutes = require('./timeline-api-routes');
+const votingApiRoutes = require('./voting-api-routes');
+const documentApiRoutes = require('./document-api-routes');
+const newsApiRoutes = require('./news-api-routes');
+const analyticsApiRoutes = require('./analytics-api-routes');
+const reportsApiRoutes = require('./reports-api-routes');
+const adminUsersApiRoutes = require('./admin-users-api-routes');
+const systemApiRoutes = require('./system-api-routes');
+const integrityApiRoutes = require('./integrity-api-routes');
+const auditLogApiRoutes = require('./audit-log-api-routes');
+const learningAdminApiRoutes = require('./learning-admin-api-routes');
+const learningUserApiRoutes = require('./learning-user-api-routes');
+const learningAdvancedFeatures = require('./learning-advanced-features');
+const dailyChallengesAdminApiRoutes = require('./daily-challenges-admin-api-routes');
+const challengesAdminApiRoutes = require('./challenges-admin-api-routes');
+const communityApiRoutes = require('./community-api-routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -88,6 +106,15 @@ const authLimiter = rateLimit({
     // Use IP + User-Agent for more precise rate limiting
     return `${req.ip}-${req.get('User-Agent') || 'unknown'}`;
   },
+});
+
+// Admin API rate limiting
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 admin requests per 15 minutes
+  message: 'Too many admin API requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Stricter rate limiting for password reset
@@ -3463,8 +3490,61 @@ app.get('/api/users/stats', (req, res) => {
 app.use(politicsApiRoutes(db));
 
 // ========== ADMIN API ROUTES ==========
-// Mount admin routes with database connection
+// Mount admin auth routes first (with strict rate limiting)
+app.use(authApiRoutes(db));
+
+// Mount admin routes with database connection (with rate limiting)
+app.use('/api/admin', adminLimiter);
 app.use(adminApiRoutes(db));
+
+// Mount commitment API routes with database connection
+app.use(commitmentApiRoutes(db));
+
+// Mount timeline API routes with database connection
+app.use(timelineApiRoutes(db));
+
+// Mount voting API routes with database connection
+app.use(votingApiRoutes(db));
+app.use(documentApiRoutes(db));
+
+// Mount news API routes with database connection
+app.use(newsApiRoutes(db));
+
+// Mount analytics API routes with database connection
+app.use(analyticsApiRoutes(db));
+
+// Mount reports API routes with database connection
+app.use(reportsApiRoutes(db));
+
+// Mount admin users API routes with database connection
+app.use(adminUsersApiRoutes(db));
+
+// Mount system API routes with database connection
+app.use(systemApiRoutes(db));
+
+// Mount integrity API routes with database connection
+app.use(integrityApiRoutes(db));
+
+// Mount audit log API routes
+app.use('/api/admin/audit-log', auditLogApiRoutes);
+
+// Mount learning API routes
+app.use('/api/admin/learning', learningAdminApiRoutes);
+app.use('/api/admin/learning', dailyChallengesAdminApiRoutes);
+app.use('/api/admin/learning', challengesAdminApiRoutes);
+app.use('/api/learning', learningUserApiRoutes);
+app.use('/api/learning', learningAdvancedFeatures);
+
+// Mount community API routes
+app.use(communityApiRoutes(db));
+
+// Mount profile API routes
+const profileApiRoutes = require('./profile-api-routes');
+app.use(profileApiRoutes(db));
+
+// Mount profile content API routes (posts, saved, activities)
+const profileContentApiRoutes = require('./profile-content-api-routes');
+app.use(profileContentApiRoutes(db));
 
 // Catch all handler - send back React's index.html file for client-side routing
 // This MUST be placed AFTER all API routes

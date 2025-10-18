@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   StatusBar,
   FlatList,
   Modal,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { PoliticsStackParamList } from '../../navigation/PoliticsStackNavigator';
 import { Politician } from '../../types';
+import ApiService from '../../services/api';
 
 interface PoliticianComparisonScreenProps {
   navigation: NativeStackNavigationProp<PoliticsStackParamList, 'PoliticianComparison'>;
@@ -124,11 +127,64 @@ const mockPoliticians: ComparisonPolitician[] = [
 ];
 
 export const PoliticianComparisonScreen: React.FC<PoliticianComparisonScreenProps> = ({ navigation }) => {
-  const [selectedPoliticians, setSelectedPoliticians] = useState<ComparisonPolitician[]>([mockPoliticians[0], mockPoliticians[1]]);
+  const [selectedPoliticians, setSelectedPoliticians] = useState<ComparisonPolitician[]>([]);
+  const [availablePoliticians, setAvailablePoliticians] = useState<ComparisonPolitician[]>([]);
   const [showPoliticianModal, setShowPoliticianModal] = useState(false);
   const [selectingIndex, setSelectingIndex] = useState<0 | 1>(0);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [comparing, setComparing] = useState(false);
+
+  useEffect(() => {
+    loadPoliticians();
+  }, []);
+
+  useEffect(() => {
+    if (selectedPoliticians.length === 2) {
+      loadComparison();
+    }
+  }, [selectedPoliticians]);
+
+  const loadPoliticians = async () => {
+    try {
+      setLoading(true);
+      const response = await ApiService.getPoliticians();
+      if (response.success && response.data) {
+        const politicians = response.data.slice(0, 10); // Get first 10
+        setAvailablePoliticians(politicians);
+
+        // Set default comparison if we have at least 2 politicians
+        if (politicians.length >= 2) {
+          setSelectedPoliticians([politicians[0], politicians[1]]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading politicians:', error);
+      Alert.alert('Error', 'Failed to load politicians');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadComparison = async () => {
+    if (selectedPoliticians.length !== 2) return;
+
+    try {
+      setComparing(true);
+      const politicianIds = selectedPoliticians.map(p => p.id);
+      const response = await ApiService.comparePoliticians(politicianIds);
+
+      if (response.success && response.data) {
+        setSelectedPoliticians(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading comparison:', error);
+      Alert.alert('Error', 'Failed to load comparison data');
+    } finally {
+      setComparing(false);
+    }
+  };
 
   const handleSelectPolitician = (politician: ComparisonPolitician) => {
     const newSelected = [...selectedPoliticians];
@@ -403,7 +459,7 @@ export const PoliticianComparisonScreen: React.FC<PoliticianComparisonScreenProp
             <View style={styles.modalHeaderRight} />
           </View>
           <FlatList
-            data={mockPoliticians.filter(p => p.id !== selectedPoliticians[selectingIndex === 0 ? 1 : 0].id)}
+            data={availablePoliticians.filter(p => p.id !== selectedPoliticians[selectingIndex === 0 ? 1 : 0].id)}
             renderItem={renderPoliticianSelector}
             keyExtractor={(item) => item.id.toString()}
             style={styles.selectorList}

@@ -58,112 +58,122 @@ const YouthHubScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
-  // Sample data - replace with API calls
+  // Load data from API
   useEffect(() => {
-    loadSampleData();
+    loadData();
   }, []);
 
-  const loadSampleData = () => {
-    // Sample Youth Organizations
-    const sampleOrganizations: YouthOrganization[] = [
-      {
-        id: 1,
-        name: 'Youth for Change Kenya',
-        description: 'Empowering young Kenyans through civic education, leadership training, and community development projects.',
-        category: 'civic-education',
-        county: 'Nairobi',
-        member_count: 1250,
-        founded_date: '2018-03-15',
-        verified: true,
-        focus_areas: ['civic-education', 'leadership', 'community-development', 'youth-empowerment'],
-        contact_info: {
-          email: 'info@youthforchange.ke',
-          phone: '+254 700 123 456',
-          website: 'www.youthforchange.ke'
+  const loadData = async () => {
+    try {
+      setRefreshing(true);
+      console.log('🔄 Loading youth hub data...');
+      
+      // For now, use sample data but structure it for future API integration
+      // TODO: Replace with real API calls when backend endpoints are available
+      const sampleOrganizations: YouthOrganization[] = [
+        {
+          id: 1,
+          name: 'Youth for Change Kenya',
+          description: 'Empowering young Kenyans through civic education, leadership training, and community development projects.',
+          category: 'civic-education',
+          county: 'Nairobi',
+          member_count: 1250,
+          founded_date: '2018-03-15',
+          verified: true,
+          focus_areas: ['civic-education', 'leadership', 'community-development', 'youth-empowerment'],
+          contact_info: {
+            email: 'info@youthforchange.ke',
+            phone: '+254 700 123 456',
+            website: 'www.youthforchange.ke'
+          }
+        },
+        {
+          id: 2,
+          name: 'Green Future Youth Initiative',
+          description: 'Environmental conservation and sustainability projects led by young Kenyans across the country.',
+          category: 'environmental',
+          county: 'Mombasa',
+          member_count: 890,
+          founded_date: '2020-06-20',
+          verified: true,
+          focus_areas: ['environmental-conservation', 'sustainability', 'climate-action', 'tree-planting'],
+          contact_info: {
+            email: 'hello@greenfuture.ke',
+            phone: '+254 700 789 012',
+            website: 'www.greenfuture.ke'
+          }
+        },
+        {
+          id: 3,
+          name: 'Tech Innovators Hub',
+          description: 'Youth-led technology innovation center focusing on digital skills, entrepreneurship, and tech solutions for local problems.',
+          category: 'technology',
+          county: 'Kisumu',
+          member_count: 650,
+          founded_date: '2019-11-10',
+          verified: true,
+          focus_areas: ['technology', 'innovation', 'entrepreneurship', 'digital-skills'],
+          contact_info: {
+            email: 'contact@techinnovators.ke',
+            phone: '+254 700 345 678',
+            website: 'www.techinnovators.ke'
+          }
         }
-      },
-      {
-        id: 2,
-        name: 'Green Future Youth Initiative',
-        description: 'Environmental conservation and sustainability projects led by young Kenyans across the country.',
-        category: 'environmental',
-        county: 'Mombasa',
-        member_count: 890,
-        founded_date: '2020-06-20',
-        verified: true,
-        focus_areas: ['environmental-conservation', 'sustainability', 'climate-action', 'tree-planting'],
-        contact_info: {
-          email: 'hello@greenfuture.ke',
-          phone: '+254 700 789 012',
-          website: 'www.greenfuture.ke'
-        }
-      },
-      {
-        id: 3,
-        name: 'Tech Innovators Hub',
-        description: 'Youth-led technology innovation center focusing on digital skills, entrepreneurship, and tech solutions for local problems.',
-        category: 'technology',
-        county: 'Kisumu',
-        member_count: 650,
-        founded_date: '2019-11-10',
-        verified: true,
-        focus_areas: ['technology', 'innovation', 'entrepreneurship', 'digital-skills'],
-        contact_info: {
-          email: 'contact@techinnovators.ke',
-          phone: '+254 700 345 678',
-          website: 'www.techinnovators.ke'
-        }
-      }
-    ];
+      ];
 
-    // Sample Youth Challenges
-    const sampleChallenges: YouthChallenge[] = [
-      {
-        id: 1,
-        title: 'Community Clean-up Challenge',
-        description: 'Organize a community clean-up event in your neighborhood and document the impact.',
-        category: 'environmental',
-        xp_reward: 150,
-        deadline: '2024-12-31',
-        participants: 45,
-        difficulty: 'beginner',
-        status: 'active'
-      },
-      {
-        id: 2,
-        title: 'Youth Leadership Workshop',
-        description: 'Conduct a leadership workshop for 20+ young people in your community.',
-        category: 'leadership',
-        xp_reward: 300,
-        deadline: '2024-11-30',
-        participants: 23,
-        difficulty: 'intermediate',
-        status: 'active'
-      },
-      {
-        id: 3,
-        title: 'Digital Skills Training',
-        description: 'Train 15+ youth in basic digital skills and help them create online profiles.',
-        category: 'technology',
-        xp_reward: 250,
-        deadline: '2024-10-31',
-        participants: 18,
-        difficulty: 'intermediate',
-        status: 'active'
-      }
-    ];
+      const sampleChallenges: YouthChallenge[] = [
+        {
+          id: 1,
+          title: 'Community Clean-up Challenge',
+          description: 'Organize a community clean-up event in your neighborhood and document the impact.',
+          category: 'environmental',
+          xp_reward: 150,
+          deadline: '2024-12-31',
+          participants: 45,
+          difficulty: 'beginner',
+          status: 'active'
+        },
+        {
+          id: 2,
+          title: 'Youth Leadership Workshop',
+          description: 'Conduct a leadership workshop for 20+ young people in your community.',
+          category: 'leadership',
+          xp_reward: 300,
+          deadline: '2024-11-30',
+          participants: 23,
+          difficulty: 'intermediate',
+          status: 'active'
+        },
+        {
+          id: 3,
+          title: 'Digital Skills Training',
+          description: 'Train 15+ youth in basic digital skills and help them create online profiles.',
+          category: 'technology',
+          xp_reward: 250,
+          deadline: '2024-10-31',
+          participants: 18,
+          difficulty: 'intermediate',
+          status: 'active'
+        }
+      ];
 
-    setOrganizations(sampleOrganizations);
-    setChallenges(sampleChallenges);
+      // TODO: Replace with real API calls
+      // const organizationsResponse = await apiService.getYouthOrganizations();
+      // const challengesResponse = await apiService.getYouthChallenges();
+      
+      setOrganizations(sampleOrganizations);
+      setChallenges(sampleChallenges);
+      console.log('✅ Youth hub data loaded successfully');
+      
+    } catch (error) {
+      console.error('❌ Error loading youth hub data:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      loadSampleData();
-      setRefreshing(false);
-    }, 1000);
+    await loadData();
   };
 
   const joinOrganization = (id: number) => {
