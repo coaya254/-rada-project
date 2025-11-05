@@ -73,12 +73,13 @@ module.exports = (db) => {
     const { id } = req.params;
 
     const query = `
-      SELECT id, title, type, date_published as date, description,
-             file_url as fileUrl, source_url, content, summary,
-             created_at as createdAt
-      FROM documents
-      WHERE politician_id = ? AND status = 'published'
-      ORDER BY date_published DESC
+      SELECT id, politician_id, title, subtitle, icon, type, category, category_color,
+             date, published_date, description, briefing, summary, details, pages,
+             image_url, thumbnail_url, document_url, file_url, source_links, tags,
+             created_at
+      FROM politician_documents
+      WHERE politician_id = ?
+      ORDER BY published_date DESC, date DESC, created_at DESC
     `;
 
     db.query(query, [id], (error, results) => {
@@ -90,9 +91,50 @@ module.exports = (db) => {
         });
       }
 
+      // Parse JSON fields
+      const processedResults = results.map(doc => {
+        let details = doc.details;
+        let tags = doc.tags;
+        let source_links = doc.source_links;
+
+        // Parse details (JSON array)
+        if (typeof details === 'string') {
+          try {
+            details = JSON.parse(details);
+          } catch (e) {
+            details = [];
+          }
+        }
+
+        // Parse tags (JSON array)
+        if (typeof tags === 'string') {
+          try {
+            tags = JSON.parse(tags);
+          } catch (e) {
+            tags = [];
+          }
+        }
+
+        // Parse source_links (JSON object)
+        if (typeof source_links === 'string') {
+          try {
+            source_links = JSON.parse(source_links);
+          } catch (e) {
+            source_links = null;
+          }
+        }
+
+        return {
+          ...doc,
+          details,
+          tags,
+          source_links
+        };
+      });
+
       res.json({
         success: true,
-        data: results
+        data: processedResults
       });
     });
   });
@@ -102,12 +144,12 @@ module.exports = (db) => {
     const { id } = req.params;
 
     const query = `
-      SELECT id, event_date as date, title, description, event_type as type,
-             source_links, verification_links,
-             created_at as createdAt
-      FROM timeline_events
+      SELECT id, politician_id, date, title, description, type, category,
+             summary, source, source_url, source_links, tags, icon,
+             created_at
+      FROM politician_timeline
       WHERE politician_id = ?
-      ORDER BY event_date DESC
+      ORDER BY date DESC, created_at DESC
     `;
 
     db.query(query, [id], (error, results) => {
@@ -120,11 +162,19 @@ module.exports = (db) => {
       }
 
       // Parse JSON fields
-      const timeline = results.map(t => ({
-        ...t,
-        source_links: t.source_links ? (typeof t.source_links === 'string' ? JSON.parse(t.source_links) : t.source_links) : [],
-        verification_links: t.verification_links ? (typeof t.verification_links === 'string' ? JSON.parse(t.verification_links) : t.verification_links) : []
-      }));
+      const timeline = results.map(t => {
+        let source_links = t.source_links;
+        let tags = t.tags;
+
+        if (typeof source_links === 'string') {
+          try { source_links = JSON.parse(source_links); } catch (e) { source_links = null; }
+        }
+        if (typeof tags === 'string') {
+          try { tags = JSON.parse(tags); } catch (e) { tags = []; }
+        }
+
+        return { ...t, source_links, tags };
+      });
 
       res.json({
         success: true,
@@ -138,14 +188,13 @@ module.exports = (db) => {
     const { id } = req.params;
 
     const query = `
-      SELECT id, promise as title, description, status, category,
-             date_made as dateMade, context, progress_percentage as progress,
-             evidence, last_activity_date, source_links, verification_links,
-             related_actions,
-             created_at as createdAt, updated_at as updatedAt
-      FROM commitments
+      SELECT id, politician_id, title, description, summary, status, category,
+             date_made, deadline, progress, progress_percentage,
+             evidence_text, evidence_url, source_links, tags,
+             created_at, updated_at
+      FROM politician_commitments
       WHERE politician_id = ?
-      ORDER BY date_made DESC
+      ORDER BY date_made DESC, created_at DESC
     `;
 
     db.query(query, [id], (error, results) => {
@@ -158,12 +207,19 @@ module.exports = (db) => {
       }
 
       // Parse JSON fields
-      const commitments = results.map(c => ({
-        ...c,
-        source_links: c.source_links ? (typeof c.source_links === 'string' ? JSON.parse(c.source_links) : c.source_links) : [],
-        verification_links: c.verification_links ? (typeof c.verification_links === 'string' ? JSON.parse(c.verification_links) : c.verification_links) : [],
-        related_actions: c.related_actions ? (typeof c.related_actions === 'string' ? JSON.parse(c.related_actions) : c.related_actions) : []
-      }));
+      const commitments = results.map(c => {
+        let source_links = c.source_links;
+        let tags = c.tags;
+
+        if (typeof source_links === 'string') {
+          try { source_links = JSON.parse(source_links); } catch (e) { source_links = null; }
+        }
+        if (typeof tags === 'string') {
+          try { tags = JSON.parse(tags); } catch (e) { tags = []; }
+        }
+
+        return { ...c, source_links, tags };
+      });
 
       res.json({
         success: true,
@@ -177,15 +233,13 @@ module.exports = (db) => {
     const { id } = req.params;
 
     const query = `
-      SELECT id, bill_title as bill_name, vote_value as vote,
-             vote_date as date, category, bill_description,
-             significance, reasoning as notes, bill_status, bill_passed, bill_number,
-             session_name as session, source_links, verification_links,
-             hansard_reference,
+      SELECT id, politician_id, bill_name, vote, vote_date, category, description,
+             bill_number, legislative_session, bill_status, vote_result,
+             notes, bill_url, source_url, source_links, tags,
              created_at
-      FROM voting_records
+      FROM politician_voting_records
       WHERE politician_id = ?
-      ORDER BY vote_date DESC
+      ORDER BY vote_date DESC, created_at DESC
     `;
 
     db.query(query, [id], (error, results) => {
@@ -197,18 +251,41 @@ module.exports = (db) => {
         });
       }
 
-      // Parse JSON fields
-      const votingRecords = results.map(v => ({
-        ...v,
-        bill_title: v.bill_name, // Add camelCase alias for compatibility
-        bill_summary: v.bill_description, // Add alias
-        source_links: v.source_links ? (typeof v.source_links === 'string' ? JSON.parse(v.source_links) : v.source_links) : [],
-        verification_links: v.verification_links ? (typeof v.verification_links === 'string' ? JSON.parse(v.verification_links) : v.verification_links) : []
-      }));
+      // Parse JSON fields and process results
+      const processedResults = results.map(record => {
+        let source_links = record.source_links;
+        let tags = record.tags;
+
+        // Parse JSON strings if needed
+        if (typeof source_links === 'string') {
+          try {
+            source_links = JSON.parse(source_links);
+          } catch (e) {
+            console.error('Error parsing source_links:', e);
+            source_links = null;
+          }
+        }
+
+        if (typeof tags === 'string') {
+          try {
+            tags = JSON.parse(tags);
+          } catch (e) {
+            console.error('Error parsing tags:', e);
+            tags = [];
+          }
+        }
+
+        return {
+          ...record,
+          source_links,
+          tags,
+          date: record.vote_date // Add date alias for backward compatibility
+        };
+      });
 
       res.json({
         success: true,
-        data: votingRecords
+        data: processedResults
       });
     });
   });
@@ -218,15 +295,13 @@ module.exports = (db) => {
     const { id } = req.params;
 
     const query = `
-      SELECT id, bill_title as bill_name, vote_value as vote,
-             vote_date as date, category, bill_description,
-             significance, reasoning as notes, bill_status, bill_passed, bill_number,
-             session_name as session, source_links, verification_links,
-             hansard_reference,
+      SELECT id, politician_id, bill_name, vote, vote_date, category, description,
+             bill_number, legislative_session, bill_status, vote_result,
+             notes, bill_url, source_url, source_links, tags,
              created_at
-      FROM voting_records
+      FROM politician_voting_records
       WHERE politician_id = ?
-      ORDER BY vote_date DESC
+      ORDER BY vote_date DESC, created_at DESC
     `;
 
     db.query(query, [id], (error, results) => {
@@ -238,18 +313,41 @@ module.exports = (db) => {
         });
       }
 
-      // Parse JSON fields
-      const votingRecords = results.map(v => ({
-        ...v,
-        bill_title: v.bill_name, // Add camelCase alias for compatibility
-        bill_summary: v.bill_description, // Add alias
-        source_links: v.source_links ? (typeof v.source_links === 'string' ? JSON.parse(v.source_links) : v.source_links) : [],
-        verification_links: v.verification_links ? (typeof v.verification_links === 'string' ? JSON.parse(v.verification_links) : v.verification_links) : []
-      }));
+      // Parse JSON fields and process results
+      const processedResults = results.map(record => {
+        let source_links = record.source_links;
+        let tags = record.tags;
+
+        // Parse JSON strings if needed
+        if (typeof source_links === 'string') {
+          try {
+            source_links = JSON.parse(source_links);
+          } catch (e) {
+            console.error('Error parsing source_links:', e);
+            source_links = null;
+          }
+        }
+
+        if (typeof tags === 'string') {
+          try {
+            tags = JSON.parse(tags);
+          } catch (e) {
+            console.error('Error parsing tags:', e);
+            tags = [];
+          }
+        }
+
+        return {
+          ...record,
+          source_links,
+          tags,
+          date: record.vote_date // Add date alias for backward compatibility
+        };
+      });
 
       res.json({
         success: true,
-        data: votingRecords
+        data: processedResults
       });
     });
   });
@@ -315,15 +413,22 @@ module.exports = (db) => {
     const query = `
       SELECT n.id,
              n.title as headline,
+             n.title,
              n.description as summary,
+             n.description,
              n.source,
              n.url as link,
+             n.url,
              n.published_date as source_publication_date,
+             n.published_date,
              n.created_at as system_addition_date,
+             n.created_at,
              n.image_url as imageUrl,
+             n.image_url,
              n.category,
              n.is_external as isExternal,
-             'high' as credibility
+             n.credibility,
+             n.source_links
       FROM news n
       INNER JOIN politician_news pn ON n.id = pn.news_id
       WHERE pn.politician_id = ?
@@ -339,9 +444,43 @@ module.exports = (db) => {
         });
       }
 
+      // Parse source_links JSON field
+      const processedResults = results.map(news => {
+        let sourceLinks = news.source_links;
+
+        // Parse source_links if it's a string
+        if (typeof sourceLinks === 'string') {
+          try {
+            sourceLinks = JSON.parse(sourceLinks);
+          } catch (e) {
+            console.error('Error parsing source_links:', e);
+            sourceLinks = null;
+          }
+        }
+
+        // Convert source_links object to array format for easier use
+        let sources = [];
+        if (sourceLinks && typeof sourceLinks === 'object') {
+          sources = Object.entries(sourceLinks).map(([name, url]) => ({
+            name,
+            url
+          }));
+        } else if (news.source && news.url) {
+          // Fallback to single source if no source_links
+          sources = [{ name: news.source, url: news.url }];
+        }
+
+        return {
+          ...news,
+          source_links: sourceLinks,
+          sources: sources,
+          credibility: news.credibility || 'medium'
+        };
+      });
+
       res.json({
         success: true,
-        data: results
+        data: processedResults
       });
     });
   });

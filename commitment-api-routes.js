@@ -7,7 +7,7 @@ module.exports = (db) => {
   router.get('/api/admin/commitments', (req, res) => {
     const { politicianId, status, category } = req.query;
 
-    let query = 'SELECT * FROM commitments WHERE 1=1';
+    let query = 'SELECT * FROM politician_commitments WHERE 1=1';
     const params = [];
 
     if (politicianId) {
@@ -40,8 +40,7 @@ module.exports = (db) => {
       const commitments = results.map(c => ({
         ...c,
         source_links: c.source_links ? (typeof c.source_links === 'string' ? JSON.parse(c.source_links) : c.source_links) : [],
-        verification_links: c.verification_links ? (typeof c.verification_links === 'string' ? JSON.parse(c.verification_links) : c.verification_links) : [],
-        related_actions: c.related_actions ? (typeof c.related_actions === 'string' ? JSON.parse(c.related_actions) : c.related_actions) : []
+        tags: c.tags ? (typeof c.tags === 'string' ? JSON.parse(c.tags) : c.tags) : []
       }));
 
       res.json({
@@ -55,7 +54,7 @@ module.exports = (db) => {
   router.get('/api/admin/commitments/:id', (req, res) => {
     const { id } = req.params;
 
-    db.query('SELECT * FROM commitments WHERE id = ?', [id], (err, results) => {
+    db.query('SELECT * FROM politician_commitments WHERE id = ?', [id], (err, results) => {
       if (err) {
         console.error('Error fetching commitment:', err);
         return res.status(500).json({
@@ -74,8 +73,7 @@ module.exports = (db) => {
       const commitment = {
         ...results[0],
         source_links: results[0].source_links ? JSON.parse(results[0].source_links) : [],
-        verification_links: results[0].verification_links ? JSON.parse(results[0].verification_links) : [],
-        related_actions: results[0].related_actions ? JSON.parse(results[0].related_actions) : []
+        tags: results[0].tags ? JSON.parse(results[0].tags) : []
       };
 
       res.json({
@@ -89,50 +87,50 @@ module.exports = (db) => {
   router.post('/api/admin/commitments', auditLog('CREATE', 'commitment'), (req, res) => {
     const {
       politician_id,
-      promise,
+      title,
       description,
+      summary,
       category,
-      context,
       date_made,
+      deadline,
       status,
       progress_percentage,
-      evidence,
-      last_activity_date,
+      evidence_text,
+      evidence_url,
       source_links,
-      verification_links,
-      related_actions
+      tags
     } = req.body;
 
     // Validate required fields
-    if (!politician_id || !promise || !description || !category || !date_made) {
+    if (!politician_id || !title || !description || !category || !date_made) {
       return res.status(400).json({
         success: false,
-        error: 'Politician ID, promise, description, category, and date made are required'
+        error: 'Politician ID, title, description, category, and date made are required'
       });
     }
 
     const query = `
-      INSERT INTO commitments (
-        politician_id, promise, description, category, context, date_made,
-        status, progress_percentage, evidence, last_activity_date,
-        source_links, verification_links, related_actions
+      INSERT INTO politician_commitments (
+        politician_id, title, description, summary, category, date_made,
+        deadline, status, progress_percentage, evidence_text, evidence_url,
+        source_links, tags
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
       politician_id,
-      promise,
+      title,
       description,
+      summary || null,
       category,
-      context || null,
       date_made,
-      status || 'no_evidence',
+      deadline || null,
+      status || 'pending',
       progress_percentage || 0,
-      evidence || null,
-      last_activity_date || null,
+      evidence_text || null,
+      evidence_url || null,
       source_links ? JSON.stringify(source_links) : null,
-      verification_links ? JSON.stringify(verification_links) : null,
-      related_actions ? JSON.stringify(related_actions) : null
+      tags ? JSON.stringify(tags) : null
     ];
 
     db.query(query, values, (err, result) => {
@@ -149,9 +147,9 @@ module.exports = (db) => {
         data: {
           id: result.insertId,
           politician_id,
-          promise,
+          title,
           category,
-          status: status || 'no_evidence'
+          status: status || 'pending'
         },
         message: 'Commitment created successfully'
       });
@@ -162,42 +160,46 @@ module.exports = (db) => {
   router.put('/api/admin/commitments/:id', auditLog('UPDATE', 'commitment'), (req, res) => {
     const { id } = req.params;
     const {
-      promise,
+      title,
       description,
+      summary,
       category,
-      context,
       date_made,
+      deadline,
       status,
       progress_percentage,
-      evidence,
-      last_activity_date,
+      evidence_text,
+      evidence_url,
       source_links,
-      verification_links,
-      related_actions
+      tags
     } = req.body;
 
     const updates = [];
     const values = [];
 
-    if (promise !== undefined) {
-      updates.push('promise = ?');
-      values.push(promise);
+    if (title !== undefined) {
+      updates.push('title = ?');
+      values.push(title);
     }
     if (description !== undefined) {
       updates.push('description = ?');
       values.push(description);
     }
+    if (summary !== undefined) {
+      updates.push('summary = ?');
+      values.push(summary);
+    }
     if (category !== undefined) {
       updates.push('category = ?');
       values.push(category);
     }
-    if (context !== undefined) {
-      updates.push('context = ?');
-      values.push(context);
-    }
     if (date_made !== undefined) {
       updates.push('date_made = ?');
       values.push(date_made);
+    }
+    if (deadline !== undefined) {
+      updates.push('deadline = ?');
+      values.push(deadline);
     }
     if (status !== undefined) {
       updates.push('status = ?');
@@ -207,25 +209,21 @@ module.exports = (db) => {
       updates.push('progress_percentage = ?');
       values.push(progress_percentage);
     }
-    if (evidence !== undefined) {
-      updates.push('evidence = ?');
-      values.push(evidence);
+    if (evidence_text !== undefined) {
+      updates.push('evidence_text = ?');
+      values.push(evidence_text);
     }
-    if (last_activity_date !== undefined) {
-      updates.push('last_activity_date = ?');
-      values.push(last_activity_date);
+    if (evidence_url !== undefined) {
+      updates.push('evidence_url = ?');
+      values.push(evidence_url);
     }
     if (source_links !== undefined) {
       updates.push('source_links = ?');
       values.push(JSON.stringify(source_links));
     }
-    if (verification_links !== undefined) {
-      updates.push('verification_links = ?');
-      values.push(JSON.stringify(verification_links));
-    }
-    if (related_actions !== undefined) {
-      updates.push('related_actions = ?');
-      values.push(JSON.stringify(related_actions));
+    if (tags !== undefined) {
+      updates.push('tags = ?');
+      values.push(JSON.stringify(tags));
     }
 
     if (updates.length === 0) {
@@ -236,7 +234,7 @@ module.exports = (db) => {
     }
 
     values.push(id);
-    const query = `UPDATE commitments SET ${updates.join(', ')} WHERE id = ?`;
+    const query = `UPDATE politician_commitments SET ${updates.join(', ')} WHERE id = ?`;
 
     db.query(query, values, (err, result) => {
       if (err) {
@@ -265,7 +263,7 @@ module.exports = (db) => {
   router.delete('/api/admin/commitments/:id', auditLog('DELETE', 'commitment'), (req, res) => {
     const { id } = req.params;
 
-    db.query('DELETE FROM commitments WHERE id = ?', [id], (err, result) => {
+    db.query('DELETE FROM politician_commitments WHERE id = ?', [id], (err, result) => {
       if (err) {
         console.error('Error deleting commitment:', err);
         return res.status(500).json({
@@ -291,15 +289,15 @@ module.exports = (db) => {
   // Update commitment progress
   router.patch('/api/admin/commitments/:id/progress', (req, res) => {
     const { id } = req.params;
-    const { status, progress_percentage, evidence } = req.body;
+    const { status, progress_percentage, evidence_text } = req.body;
 
     const query = `
-      UPDATE commitments
-      SET status = ?, progress_percentage = ?, evidence = ?, last_activity_date = CURDATE()
+      UPDATE politician_commitments
+      SET status = ?, progress_percentage = ?, evidence_text = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
 
-    db.query(query, [status, progress_percentage, evidence, id], (err, result) => {
+    db.query(query, [status, progress_percentage, evidence_text, id], (err, result) => {
       if (err) {
         console.error('Error updating commitment progress:', err);
         return res.status(500).json({

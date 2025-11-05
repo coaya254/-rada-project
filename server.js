@@ -85,13 +85,15 @@ const integrityApiRoutes = require('./integrity-api-routes');
 const auditLogApiRoutes = require('./audit-log-api-routes');
 const learningAdminApiRoutes = require('./learning-admin-api-routes');
 const learningUserApiRoutes = require('./learning-user-api-routes');
+const quickLinksApiRoutes = require('./quick-links-api-routes');
 const learningAdvancedFeatures = require('./learning-advanced-features');
 const dailyChallengesAdminApiRoutes = require('./daily-challenges-admin-api-routes');
 const challengesAdminApiRoutes = require('./challenges-admin-api-routes');
 const communityApiRoutes = require('./community-api-routes');
+const polihubIntegratedApiRoutes = require('./polihub-integrated-api-routes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
 // Enhanced rate limiting for authentication endpoints
@@ -138,7 +140,7 @@ const apiLimiter = rateLimit({
 // Configure CORS
 app.use(cors({
   origin: '*', // In production, replace with your specific domain
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-user-uuid', 'x-user-role']
 }));
 
@@ -3533,6 +3535,7 @@ app.use('/api/admin/learning', learningAdminApiRoutes);
 app.use('/api/admin/learning', dailyChallengesAdminApiRoutes);
 app.use('/api/admin/learning', challengesAdminApiRoutes);
 app.use('/api/learning', learningUserApiRoutes);
+app.use('/api', quickLinksApiRoutes(db));
 app.use('/api/learning', learningAdvancedFeatures);
 
 // Mount community API routes
@@ -3546,17 +3549,48 @@ app.use(profileApiRoutes(db));
 const profileContentApiRoutes = require('./profile-content-api-routes');
 app.use(profileContentApiRoutes(db));
 
+// Mount PoliHub integrated API routes (politics + civic education + blog)
+app.use(polihubIntegratedApiRoutes(db));
+
 // Catch all handler - send back React's index.html file for client-side routing
 // This MUST be placed AFTER all API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
 });
 
-// Start server
+// Start server with automatic port fallback
 console.log('🔍 About to start server listening...');
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Rada.ke server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/api/health`);
-  console.log(`API base: http://localhost:${PORT}/api`);
-  console.log(`Mobile access: http://192.168.100.41:${PORT}/api`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  const actualPort = server.address().port;
+  console.log(`🚀 Rada.ke server running on port ${actualPort}`);
+  console.log(`Health check: http://localhost:${actualPort}/api/health`);
+  console.log(`API base: http://localhost:${actualPort}/api`);
+  console.log(`Mobile access: http://192.168.100.41:${actualPort}/api`);
+});
+
+// Handle port already in use error
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`⚠️  Port ${PORT} is already in use, trying next available port...`);
+    const nextPort = PORT + 1;
+    const fallbackServer = app.listen(nextPort, '0.0.0.0', () => {
+      const actualPort = fallbackServer.address().port;
+      console.log(`🚀 Rada.ke server running on port ${actualPort}`);
+      console.log(`Health check: http://localhost:${actualPort}/api/health`);
+      console.log(`API base: http://localhost:${actualPort}/api`);
+      console.log(`Mobile access: http://192.168.100.41:${actualPort}/api`);
+    });
+
+    fallbackServer.on('error', (fallbackErr) => {
+      if (fallbackErr.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${nextPort} is also in use. Please free up a port or set a different PORT in .env`);
+      } else {
+        console.error('❌ Server error:', fallbackErr);
+      }
+      process.exit(1);
+    });
+  } else {
+    console.error('❌ Server error:', err);
+    process.exit(1);
+  }
 });

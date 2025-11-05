@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.100.41:5000/api';
 const ADMIN_API_PREFIX = '/admin';
 
 interface APIResponse<T> {
@@ -45,11 +45,14 @@ class AdminAPIService {
     try {
       const { method = 'GET', body, timeout = this.defaultTimeout } = config;
       const headers = await this.getAuthHeaders();
+      const fullURL = `${this.baseURL}${endpoint}`;
+
+      console.log(`🌐 Admin API Request: ${method} ${fullURL}`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
+      const response = await fetch(fullURL, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
@@ -58,15 +61,19 @@ class AdminAPIService {
 
       clearTimeout(timeoutId);
 
+      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error(`❌ API Error Response:`, errorData);
         throw new Error(errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log(`✅ API Success:`, data);
       return data; // Backend already returns { success, data } format
     } catch (error: any) {
-      console.error(`Admin API Error (${endpoint}):`, error);
+      console.error(`❌ Admin API Error (${endpoint}):`, error);
       return {
         success: false,
         error: error.message || 'Network request failed',

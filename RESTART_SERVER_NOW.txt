@@ -1,0 +1,19 @@
+🚨 IMPORTANT: YOU MUST RESTART YOUR SERVER! 🚨
+
+The blog API code has been updated but the server is still running the OLD code.
+
+HOW TO RESTART:
+
+1. Find the terminal/command prompt where server.js is running
+2. Press Ctrl+C to stop it
+3. Run: node server.js
+4. Wait for "Server running on port 5000"
+
+THEN:
+- Go to Admin Dashboard
+- Go to Blog Posts section
+- You should now see all 4 blog posts!
+
+If you don't restart, the admin will show 0 posts because the server hasn't loaded the new code yet.
+
+✅ AFTER RESTART, DELETE THIS FILE

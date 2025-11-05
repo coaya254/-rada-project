@@ -21,6 +21,7 @@ import PathsManagementScreen from '../screens/admin/PathsManagementScreen';
 import AchievementsManagementScreen from '../screens/admin/AchievementsManagementScreen';
 import { DailyChallengesManagementScreen } from '../screens/admin/DailyChallengesManagementScreen';
 import { ChallengesManagementScreen } from '../screens/admin/ChallengesManagementScreen';
+import EnhancedAdminDashboard from '../screens/admin/EnhancedAdminDashboard';
 
 export type LearningStackParamList = {
   LearningHome: undefined;
@@ -91,6 +92,7 @@ export type LearningStackParamList = {
   AchievementsManagement: undefined;
   DailyChallengesManagement: undefined;
   ChallengesManagement: undefined;
+  EnhancedAdminDashboard: undefined;
 };
 
 const Stack = createNativeStackNavigator<LearningStackParamList>();
@@ -236,6 +238,14 @@ export const LearningStackNavigator: React.FC = () => {
         component={ChallengesManagementScreen}
         options={{
           animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="EnhancedAdminDashboard"
+        component={EnhancedAdminDashboard}
+        options={{
+          headerShown: false,
+          animation: 'slide_from_bottom',
         }}
       />
     </Stack.Navigator>

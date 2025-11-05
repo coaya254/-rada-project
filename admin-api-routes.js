@@ -38,8 +38,8 @@ module.exports = (db) => {
           ) as completion_score,
           DATE_FORMAT(p.updated_at, '%Y-%m-%d') as last_updated
         FROM politicians p
-        LEFT JOIN timeline_events t ON p.id = t.politician_id
-        LEFT JOIN commitments c ON p.id = c.politician_id
+        LEFT JOIN politician_timeline t ON p.id = t.politician_id
+        LEFT JOIN politician_commitments c ON p.id = c.politician_id
         GROUP BY p.id
         ORDER BY p.created_at DESC
         LIMIT 100
@@ -73,8 +73,8 @@ module.exports = (db) => {
           ) as completion_score,
           DATE_FORMAT(p.updated_at, '%Y-%m-%d') as last_updated
         FROM politicians p
-        LEFT JOIN timeline_events t ON p.id = t.politician_id
-        LEFT JOIN commitments c ON p.id = c.politician_id
+        LEFT JOIN politician_timeline t ON p.id = t.politician_id
+        LEFT JOIN politician_commitments c ON p.id = c.politician_id
         WHERE p.name LIKE ? OR p.party LIKE ? OR p.position LIKE ?
         GROUP BY p.id
         ORDER BY p.name ASC

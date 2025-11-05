@@ -1,0 +1,83 @@
+Uncaught runtime errors:
+×
+ERROR
+selectedTopic is not defined
+ReferenceError: selectedTopic is not defined
+    at CivicEducationPage (http://localhost:3000/static/js/bundle.js:52384:37)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:20623:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:24191:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:25910:20)
+    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:10879:18)
+    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:10923:20)
+    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:10980:35)
+    at beginWork$1 (http://localhost:3000/static/js/bundle.js:30879:11)
+    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:30127:16)
+    at workLoopSync (http://localhost:3000/static/js/bundle.js:30050:9)
+ERROR
+selectedTopic is not defined
+ReferenceError: selectedTopic is not defined
+    at CivicEducationPage (http://localhost:3000/static/js/bundle.js:52384:37)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:20623:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:24191:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:25910:20)
+    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:10879:18)
+    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:10923:20)
+    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:10980:35)
+    at beginWork$1 (http://localhost:3000/static/js/bundle.js:30879:11)
+    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:30127:16)
+    at workLoopSync (http://localhost:3000/static/js/bundle.js:30050:9)
+ERROR
+selectedTopic is not defined
+ReferenceError: selectedTopic is not defined
+    at CivicEducationPage (http://localhost:3000/static/js/bundle.js:52384:37)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:20623:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:24191:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:25910:20)
+    at beginWork$1 (http://localhost:3000/static/js/bundle.js:30857:18)
+    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:30127:16)
+    at workLoopSync (http://localhost:3000/static/js/bundle.js:30050:9)
+    at renderRootSync (http://localhost:3000/static/js/bundle.js:30023:11)
+    at recoverFromConcurrentError (http://localhost:3000/static/js/bundle.js:29515:24)
+    at performSyncWorkOnRoot (http://localhost:3000/static/js/bundle.js:29724:24)
+
+    Uncaught runtime errors:
+×
+ERROR
+selectedTopic is not defined
+ReferenceError: selectedTopic is not defined
+    at CivicEducationPage (http://localhost:3000/static/js/bundle.js:52384:37)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:20623:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:24191:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:25910:20)
+    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:10879:18)
+    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:10923:20)
+    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:10980:35)
+    at beginWork$1 (http://localhost:3000/static/js/bundle.js:30879:11)
+    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:30127:16)
+    at workLoopSync (http://localhost:3000/static/js/bundle.js:30050:9)
+ERROR
+selectedTopic is not defined
+ReferenceError: selectedTopic is not defined
+    at CivicEducationPage (http://localhost:3000/static/js/bundle.js:52384:37)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:20623:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:24191:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:25910:20)
+    at HTMLUnknownElement.callCallback (http://localhost:3000/static/js/bundle.js:10879:18)
+    at Object.invokeGuardedCallbackDev (http://localhost:3000/static/js/bundle.js:10923:20)
+    at invokeGuardedCallback (http://localhost:3000/static/js/bundle.js:10980:35)
+    at beginWork$1 (http://localhost:3000/static/js/bundle.js:30879:11)
+    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:30127:16)
+    at workLoopSync (http://localhost:3000/static/js/bundle.js:30050:9)
+ERROR
+selectedTopic is not defined
+ReferenceError: selectedTopic is not defined
+    at CivicEducationPage (http://localhost:3000/static/js/bundle.js:52384:37)
+    at renderWithHooks (http://localhost:3000/static/js/bundle.js:20623:22)
+    at updateFunctionComponent (http://localhost:3000/static/js/bundle.js:24191:24)
+    at beginWork (http://localhost:3000/static/js/bundle.js:25910:20)
+    at beginWork$1 (http://localhost:3000/static/js/bundle.js:30857:18)
+    at performUnitOfWork (http://localhost:3000/static/js/bundle.js:30127:16)
+    at workLoopSync (http://localhost:3000/static/js/bundle.js:30050:9)
+    at renderRootSync (http://localhost:3000/static/js/bundle.js:30023:11)
+    at recoverFromConcurrentError (http://localhost:3000/static/js/bundle.js:29515:24)
+    at performSyncWorkOnRoot (http://localhost:3000/static/js/bundle.js:29724:24)

@@ -71,7 +71,16 @@ export const ModuleDetailScreen: React.FC<ModuleDetailScreenProps> = ({ navigati
       fetchModuleLessons();
     });
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, initialModule.id]);
+
+  // Handle route params for forced refresh
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchModuleLessons();
+      // Clear the refresh param
+      navigation.setParams({ refresh: undefined } as any);
+    }
+  }, [route.params?.refresh]);
 
   const fetchModuleLessons = async () => {
     try {

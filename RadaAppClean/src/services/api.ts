@@ -40,7 +40,7 @@ export interface CommunityPost {
 
 // API Configuration
 const API_BASE_URL = __DEV__
-  ? 'http://localhost:3000'  // Development
+  ? 'http://192.168.100.41:5000'  // Development - Use your computer's IP address
   : 'https://your-production-api.com'; // Production
 
 const API_CONFIG = {

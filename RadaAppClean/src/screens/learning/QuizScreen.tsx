@@ -311,9 +311,22 @@ export const QuizScreen: React.FC<QuizScreenProps> = ({ navigation, route }) => 
           </View>
 
           <View style={styles.resultActions}>
-            <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.goBack()}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => {
+                if (moduleId) {
+                  // Return to module with refresh flag
+                  navigation.navigate('ModuleDetail', {
+                    module: { id: moduleId },
+                    refresh: true
+                  });
+                } else {
+                  navigation.navigate('LearningHome');
+                }
+              }}
+            >
               <Text style={styles.primaryButtonText}>Continue Learning</Text>
-              <MaterialIcons name="arrow-forward" size={20} color="#FFFFFF" />
+              <MaterialIcons name="arrow-forward" size={20} color="#1F2937" />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.secondaryButton} onPress={handleRestart}>

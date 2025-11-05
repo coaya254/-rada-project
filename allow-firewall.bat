@@ -1,0 +1,6 @@
+@echo off
+echo Adding firewall rule for Node.js...
+netsh advfirewall firewall add rule name="Node.js Server" dir=in action=allow program="C:\Program Files\nodejs\node.exe" enable=yes
+echo.
+echo Firewall rule added! Press any key to close...
+pause

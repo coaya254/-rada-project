@@ -44,7 +44,7 @@ interface Stats {
   active_streaks: number;
 }
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export const DailyChallengesManagementScreen: React.FC<DailyChallengesManagementScreenProps> = ({ navigation }) => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);

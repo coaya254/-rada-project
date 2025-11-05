@@ -1,0 +1,149 @@
+╔═══════════════════════════════════════════════════════════════╗
+║        POLIHUB CPANEL DEPLOYMENT - FILES TO UPLOAD            ║
+║               www.radamtaani.co.ke                            ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📦 UPLOAD TO: /home/username/radamtaani/ (Application Root)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ CRITICAL FILES:
+   ├── .env                                    ⚠️ RENAME .env.cpanel & ADD DB PASSWORD!
+   ├── server.js                               ⭐ Main server file
+   ├── package.json                            ⭐ Use package.cpanel.json (rename)
+   └── package-lock.json
+
+✅ API ROUTE FILES (all *-api-routes.js):
+   ├── polihub-integrated-api-routes.js        🔥 REQUIRED for PoliHub
+   ├── politics-api-routes.js
+   ├── admin-api-routes.js
+   ├── auth-api-routes.js
+   ├── commitment-api-routes.js
+   ├── timeline-api-routes.js
+   ├── voting-api-routes.js
+   ├── document-api-routes.js
+   ├── news-api-routes.js
+   ├── analytics-api-routes.js
+   ├── reports-api-routes.js
+   ├── admin-users-api-routes.js
+   ├── system-api-routes.js
+   ├── integrity-api-routes.js
+   ├── audit-log-api-routes.js
+   ├── learning-admin-api-routes.js
+   ├── learning-user-api-routes.js
+   ├── quick-links-api-routes.js
+   ├── learning-advanced-features.js
+   ├── daily-challenges-admin-api-routes.js
+   ├── challenges-admin-api-routes.js
+   ├── community-api-routes.js
+   ├── content_api_routes_new.js
+   ├── enhanced_auth_middleware.js
+   └── enhanced_api_routes.js
+
+✅ POLIHUB DIRECTORY:
+   └── polihub/
+       ├── build/                              📦 Upload entire build folder
+       ├── src/                                (optional - for reference)
+       ├── node_modules/                       ❌ DON'T UPLOAD (will npm install)
+       ├── package.json
+       └── package-lock.json
+
+✅ OPTIONAL HELPERS:
+   ├── community-api-routes.js
+   └── uploads/                                📁 Create this folder if needed
+
+
+📂 UPLOAD TO: /home/username/public_html/ (Web Root)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ FROM polihub/build/ UPLOAD ALL:
+   ├── index.html                              🔥 REQUIRED
+   ├── favicon.ico
+   ├── manifest.json
+   ├── robots.txt
+   ├── asset-manifest.json
+   └── static/                                 📁 ENTIRE folder with JS/CSS
+       ├── css/
+       │   └── main.*.css
+       └── js/
+           ├── main.*.js
+           └── *.chunk.js
+
+✅ CONFIGURATION:
+   └── .htaccess                               🔥 REQUIRED for routing
+
+
+🗄️ DATABASE: coayaorg_rada
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 BEFORE UPLOADING - CREATE TABLES:
+
+Login to phpMyAdmin and ensure these tables exist:
+   ├── politicians
+   ├── politician_documents
+   ├── politician_news
+   ├── voting_records
+   ├── civic_topics
+   ├── blog_posts
+   ├── blog_authors
+   ├── news_articles
+   ├── sources
+   ├── quick_links
+   ├── about_page
+   └── users (if needed)
+
+
+⚙️ BEFORE STARTING NODE.JS APP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. ✏️ EDIT .env.cpanel:
+
+   DB_PASSWORD=YOUR_ACTUAL_MYSQL_PASSWORD_HERE
+
+   Then RENAME to: .env
+
+2. 📝 RENAME package.cpanel.json to package.json
+   (Overwrite existing if needed - this has Node 10 compatible versions)
+
+3. ✅ VERIFY file structure matches above
+
+4. 🚀 In cPanel → Setup Node.js App:
+   - Application root: /home/username/radamtaani
+   - Startup file: server.js
+   - Port: 3000
+   - Click CREATE
+
+5. 📦 Install dependencies:
+   source /path/to/activate (shown by cPanel)
+   npm install
+
+6. ▶️ START APP in cPanel interface
+
+
+🎯 VERIFICATION CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+□ Database password added to .env
+□ All files uploaded to correct locations
+□ polihub/build/ contents in public_html/
+□ .htaccess in public_html/
+□ Node.js app created in cPanel
+□ Dependencies installed (npm install)
+□ App started successfully
+□ Visit: https://www.radamtaani.co.ke
+□ Test: https://www.radamtaani.co.ke/api/polihub/politicians
+
+
+📞 SUPPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Detailed Guide: CPANEL_DEPLOYMENT_GUIDE.md
+Quick Steps: QUICK_DEPLOYMENT_STEPS.md
+
+Database: coayaorg_rada (username AND database name)
+Domain: www.radamtaani.co.ke
+Node Version: 10.24.1
+
+═══════════════════════════════════════════════════════════════
+Generated: 2025-11-03
+Ready to deploy! 🚀
+═══════════════════════════════════════════════════════════════

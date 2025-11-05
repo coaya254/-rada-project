@@ -66,6 +66,7 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
     totalModules: 24,
   });
 
+  const [inProgressModules, setInProgressModules] = useState<Module[]>([]);
   const [featuredModules, setFeaturedModules] = useState<Module[]>([]);
   const [completedModules, setCompletedModules] = useState<Module[]>([]);
 
@@ -122,12 +123,12 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
         // API returns data in either "data" or "modules" field
         const modules = modulesResponse.data || modulesResponse.modules;
 
-        // Transform API data to match frontend interface
-        const transformedModules = modules
+        // Get in-progress modules
+        const inProgress = modules
           .filter((m: any) => {
-            const hasProgress = (m.progress_percentage || 0) > 0;
+            const progress = m.progress_percentage || 0;
             const isPublished = m.is_published === 1 || m.is_published === true;
-            return hasProgress && isPublished;
+            return isPublished && progress > 0 && progress < 100;
           })
           .slice(0, 4) // Show 4 most recent in-progress modules
           .map((m: any) => ({
@@ -143,7 +144,30 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
             category: m.category || 'General',
           }));
 
-        setFeaturedModules(transformedModules);
+        setInProgressModules(inProgress);
+
+        // Get featured modules
+        const featured = modules
+          .filter((m: any) => {
+            const isPublished = m.is_published === 1 || m.is_published === true;
+            const isFeatured = m.is_featured === 1 || m.is_featured === true;
+            return isPublished && isFeatured;
+          })
+          .slice(0, 3) // Show top 3 featured modules
+          .map((m: any) => ({
+            id: m.id,
+            title: m.title,
+            description: m.description,
+            icon: m.icon || 'school',
+            progress: m.progress_percentage || 0,
+            totalLessons: m.total_lessons || 0,
+            completedLessons: Math.round((m.total_lessons || 0) * ((m.progress_percentage || 0) / 100)),
+            xpReward: m.xp_reward || 0,
+            difficulty: m.difficulty?.charAt(0).toUpperCase() + m.difficulty?.slice(1) || 'Beginner',
+            category: m.category || 'General',
+          }));
+
+        setFeaturedModules(featured);
 
         // Also fetch completed modules (100% progress)
         const completedTransformed = modules
@@ -171,7 +195,7 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
 
       // Fetch active challenges
       try {
-        const challengesResponse = await fetch('http://localhost:3000/api/admin/learning/challenges?active=true');
+        const challengesResponse = await fetch('http://localhost:5000/api/admin/learning/challenges?active=true');
         const challengesData = await challengesResponse.json();
 
         if (challengesData.success && challengesData.challenges) {
@@ -433,8 +457,70 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Continue Learning (In-Progress Modules) */}
+        {/* Featured Modules */}
         {featuredModules.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleContainer}>
+                <MaterialIcons name="star" size={24} color="#F59E0B" />
+                <Text style={styles.sectionTitle}>Featured Modules</Text>
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+            >
+              {featuredModules.map((module) => {
+                const isImageUrl = module.icon.startsWith('http://') || module.icon.startsWith('https://');
+                return (
+                  <TouchableOpacity
+                    key={module.id}
+                    style={styles.featuredCard}
+                    onPress={() => navigation.navigate('ModuleDetail', { module })}
+                  >
+                    <LinearGradient
+                      colors={['#F59E0B', '#D97706']}
+                      style={styles.featuredGradient}
+                    >
+                      <View style={styles.featuredBadge}>
+                        <MaterialIcons name="star" size={16} color="#FFD700" />
+                        <Text style={styles.featuredBadgeText}>Featured</Text>
+                      </View>
+                      {isImageUrl ? (
+                        <Image
+                          source={{ uri: module.icon }}
+                          style={styles.featuredIcon}
+                        />
+                      ) : (
+                        <View style={styles.featuredIcon}>
+                          <Text style={styles.featuredIconEmoji}>{module.icon}</Text>
+                        </View>
+                      )}
+                      <Text style={styles.featuredTitle}>{module.title}</Text>
+                      <Text style={styles.featuredDescription} numberOfLines={2}>
+                        {module.description}
+                      </Text>
+                      <View style={styles.featuredStats}>
+                        <View style={styles.featuredStat}>
+                          <MaterialIcons name="menu-book" size={14} color="rgba(255,255,255,0.9)" />
+                          <Text style={styles.featuredStatText}>{module.totalLessons} lessons</Text>
+                        </View>
+                        <View style={styles.featuredStat}>
+                          <MaterialIcons name="stars" size={14} color="rgba(255,255,255,0.9)" />
+                          <Text style={styles.featuredStatText}>{module.xpReward} XP</Text>
+                        </View>
+                      </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Continue Learning (In-Progress Modules) */}
+        {inProgressModules.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Continue Learning</Text>
@@ -443,7 +529,7 @@ export const LearningHome: React.FC<LearningHomeProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
             <FlatList
-              data={featuredModules}
+              data={inProgressModules}
               renderItem={renderModuleCard}
               keyExtractor={(item) => item.id.toString()}
               scrollEnabled={false}
@@ -833,5 +919,83 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  horizontalScroll: {
+    paddingRight: 24,
+  },
+  featuredCard: {
+    width: 260,
+    marginRight: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  featuredGradient: {
+    padding: 20,
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    marginBottom: 16,
+  },
+  featuredBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  featuredIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  featuredIconEmoji: {
+    fontSize: 48,
+    textAlign: 'center',
+    lineHeight: 80,
+  },
+  featuredTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 8,
+    lineHeight: 26,
+  },
+  featuredDescription: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  featuredStats: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  featuredStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  featuredStatText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
   },
 });

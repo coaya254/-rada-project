@@ -44,7 +44,7 @@ module.exports = (db) => {
   router.get('/api/admin/documents', (req, res) => {
     const { politicianId } = req.query;
 
-    let query = 'SELECT * FROM documents';
+    let query = 'SELECT * FROM politician_documents';
     const params = [];
 
     if (politicianId) {
@@ -52,7 +52,7 @@ module.exports = (db) => {
       params.push(politicianId);
     }
 
-    query += ' ORDER BY date_published DESC';
+    query += ' ORDER BY published_date DESC';
 
     db.query(query, params, (err, results) => {
       if (err) {
@@ -81,7 +81,7 @@ module.exports = (db) => {
   router.get('/api/admin/documents/:id', (req, res) => {
     const { id } = req.params;
 
-    db.query('SELECT * FROM documents WHERE id = ?', [id], (err, results) => {
+    db.query('SELECT * FROM politician_documents WHERE id = ?', [id], (err, results) => {
       if (err) {
         console.error('Error fetching document:', err);
         return res.status(500).json({
@@ -115,53 +115,46 @@ module.exports = (db) => {
     const {
       politician_id,
       title,
+      subtitle,
       type,
+      category,
+      date,
       description,
-      content,
-      date_published,
-      source_url,
-      file_url,
-      status,
-      tags,
-      language,
-      is_featured,
-      transcript_available,
       summary,
-      key_points
+      briefing,
+      details,
+      tags,
+      source_links
     } = req.body;
 
     // Validate required fields
-    if (!politician_id || !title || !type || !date_published) {
+    if (!politician_id || !title || !type || !date) {
       return res.status(400).json({
         success: false,
-        error: 'Politician ID, title, type, and date published are required'
+        error: 'Politician ID, title, type, and date are required'
       });
     }
 
     const query = `
-      INSERT INTO documents (
-        politician_id, title, type, description, content, date_published,
-        source_url, file_url, status, tags, language, is_featured,
-        transcript_available, summary, key_points
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO politician_documents (
+        politician_id, title, subtitle, type, category, date,
+        description, summary, briefing, details, tags, source_links
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
       politician_id,
       title,
+      subtitle || null,
       type,
-      description || '',
-      content || '',
-      date_published,
-      source_url || null,
-      file_url || null,
-      status || 'draft',
+      category || null,
+      date,
+      description || null,
+      summary || null,
+      briefing || null,
+      details ? JSON.stringify(details) : null,
       tags ? JSON.stringify(tags) : null,
-      language || 'en',
-      is_featured || false,
-      transcript_available || false,
-      summary || '',
-      key_points ? JSON.stringify(key_points) : null
+      source_links ? JSON.stringify(source_links) : null
     ];
 
     db.query(query, values, (err, result) => {
@@ -194,7 +187,7 @@ module.exports = (db) => {
       type,
       description,
       content,
-      date_published,
+      published_date,
       source_url,
       file_url,
       status,
@@ -225,9 +218,9 @@ module.exports = (db) => {
       updates.push('content = ?');
       values.push(content);
     }
-    if (date_published !== undefined) {
-      updates.push('date_published = ?');
-      values.push(date_published);
+    if (published_date !== undefined) {
+      updates.push('published_date = ?');
+      values.push(published_date);
     }
     if (source_url !== undefined) {
       updates.push('source_url = ?');
@@ -274,7 +267,7 @@ module.exports = (db) => {
     }
 
     values.push(id);
-    const query = `UPDATE documents SET ${updates.join(', ')} WHERE id = ?`;
+    const query = `UPDATE politician_documents SET ${updates.join(', ')} WHERE id = ?`;
 
     db.query(query, values, (err, result) => {
       if (err) {
@@ -303,7 +296,7 @@ module.exports = (db) => {
   router.delete('/api/admin/documents/:id', auditLog('DELETE', 'document'), (req, res) => {
     const { id } = req.params;
 
-    db.query('DELETE FROM documents WHERE id = ?', [id], (err, result) => {
+    db.query('DELETE FROM politician_documents WHERE id = ?', [id], (err, result) => {
       if (err) {
         console.error('Error deleting document:', err);
         return res.status(500).json({

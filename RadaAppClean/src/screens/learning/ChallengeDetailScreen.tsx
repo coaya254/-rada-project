@@ -86,7 +86,7 @@ export const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ na
   const loadChallengeDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/admin/learning/challenges/${initialChallenge.id}`);
+      const response = await fetch(`http://localhost:5000/api/admin/learning/challenges/${initialChallenge.id}`);
       const data = await response.json();
 
       if (data.success && data.challenge) {
@@ -143,7 +143,7 @@ export const ChallengeDetailScreen: React.FC<ChallengeDetailScreenProps> = ({ na
     // For module tasks, fetch the module details and navigate to ModuleDetail screen
     if (task.task_type === 'module') {
       try {
-        const response = await fetch(`http://localhost:3000/api/admin/learning/modules/${task.task_id}`);
+        const response = await fetch(`http://localhost:5000/api/admin/learning/modules/${task.task_id}`);
         const data = await response.json();
 
         if (data.success && data.module) {

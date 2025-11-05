@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Change this to your computer's IP address if testing on physical device
 // Find it by running: ipconfig (Windows) and look for IPv4 Address
-const API_BASE_URL = 'http://localhost:3000/api/community';
+const API_BASE_URL = 'http://192.168.100.41:5000/api/community';
 
 export interface Discussion {
   id: number;

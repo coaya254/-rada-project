@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node add-source-associations.js:*)",
+      "Bash(node fix-sidebar-order.js:*)",
+      "Bash(node check-politician-tables-detailed.js:*)",
+      "Bash(node:*)",
+      "Bash(npm run build:*)",
+      "Bash(dir /b:*)",
+      "Bash(dir:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

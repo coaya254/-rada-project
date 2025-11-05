@@ -82,7 +82,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
   const loadChallenges = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/admin/learning/challenges');
+      const response = await fetch('http://localhost:5000/api/admin/learning/challenges');
       const data = await response.json();
 
       if (data.success) {
@@ -98,7 +98,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
 
   const loadAvailableContent = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/admin/learning/modules');
+      const response = await fetch('http://localhost:5000/api/admin/learning/modules');
       const data = await response.json();
 
       if (data.success) {
@@ -123,7 +123,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
 
   const loadChallengeTasks = async (challengeId: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/admin/learning/challenges/${challengeId}`);
+      const response = await fetch(`http://localhost:5000/api/admin/learning/challenges/${challengeId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -142,7 +142,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/admin/learning/challenges', {
+      const response = await fetch('http://localhost:5000/api/admin/learning/challenges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,7 +175,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
 
   const handleToggleActive = async (challenge: Challenge) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/admin/learning/challenges/${challenge.id}`, {
+      const response = await fetch(`http://localhost:5000/api/admin/learning/challenges/${challenge.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: !challenge.active }),
@@ -215,7 +215,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/admin/learning/challenges/${selectedChallenge.id}`, {
+      const response = await fetch(`http://localhost:5000/api/admin/learning/challenges/${selectedChallenge.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -257,7 +257,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(`http://localhost:3000/api/admin/learning/challenges/${challenge.id}`, {
+              const response = await fetch(`http://localhost:5000/api/admin/learning/challenges/${challenge.id}`, {
                 method: 'DELETE',
               });
 
@@ -295,7 +295,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/admin/learning/challenges/${selectedChallenge.id}/tasks`,
+        `http://localhost:5000/api/admin/learning/challenges/${selectedChallenge.id}/tasks`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -331,7 +331,7 @@ export const ChallengesManagementScreen: React.FC<ChallengesManagementScreenProp
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/admin/learning/challenges/${selectedChallenge.id}/tasks/${taskId}`,
+        `http://localhost:5000/api/admin/learning/challenges/${selectedChallenge.id}/tasks/${taskId}`,
         { method: 'DELETE' }
       );
 

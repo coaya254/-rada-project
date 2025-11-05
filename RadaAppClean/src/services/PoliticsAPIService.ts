@@ -1,5 +1,5 @@
 // Public-facing Politics API Service (no auth required)
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.100.41:5000/api';
 
 interface APIResponse<T> {
   success: boolean;

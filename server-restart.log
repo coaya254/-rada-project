@@ -1,0 +1,156 @@
+🔍 About to start server listening...
+🚀 Rada.ke server running on port 5000
+Health check: http://localhost:5000/api/health
+API base: http://localhost:5000/api
+Mobile access: http://192.168.100.41:5000/api
+✅ Connected to MySQL Database
+🔍 Checking database tables...
+✅ All database tables already exist, skipping table creation
+🔍 Checking for existing data...
+✅ Database already contains sample data - skipping insertion
+[0mGET /api/quick-links [32m200[0m 33.960 ms - 1962[0m
+127.0.0.1 - - [31/Oct/2025:20:28:54 +0000] "GET /api/quick-links HTTP/1.1" 200 1962 "-" "curl/8.14.1"
+[0mGET /api/quick-links [32m200[0m 6.055 ms - 981[0m
+127.0.0.1 - - [31/Oct/2025:20:30:53 +0000] "GET /api/quick-links HTTP/1.1" 200 981 "-" "curl/8.14.1"
+📚 Fetching civic modules with filters: { category: undefined, difficulty: undefined, status: 'published' }
+✅ Found 18 modules
+[0mGET /api/polihub/trending [36m304[0m 17.702 ms - -[0m
+127.0.0.1 - - [31/Oct/2025:20:33:13 +0000] "GET /api/polihub/trending HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians? [36m304[0m 20.264 ms - -[0m
+127.0.0.1 - - [31/Oct/2025:20:33:13 +0000] "GET /api/polihub/politicians? HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/blog?limit=20 [36m304[0m 26.001 ms - -[0m
+127.0.0.1 - - [31/Oct/2025:20:33:13 +0000] "GET /api/polihub/blog?limit=20 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+  ✅ Module "Electoral Process" has 2 lessons
+  ✅ Module "Understanding County Governments" has 0 lessons
+  ✅ Module "Constitution Basics" has 0 lessons
+  ✅ Module "Civic Participation" has 0 lessons
+  ✅ Module "Civil Rights History" has 0 lessons
+  ✅ Module "Civic Rights and Responsibilities" has 0 lessons
+  ✅ Module "Budget Literacy" has 0 lessons
+  ✅ Module "Digital Citizenship" has 0 lessons
+  ✅ Module "Introduction to Civic Engagement" has 0 lessons
+  ✅ Module "Understanding Local Government" has 0 lessons
+  ✅ Module "Youth Leadership in Politics" has 0 lessons
+  ✅ Module "County Governance" has 0 lessons
+  ✅ Module "Constitutional Basics" has 0 lessons
+  ✅ Module "Kenya Government Structure" has 0 lessons
+  ✅ Module "E2E Test Module" has 1 lessons
+  ✅ Module "Kenya Voting Guide - ADHD Friendly Module" has 2 lessons
+  ✅ Module "Constitutional Basics" has 5 lessons
+  ✅ Module "Trial Module 1" has 3 lessons
+[0mGET /api/polihub/civic-modules?status=published [36m304[0m 62.997 ms - -[0m
+127.0.0.1 - - [31/Oct/2025:20:33:13 +0000] "GET /api/polihub/civic-modules?status=published HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/trending [36m304[0m 6.994 ms - -[0m
+127.0.0.1 - - [31/Oct/2025:20:33:13 +0000] "GET /api/polihub/trending HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians? [36m304[0m 7.621 ms - -[0m
+127.0.0.1 - - [31/Oct/2025:20:33:13 +0000] "GET /api/polihub/politicians? HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/blog?limit=20 [36m304[0m 8.087 ms - -[0m
+127.0.0.1 - - [31/Oct/2025:20:33:13 +0000] "GET /api/polihub/blog?limit=20 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+📚 Fetching civic modules with filters: { category: undefined, difficulty: undefined, status: 'published' }
+✅ Found 18 modules
+  ✅ Module "Kenya Voting Guide - ADHD Friendly Module" has 2 lessons
+  ✅ Module "Trial Module 1" has 3 lessons
+  ✅ Module "E2E Test Module" has 1 lessons
+  ✅ Module "Constitutional Basics" has 0 lessons
+  ✅ Module "Kenya Government Structure" has 0 lessons
+  ✅ Module "Constitution Basics" has 0 lessons
+  ✅ Module "Understanding County Governments" has 0 lessons
+  ✅ Module "Civic Participation" has 0 lessons
+  ✅ Module "Constitutional Basics" has 5 lessons
+  ✅ Module "Electoral Process" has 2 lessons
+  ✅ Module "Civil Rights History" has 0 lessons
+  ✅ Module "Civic Rights and Responsibilities" has 0 lessons
+  ✅ Module "Budget Literacy" has 0 lessons
+  ✅ Module "Digital Citizenship" has 0 lessons
+  ✅ Module "Introduction to Civic Engagement" has 0 lessons
+  ✅ Module "Understanding Local Government" has 0 lessons
+  ✅ Module "Youth Leadership in Politics" has 0 lessons
+  ✅ Module "County Governance" has 0 lessons
+[0mGET /api/polihub/civic-modules?status=published [36m304[0m 23.804 ms - -[0m
+127.0.0.1 - - [31/Oct/2025:20:33:13 +0000] "GET /api/polihub/civic-modules?status=published HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/quick-links [32m200[0m 18.621 ms - 981[0m
+127.0.0.1 - - [01/Nov/2025:06:05:56 +0000] "GET /api/quick-links HTTP/1.1" 200 981 "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/quick-links [36m304[0m 17.510 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:05:56 +0000] "GET /api/quick-links HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians/24 [36m304[0m 560.509 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:05:59 +0000] "GET /api/polihub/politicians/24 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians/24 [36m304[0m 82.740 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:05:59 +0000] "GET /api/polihub/politicians/24 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+📚 Fetching civic modules with filters: { category: undefined, difficulty: undefined, status: 'published' }
+[0mGET /api/polihub/trending [36m304[0m 5.812 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:23 +0000] "GET /api/polihub/trending HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+✅ Found 18 modules
+  ✅ Module "E2E Test Module" has 1 lessons
+  ✅ Module "Electoral Process" has 2 lessons
+  ✅ Module "Constitutional Basics" has 5 lessons
+  ✅ Module "Constitutional Basics" has 0 lessons
+  ✅ Module "Kenya Government Structure" has 0 lessons
+  ✅ Module "Understanding County Governments" has 0 lessons
+  ✅ Module "Civic Participation" has 0 lessons
+  ✅ Module "Constitution Basics" has 0 lessons
+  ✅ Module "Trial Module 1" has 3 lessons
+  ✅ Module "Kenya Voting Guide - ADHD Friendly Module" has 2 lessons
+  ✅ Module "Civil Rights History" has 0 lessons
+  ✅ Module "Civic Rights and Responsibilities" has 0 lessons
+  ✅ Module "Budget Literacy" has 0 lessons
+  ✅ Module "Digital Citizenship" has 0 lessons
+  ✅ Module "Introduction to Civic Engagement" has 0 lessons
+  ✅ Module "Understanding Local Government" has 0 lessons
+  ✅ Module "Youth Leadership in Politics" has 0 lessons
+  ✅ Module "County Governance" has 0 lessons
+[0mGET /api/polihub/civic-modules?status=published [36m304[0m 22.171 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:23 +0000] "GET /api/polihub/civic-modules?status=published HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians? [36m304[0m 5.139 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:23 +0000] "GET /api/polihub/politicians? HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/blog?limit=20 [36m304[0m 6.886 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:23 +0000] "GET /api/polihub/blog?limit=20 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+📚 Fetching civic modules with filters: { category: undefined, difficulty: undefined, status: 'published' }
+[0mGET /api/polihub/trending [36m304[0m 3.648 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:23 +0000] "GET /api/polihub/trending HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+✅ Found 18 modules
+  ✅ Module "Kenya Voting Guide - ADHD Friendly Module" has 2 lessons
+  ✅ Module "E2E Test Module" has 1 lessons
+  ✅ Module "Trial Module 1" has 3 lessons
+  ✅ Module "Constitutional Basics" has 5 lessons
+  ✅ Module "Constitutional Basics" has 0 lessons
+  ✅ Module "Electoral Process" has 2 lessons
+  ✅ Module "Kenya Government Structure" has 0 lessons
+  ✅ Module "Understanding County Governments" has 0 lessons
+  ✅ Module "Constitution Basics" has 0 lessons
+  ✅ Module "Civic Participation" has 0 lessons
+  ✅ Module "Civil Rights History" has 0 lessons
+  ✅ Module "Civic Rights and Responsibilities" has 0 lessons
+  ✅ Module "Budget Literacy" has 0 lessons
+  ✅ Module "Digital Citizenship" has 0 lessons
+  ✅ Module "Introduction to Civic Engagement" has 0 lessons
+  ✅ Module "Understanding Local Government" has 0 lessons
+  ✅ Module "Youth Leadership in Politics" has 0 lessons
+  ✅ Module "County Governance" has 0 lessons
+[0mGET /api/polihub/civic-modules?status=published [36m304[0m 15.388 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:23 +0000] "GET /api/polihub/civic-modules?status=published HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians? [36m304[0m 3.706 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:23 +0000] "GET /api/polihub/politicians? HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/blog?limit=20 [36m304[0m 5.922 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:23 +0000] "GET /api/polihub/blog?limit=20 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/quick-links [36m304[0m 3.046 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:27 +0000] "GET /api/quick-links HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/quick-links [36m304[0m 5.594 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:27 +0000] "GET /api/quick-links HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians/24 [36m304[0m 43.415 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:29 +0000] "GET /api/polihub/politicians/24 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians/24 [36m304[0m 48.584 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:06:29 +0000] "GET /api/polihub/politicians/24 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians/24 [36m304[0m 23.377 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:51:13 +0000] "GET /api/polihub/politicians/24 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/sources [36m304[0m 8.189 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:51:13 +0000] "GET /api/polihub/sources HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/sources [36m304[0m 2.380 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:06:51:13 +0000] "GET /api/polihub/sources HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/quick-links [36m304[0m 20.510 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:07:08:21 +0000] "GET /api/quick-links HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/quick-links [36m304[0m 7.054 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:07:08:21 +0000] "GET /api/quick-links HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians/24 [36m304[0m 252.198 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:07:08:25 +0000] "GET /api/polihub/politicians/24 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+[0mGET /api/polihub/politicians/24 [36m304[0m 289.012 ms - -[0m
+127.0.0.1 - - [01/Nov/2025:07:08:26 +0000] "GET /api/polihub/politicians/24 HTTP/1.1" 304 - "http://localhost:3000/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"

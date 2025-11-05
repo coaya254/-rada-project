@@ -43,6 +43,7 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
   const [selectedPoliticians, setSelectedPoliticians] = useState<number[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Load politicians from API
   useEffect(() => {
@@ -51,9 +52,13 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
 
   const loadPoliticians = async () => {
     try {
+      setLoading(true);
+      console.log('🔍 Loading politicians from API...');
       const response = await adminAPI.searchPoliticians('', { include_drafts: true });
+      console.log('📡 API Response:', JSON.stringify(response, null, 2));
 
       if (response.success && response.data) {
+        console.log(`✅ Found ${response.data.length} politicians`);
         const politiciansData: PoliticianWithStatus[] = response.data.map((p: any) => ({
           id: p.id,
           name: p.name,
@@ -74,12 +79,19 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
           completion_score: p.completion_score || 0,
         }));
 
+        console.log('📊 Processed politicians:', politiciansData.length);
         setPoliticians(politiciansData);
         setFilteredPoliticians(politiciansData);
+        console.log('✅ State updated with politicians');
+      } else {
+        console.error('❌ API response not successful or no data:', response);
+        Alert.alert('Error', response.error || 'Failed to load politicians - no data');
       }
     } catch (error) {
-      console.error('Error loading politicians:', error);
-      Alert.alert('Error', 'Failed to load politicians');
+      console.error('❌ Error loading politicians:', error);
+      Alert.alert('Error', 'Failed to load politicians: ' + (error as any).message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -739,14 +751,34 @@ export const ManagePoliticiansScreen: React.FC<ManagePoliticiansScreenProps> = (
       </View>
 
       {/* Politicians List */}
-      <FlatList
-        data={filteredPoliticians}
-        renderItem={renderPoliticianCard}
-        keyExtractor={(item) => item.id.toString()}
-        style={styles.politiciansList}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
+      {loading ? (
+        <View style={styles.centerContent}>
+          <Text style={styles.loadingText}>Loading politicians...</Text>
+          <Text style={styles.debugText}>Check console for API logs</Text>
+        </View>
+      ) : filteredPoliticians.length === 0 ? (
+        <View style={styles.centerContent}>
+          <MaterialIcons name="people-outline" size={64} color="#ccc" />
+          <Text style={styles.emptyText}>No politicians found</Text>
+          <Text style={styles.emptySubtext}>
+            {politicians.length === 0
+              ? 'Failed to load data from API. Check console logs.'
+              : 'Try adjusting your filters'}
+          </Text>
+          <Text style={styles.debugText}>
+            Total in DB: {politicians.length} | Filtered: {filteredPoliticians.length}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredPoliticians}
+          renderItem={renderPoliticianCard}
+          keyExtractor={(item) => item.id.toString()}
+          style={styles.politiciansList}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
 
       {renderFiltersModal()}
       {renderActionModal()}
@@ -1117,5 +1149,35 @@ const styles = StyleSheet.create({
   bulkActionText: {
     fontSize: 16,
     color: '#333',
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 16,
+    fontFamily: 'monospace',
   },
 });

@@ -31,13 +31,13 @@ module.exports = (db) => {
     records.forEach((record, index) => {
       const {
         politician_id,
-        bill_title,
+        bill_name,
         bill_number,
         bill_description,
         significance,
         vote_date,
         category,
-        vote_value,
+        vote,
         reasoning,
         bill_status,
         bill_passed,
@@ -52,7 +52,7 @@ module.exports = (db) => {
       } = record;
 
       // Validate required fields
-      if (!politician_id || !bill_title || !bill_number || !vote_date || !vote_value) {
+      if (!politician_id || !bill_name || !bill_number || !vote_date || !vote) {
         errors.push({ index, error: 'Missing required fields' });
         if (imported + errors.length === records.length) {
           sendResponse();
@@ -61,25 +61,20 @@ module.exports = (db) => {
       }
 
       const query = `
-        INSERT INTO voting_records (
-          politician_id, bill_title, bill_number, bill_description, significance,
-          vote_date, category, vote_value, reasoning, bill_status, bill_passed,
-          vote_count_for, vote_count_against, vote_count_abstain, total_votes,
-          session_name, source_links, verification_links, hansard_reference
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO politician_voting_records (
+          politician_id, bill_name, bill_number, description,
+          vote_date, category, vote, notes,
+          source_links, tags
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       db.query(
         query,
         [
-          politician_id, bill_title, bill_number, bill_description || null, significance || 'medium',
-          vote_date, category || 'General', vote_value, reasoning || null, bill_status || null,
-          bill_passed !== undefined ? (bill_passed ? 1 : 0) : null,
-          vote_count_for || null, vote_count_against || null, vote_count_abstain || null,
-          total_votes || null, session_name || null,
+          politician_id, bill_name, bill_number, bill_description || null,
+          vote_date, category || 'General', vote, reasoning || null,
           source_links ? JSON.stringify(source_links) : null,
-          verification_links ? JSON.stringify(verification_links) : null,
-          hansard_reference || null
+          null // tags
         ],
         (err, result) => {
           if (err) {
@@ -100,7 +95,7 @@ module.exports = (db) => {
   router.get('/api/admin/voting-records', (req, res) => {
     const { politicianId } = req.query;
 
-    let query = 'SELECT * FROM voting_records';
+    let query = 'SELECT * FROM politician_voting_records';
     const params = [];
 
     if (politicianId) {
@@ -131,13 +126,13 @@ module.exports = (db) => {
       const records = results.map(record => ({
         id: record.id,
         politician_id: record.politician_id,
-        bill_title: record.bill_title,
+        bill_name: record.bill_name,
         bill_number: record.bill_number,
         bill_description: record.bill_description,
         significance: record.significance,
         vote_date: record.vote_date,
         category: record.category,
-        vote_value: dbToFrontendVote[record.vote_value] || record.vote_value,
+        vote: dbToFrontendVote[record.vote] || record.vote,
         reasoning: record.reasoning,
         bill_status: record.bill_status,
         bill_passed: record.bill_passed,
@@ -164,7 +159,7 @@ module.exports = (db) => {
   router.get('/api/admin/voting-records/:id', (req, res) => {
     const { id } = req.params;
 
-    db.query('SELECT * FROM voting_records WHERE id = ?', [id], (err, results) => {
+    db.query('SELECT * FROM politician_voting_records WHERE id = ?', [id], (err, results) => {
       if (err) {
         console.error('Error fetching voting record:', err);
         return res.status(500).json({
@@ -191,13 +186,13 @@ module.exports = (db) => {
       const record = {
         id: results[0].id,
         politician_id: results[0].politician_id,
-        bill_title: results[0].bill_title,
+        bill_name: results[0].bill_name,
         bill_number: results[0].bill_number,
         bill_description: results[0].bill_description,
         significance: results[0].significance,
         vote_date: results[0].vote_date,
         category: results[0].category,
-        vote_value: dbToFrontendVote[results[0].vote_value] || results[0].vote_value,
+        vote: dbToFrontendVote[results[0].vote] || results[0].vote,
         reasoning: results[0].reasoning,
         bill_status: results[0].bill_status,
         bill_passed: results[0].bill_passed,
@@ -224,76 +219,43 @@ module.exports = (db) => {
   router.post('/api/admin/voting-records', auditLog('CREATE', 'voting_record'), (req, res) => {
     const {
       politician_id,
-      bill_title,
+      bill_name,
       bill_number,
-      bill_description,
-      significance,
+      description,
       vote_date,
       category,
-      vote_value,
-      reasoning,
-      bill_status,
-      bill_passed,
-      vote_count_for,
-      vote_count_against,
-      vote_count_abstain,
-      total_votes,
-      session_name,
+      vote,
+      notes,
       source_links,
-      verification_links,
-      hansard_reference
+      tags
     } = req.body;
 
     // Validate required fields
-    if (!politician_id || !bill_title || !bill_number || !vote_date || !vote_value) {
+    if (!politician_id || !bill_name || !bill_number || !vote_date || !vote) {
       return res.status(400).json({
         success: false,
-        error: 'Politician ID, bill title, bill number, vote date, and vote value are required'
+        error: 'Politician ID, bill name, bill number, vote date, and vote are required'
       });
     }
 
-    // Convert frontend vote values to database ENUM values
-    const voteValueMap = {
-      'for': 'yes',
-      'against': 'no',
-      'abstain': 'abstain',
-      'absent': 'absent',
-      // Also accept database values directly
-      'yes': 'yes',
-      'no': 'no'
-    };
-
-    const mappedVoteValue = voteValueMap[vote_value.toLowerCase()] || vote_value;
-
     const query = `
-      INSERT INTO voting_records (
-        politician_id, bill_title, bill_number, bill_description, significance, vote_date,
-        category, vote_value, reasoning, bill_status, bill_passed, vote_count_for,
-        vote_count_against, vote_count_abstain, total_votes, session_name,
-        source_links, verification_links, hansard_reference
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO politician_voting_records (
+        politician_id, bill_name, bill_number, description, vote_date,
+        category, vote, notes, source_links, tags
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
       politician_id,
-      bill_title,
+      bill_name,
       bill_number,
-      bill_description || '',
-      significance || null,
+      description || null,
       vote_date,
-      category || 'Other',
-      mappedVoteValue,
-      reasoning || null,
-      bill_status || 'Proposed',
-      bill_passed !== undefined ? bill_passed : null,
-      vote_count_for || 0,
-      vote_count_against || 0,
-      vote_count_abstain || 0,
-      total_votes || 0,
-      session_name || '',
+      category || 'General',
+      vote,
+      notes || null,
       source_links ? JSON.stringify(source_links) : null,
-      verification_links ? JSON.stringify(verification_links) : null,
-      hansard_reference || null
+      tags ? JSON.stringify(tags) : null
     ];
 
     db.query(query, values, (err, result) => {
@@ -310,8 +272,8 @@ module.exports = (db) => {
         data: {
           id: result.insertId,
           politician_id,
-          bill_title,
-          vote_value
+          bill_name,
+          vote
         },
         message: 'Voting record created successfully'
       });
@@ -322,13 +284,13 @@ module.exports = (db) => {
   router.put('/api/admin/voting-records/:id', auditLog('UPDATE', 'voting_record'), (req, res) => {
     const { id } = req.params;
     const {
-      bill_title,
+      bill_name,
       bill_number,
       bill_description,
       significance,
       vote_date,
       category,
-      vote_value,
+      vote,
       reasoning,
       bill_status,
       bill_passed,
@@ -345,9 +307,9 @@ module.exports = (db) => {
     const updates = [];
     const values = [];
 
-    if (bill_title !== undefined) {
-      updates.push('bill_title = ?');
-      values.push(bill_title);
+    if (bill_name !== undefined) {
+      updates.push('bill_name = ?');
+      values.push(bill_name);
     }
     if (bill_number !== undefined) {
       updates.push('bill_number = ?');
@@ -369,7 +331,7 @@ module.exports = (db) => {
       updates.push('category = ?');
       values.push(category);
     }
-    if (vote_value !== undefined) {
+    if (vote !== undefined) {
       // Convert frontend vote values to database ENUM values
       const voteValueMap = {
         'for': 'yes',
@@ -379,8 +341,8 @@ module.exports = (db) => {
         'yes': 'yes',
         'no': 'no'
       };
-      const mappedVoteValue = voteValueMap[vote_value.toLowerCase()] || vote_value;
-      updates.push('vote_value = ?');
+      const mappedVoteValue = voteValueMap[vote.toLowerCase()] || vote;
+      updates.push('vote = ?');
       values.push(mappedVoteValue);
     }
     if (reasoning !== undefined) {
@@ -436,7 +398,7 @@ module.exports = (db) => {
     }
 
     values.push(id);
-    const query = `UPDATE voting_records SET ${updates.join(', ')} WHERE id = ?`;
+    const query = `UPDATE politician_voting_records SET ${updates.join(', ')} WHERE id = ?`;
 
     db.query(query, values, (err, result) => {
       if (err) {
@@ -465,7 +427,7 @@ module.exports = (db) => {
   router.delete('/api/admin/voting-records/:id', auditLog('DELETE', 'voting_record'), (req, res) => {
     const { id } = req.params;
 
-    db.query('DELETE FROM voting_records WHERE id = ?', [id], (err, result) => {
+    db.query('DELETE FROM politician_voting_records WHERE id = ?', [id], (err, result) => {
       if (err) {
         console.error('Error deleting voting record:', err);
         return res.status(500).json({

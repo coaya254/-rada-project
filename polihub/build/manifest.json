@@ -1,0 +1,14 @@
+{
+  "short_name": "PoliHub",
+  "name": "PoliHub - Political Education Platform",
+  "description": "Empowering young citizens through accessible political education and civic engagement.",
+  "icons": [],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#a855f7",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["education", "politics", "news"],
+  "lang": "en-US"
+}

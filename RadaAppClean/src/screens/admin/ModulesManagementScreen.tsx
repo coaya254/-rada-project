@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import LearningAPIService from '../../services/LearningAPIService';
+import { API_CONFIG } from '../../config/api.config';
 
 interface Module {
   id: number;
@@ -59,10 +60,11 @@ export default function ModulesManagementScreen({ navigation }: any) {
       setLoading(true);
       const response = await LearningAPIService.adminGetModules();
       setModules(response.modules || []);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching modules:', error);
       Alert.alert('Error', 'Failed to load modules');
-    } finally {
+      setModules([]);
       setLoading(false);
     }
   };
@@ -122,8 +124,8 @@ export default function ModulesManagementScreen({ navigation }: any) {
       if (iconType === 'image' && selectedImage && !selectedImage.startsWith('http')) {
         const uploadResponse = await LearningAPIService.uploadModuleIcon(selectedImage);
         if (uploadResponse.success) {
-          // Use the full URL from server
-          iconToSave = `http://localhost:3000${uploadResponse.url}`;
+          // Use the full URL from server with API config
+          iconToSave = API_CONFIG.getFullURL(uploadResponse.url);
         } else {
           Alert.alert('Error', 'Failed to upload image');
           return;
@@ -264,10 +266,10 @@ export default function ModulesManagementScreen({ navigation }: any) {
           modules.map((module) => (
             <View key={module.id} style={styles.moduleCard}>
               <View style={styles.moduleHeader}>
-                {module.icon.startsWith('http://') || module.icon.startsWith('https://') ? (
+                {(module.icon && (module.icon.startsWith('http://') || module.icon.startsWith('https://'))) ? (
                   <Image source={{ uri: module.icon }} style={styles.moduleIconImage} />
                 ) : (
-                  <Text style={styles.moduleIcon}>{module.icon}</Text>
+                  <Text style={styles.moduleIcon}>{module.icon || '📚'}</Text>
                 )}
                 <View style={styles.moduleInfo}>
                   <Text style={styles.moduleTitle}>{module.title}</Text>
@@ -278,8 +280,8 @@ export default function ModulesManagementScreen({ navigation }: any) {
               </View>
 
               <View style={styles.moduleMeta}>
-                <View style={[styles.badge, { backgroundColor: difficultyColors[module.difficulty] + '20' }]}>
-                  <Text style={[styles.badgeText, { color: difficultyColors[module.difficulty] }]}>
+                <View style={[styles.badge, { backgroundColor: (difficultyColors[module.difficulty] || '#6B7280') + '20' }]}>
+                  <Text style={[styles.badgeText, { color: difficultyColors[module.difficulty] || '#6B7280' }]}>
                     {module.difficulty}
                   </Text>
                 </View>
