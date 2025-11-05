@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
+    <meta name="theme-color" content="#FB923C" />
+    <meta name="color-scheme" content="light only" />
+    <meta name="description" content="Empowering young Kenyans through accessible political education and civic engagement." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="RadaMtaani" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>RadaMtaani - Kenyan Politics & Civic Engagement</title>
+    <style>
+      :root {
+        color-scheme: light only;
+      }
+      * {
+        -webkit-tap-highlight-color: rgba(251, 146, 60, 0.2);
+      }
+      html, body {
+        background-color: #ffffff;
+        color: #000000;
+      }
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        touch-action: manipulation;
+      }
+      input, textarea, button, select {
+        font-size: 16px !important; /* Prevents auto-zoom on iOS */
+      }
+      /* Prevent dark mode overrides */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: light only;
+        }
+        html, body {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
