@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, MapPin, User, Phone, Mail, ExternalLink, Building2, AlertCircle } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export default function FindRepsPage() {
   const [searchType, setSearchType] = useState('county'); // 'county' or 'constituency'

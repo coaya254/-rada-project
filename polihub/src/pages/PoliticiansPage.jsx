@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Star, MapPin, Briefcase, TrendingUp } from 'lucide-react';
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export default function PoliticiansPage({
   filteredPoliticians,

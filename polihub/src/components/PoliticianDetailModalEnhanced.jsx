@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import SourceButtons from './SourceButtons';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export default function PoliticianDetailModalEnhanced({ politician, onClose }) {
   const [activeTab, setActiveTab] = useState('overview');

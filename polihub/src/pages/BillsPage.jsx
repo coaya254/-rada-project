@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Search, Filter, Calendar, User, TrendingUp, CheckCircle, XCircle, Clock, ExternalLink, X } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export default function BillsPage() {
   const [bills, setBills] = useState([]);
