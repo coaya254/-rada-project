@@ -13,11 +13,11 @@ export default function Footer({ setCurrentPage }) {
               <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-lg md:rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-xl md:text-2xl">🏛️</span>
               </div>
-              <h3 className="text-xl md:text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 PoliHub
               </h3>
             </div>
-            <p className="text-xs sm:text-sm text-gray-600 mb-3 md:mb-4">
+            <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-3 md:mb-4">
               Empowering young citizens through accessible political education.
             </p>
             <div className="flex gap-2">
@@ -82,16 +82,16 @@ export default function Footer({ setCurrentPage }) {
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl md:rounded-2xl p-4 sm:p-5 md:p-6 mb-6 md:mb-8 border-2 border-purple-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
-              <h3 className="text-lg md:text-xl font-black mb-1">Stay Informed 📬</h3>
-              <p className="text-xs md:text-sm text-gray-600">Get weekly updates</p>
+            <h3 className="text-base sm:text-lg md:text-xl font-black mb-1">Stay Informed 📬</h3>
+            <p className="text-xs sm:text-sm text-gray-600">Get weekly updates</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="px-4 py-2 md:py-2.5 rounded-full border-2 border-purple-200 focus:border-purple-500 focus:outline-none w-full sm:w-48 md:w-64 text-sm"
+                className="px-4 py-2 md:py-2.5 rounded-full border-2 border-purple-200 focus:border-purple-500 focus:outline-none w-full sm:w-48 md:w-64 text-xs sm:text-sm"
               />
-              <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 md:px-6 py-2 md:py-2.5 rounded-full font-bold hover:shadow-lg transition text-sm whitespace-nowrap">
+              <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-5 md:px-6 py-2 md:py-2.5 rounded-full font-bold hover:shadow-lg transition text-xs sm:text-sm whitespace-nowrap">
                 Subscribe
               </button>
             </div>

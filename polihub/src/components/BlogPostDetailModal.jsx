@@ -118,18 +118,18 @@ export default function BlogPostDetailModal({ post, onClose, setCurrentPage }) {
           {/* Article Content */}
           <div className="prose max-w-none">
             {post.content?.intro && (
-              <p className="text-xl text-gray-700 leading-relaxed mb-8 font-medium">
+              <p className="text-base sm:text-lg md:text-xl text-gray-700 leading-relaxed mb-8 font-medium">
                 {post.content.intro}
               </p>
             )}
 
             {(post.content?.sections || []).map((section, idx) => (
               <div key={idx} className="mb-8">
-                <h2 className="text-3xl font-black text-gray-800 mb-4">
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-800 mb-4">
                   {section.heading}
                 </h2>
                 {(section.paragraphs || []).map((paragraph, pIdx) => (
-                  <p key={pIdx} className="text-gray-700 leading-relaxed mb-4 text-lg">
+                  <p key={pIdx} className="text-gray-700 leading-relaxed mb-4 text-base sm:text-lg">
                     {paragraph}
                   </p>
                 ))}
@@ -142,7 +142,7 @@ export default function BlogPostDetailModal({ post, onClose, setCurrentPage }) {
                   <Lightbulb className="text-purple-600" size={24} />
                   Key Takeaway
                 </h3>
-                <p className="text-gray-700 leading-relaxed text-lg">
+                <p className="text-gray-700 leading-relaxed text-base sm:text-lg">
                   {post.content.conclusion}
                 </p>
               </div>
@@ -155,8 +155,8 @@ export default function BlogPostDetailModal({ post, onClose, setCurrentPage }) {
                   {post.author.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-xl font-black mb-1">{post.author}</h4>
-                  <p className="text-sm text-gray-600 mb-3">{post.authorRole}</p>
+                <h4 className="text-lg sm:text-xl font-black mb-1">{post.author}</h4>
+                <p className="text-xs sm:text-sm text-gray-600 mb-3">{post.authorRole}</p>
                   <button
                     onClick={handleViewAuthor}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-full font-bold text-sm hover:shadow-lg transition flex items-center gap-2"
